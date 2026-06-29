@@ -1492,6 +1492,21 @@
   }
   .modal-secondary:hover { color: var(--ink); border-color: var(--ink-faint); }
   .settings-msg { font-size: 12.5px; color: var(--accent); margin-top: 12px; min-height: 16px; text-align: center; }
+  .account-row {
+    background: var(--field); border: 1px solid var(--field-edge); border-radius: 10px;
+    padding: 13px 14px; display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  }
+  .account-row .ac-email { font-size: 14px; color: var(--ink); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .account-row .ac-state { font-size: 12px; color: var(--ink-faint); margin-top: 2px; }
+  .account-row .ac-state b { color: var(--accent); font-weight: 500; }
+  .ac-btn {
+    flex-shrink: 0; background: var(--accent-soft); border: 1px solid var(--accent); color: var(--accent);
+    border-radius: 9px; padding: 9px 14px; font-family: inherit; font-size: 12px; letter-spacing: 0.06em;
+    text-transform: uppercase; cursor: pointer; transition: background 0.2s ease, color 0.2s ease;
+  }
+  .ac-btn:hover { background: var(--accent); color: var(--bg); }
+  .ac-btn.ghost { background: none; color: var(--ink-soft); border-color: var(--field-edge); }
+  .ac-btn.ghost:hover { color: var(--ink); border-color: var(--ink-faint); }
   .toggle-row {
     width: 100%; display: flex; align-items: center; justify-content: space-between;
     background: var(--field); border: 1px solid var(--field-edge); border-radius: 10px;
@@ -1985,6 +2000,9 @@
     <div class="modal">
       <h2 class="modal-title serif">Settings</h2>
 
+      <label class="field-label">Account</label>
+      <div class="account-row" id="accountRow"></div>
+
       <label class="field-label">Your name</label>
       <input type="text" id="setName" autocomplete="off" maxlength="40" />
 
@@ -2126,6 +2144,24 @@
     </div>
   </div>
 
+  <!-- Account / sign in -->
+  <div class="modal-overlay" id="authModal" hidden>
+    <div class="modal">
+      <h2 class="modal-title serif" id="authTitle">Create your account</h2>
+      <p class="modal-sub" id="authSub">Sync your journal privately across all your devices.</p>
+      <label class="field-label">Email</label>
+      <input type="email" id="authEmail" autocomplete="email" />
+      <label class="field-label">Password</label>
+      <input type="password" id="authPass" autocomplete="current-password" />
+      <div class="settings-msg" id="authMsg"></div>
+      <button class="modal-primary" id="authSubmit">Create account</button>
+      <button class="modal-text" id="authToggle">Already have an account? Sign in</button>
+      <button class="modal-text" id="authForgot">Forgot password?</button>
+      <button class="modal-text" id="authGuest">Continue without an account</button>
+    </div>
+  </div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 (function () {
   "use strict";
@@ -2139,6 +2175,7 @@
   function save() {
     try { localStorage.setItem(KEY, JSON.stringify(db)); }
     catch (e) { /* storage blocked (sandbox / private mode) — keep running in-memory */ }
+    if (typeof cloudPushSoon === "function") cloudPushSoon(); // mirror to the cloud if signed in
   }
   var db = load();
   db.profile = db.profile || null;        // {name, season, plan, onboarded}
@@ -4287,6 +4324,7 @@
     renderSoundToggle();
     renderLockToggle();
     renderNotifyToggle();
+    if (typeof renderAccount === "function") renderAccount();
     $("settingsMsg").textContent = "";
     $("settings").hidden = false;
   }
@@ -4465,6 +4503,121 @@
     setTimeout(function () { $("threshold").hidden = true; }, 1100);
   }
   $("threshold").addEventListener("click", openThreshold);
+
+  // ================= accounts + cloud sync (Supabase) =================
+  var SUPA_URL = "https://rrhslltmkkvlveztylsi.supabase.co";
+  var SUPA_KEY = "sb_publishable_fSbx9nqmkd4KcH4hWGBpjQ_NrQTCaJZ";
+  var sb = (window.supabase && SUPA_URL) ? window.supabase.createClient(SUPA_URL, SUPA_KEY) : null;
+  var session = null, authMode = "signup", pushTimer = null;
+  // heavy / device-local data we don't sync into the JSON blob (kept local)
+  var SYNC_SKIP = { voice: 1, bibleCache: 1 };
+  function syncableData() { var o = {}; for (var k in db) { if (db.hasOwnProperty(k) && !SYNC_SKIP[k]) o[k] = db[k]; } return o; }
+  function cloudPush() {
+    if (!sb || !session) return;
+    sb.from("user_state").upsert({ user_id: session.user.id, data: syncableData(), updated_at: new Date().toISOString() })
+      .then(function () {}, function () {});
+  }
+  function cloudPushSoon() {
+    if (!sb || !session) return;
+    clearTimeout(pushTimer); pushTimer = setTimeout(cloudPush, 1500);
+  }
+  function rerenderAll() {
+    dailyRefresh();
+    if (typeof renderPrayerSummary === "function") renderPrayerSummary();
+    if (typeof updateTrashCount === "function") updateTrashCount();
+    if (!$("journalDrawer").hidden) renderJournal();
+  }
+  function mergeCloud(data) {
+    if (!data) return;
+    for (var k in data) { if (data.hasOwnProperty(k) && !SYNC_SKIP[k]) db[k] = data[k]; }
+    db.voice = db.voice || { journal: {}, evening: {} };
+    db.bibleCache = db.bibleCache || {};
+    try { localStorage.setItem(KEY, JSON.stringify(db)); } catch (e) {}
+    rerenderAll();
+  }
+  function cloudPull() {
+    if (!sb || !session) return;
+    sb.from("user_state").select("data").eq("user_id", session.user.id).maybeSingle()
+      .then(function (res) {
+        var row = res && res.data;
+        if (row && row.data && Object.keys(row.data).length) mergeCloud(row.data); // existing account → cloud wins
+        else cloudPush(); // first time on this account → seed the cloud from what's here
+      }, function () {});
+  }
+  // ---- account UI (in Settings) ----
+  function renderAccount() {
+    var el = $("accountRow");
+    if (!sb) { el.innerHTML = '<div class="ac-state">Offline — sign-in unavailable right now.</div>'; return; }
+    if (session && session.user) {
+      el.innerHTML = '<div style="min-width:0"><div class="ac-email">' + escapeHtml(session.user.email || "Signed in") +
+        '</div><div class="ac-state"><b>Synced</b> across your devices</div></div>' +
+        '<button class="ac-btn ghost" id="acSignOut">Sign out</button>';
+      $("acSignOut").addEventListener("click", function () { sb.auth.signOut(); });
+    } else {
+      el.innerHTML = '<div><div class="ac-email">Not signed in</div><div class="ac-state">Saving on this device only</div></div>' +
+        '<button class="ac-btn" id="acSignIn">Sign in</button>';
+      $("acSignIn").addEventListener("click", openAuth);
+    }
+  }
+  // ---- auth modal ----
+  function setAuthMode(mode) {
+    authMode = mode;
+    $("authTitle").textContent = mode === "signup" ? "Create your account" : "Welcome back";
+    $("authSub").textContent = mode === "signup" ? "Sync your journal privately across all your devices." : "Sign in to sync your journal.";
+    $("authSubmit").textContent = mode === "signup" ? "Create account" : "Sign in";
+    $("authToggle").textContent = mode === "signup" ? "Already have an account? Sign in" : "Need an account? Create one";
+    $("authPass").setAttribute("autocomplete", mode === "signup" ? "new-password" : "current-password");
+  }
+  function openAuth() {
+    if (!sb) return;
+    setAuthMode(session ? "signin" : "signup");
+    $("authEmail").value = ""; $("authPass").value = ""; $("authMsg").textContent = "";
+    $("authMsg").style.color = ""; $("authModal").hidden = false;
+    setTimeout(function () { $("authEmail").focus(); }, 50);
+  }
+  function closeAuth() { $("authModal").hidden = true; }
+  function authMsg(t, ok) { var m = $("authMsg"); m.textContent = t; m.style.color = ok ? "var(--accent)" : "#d08a72"; }
+  function authSubmit() {
+    if (!sb) return;
+    var email = $("authEmail").value.trim(), pass = $("authPass").value;
+    if (!email || !pass) { authMsg("Enter your email and a password."); return; }
+    if (pass.length < 6) { authMsg("Password needs at least 6 characters."); return; }
+    authMsg("One moment…", true);
+    var p = authMode === "signup"
+      ? sb.auth.signUp({ email: email, password: pass })
+      : sb.auth.signInWithPassword({ email: email, password: pass });
+    p.then(function (res) {
+      if (res.error) { authMsg(res.error.message); return; }
+      if (authMode === "signup" && res.data && res.data.user && !res.data.session) {
+        authMsg("Check your email to confirm, then sign in.", true); setAuthMode("signin"); return;
+      }
+      // signed in — onAuthStateChange handles session + pull
+      closeAuth();
+    }, function () { authMsg("Something went wrong. Try again."); });
+  }
+  if (sb) {
+    $("authSubmit").addEventListener("click", authSubmit);
+    $("authPass").addEventListener("keydown", function (e) { if (e.key === "Enter") authSubmit(); });
+    $("authToggle").addEventListener("click", function () { setAuthMode(authMode === "signup" ? "signin" : "signup"); authMsg(""); });
+    $("authGuest").addEventListener("click", closeAuth);
+    $("authModal").addEventListener("click", function (e) { if (e.target === this) closeAuth(); });
+    $("authForgot").addEventListener("click", function () {
+      var email = $("authEmail").value.trim();
+      if (!email) { authMsg("Enter your email above first."); return; }
+      sb.auth.resetPasswordForEmail(email, { redirectTo: location.href })
+        .then(function () { authMsg("Password reset link sent to your email.", true); });
+    });
+    sb.auth.getSession().then(function (r) {
+      session = (r.data && r.data.session) || null;
+      renderAccount();
+      if (session) cloudPull();
+    });
+    sb.auth.onAuthStateChange(function (event, s) {
+      session = s || null;
+      renderAccount();
+      if (s && event === "SIGNED_IN") { cloudPull(); showToastMsg("Signed in — your journal is syncing."); }
+    });
+  }
 
   // ================= init + auto-renew =================
   dailyRefresh();

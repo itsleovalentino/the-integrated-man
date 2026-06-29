@@ -1,11 +1,10 @@
 // The Integrated Man — offline service worker
-// Caches the app shell so it opens instantly and works with no connection.
-var CACHE = "tim-v1";
-var SHELL = ["./", "index.html"];
+// Network-first for the page (so updates always show), cache-first for static assets.
+var CACHE = "tim-v2";
 
 self.addEventListener("install", function (e) {
   self.skipWaiting();
-  e.waitUntil(caches.open(CACHE).then(function (c) { return c.addAll(SHELL); }).catch(function () {}));
+  e.waitUntil(caches.open(CACHE).then(function (c) { return c.addAll(["./", "index.html"]); }).catch(function () {}));
 });
 
 self.addEventListener("activate", function (e) {
@@ -20,23 +19,30 @@ self.addEventListener("activate", function (e) {
 self.addEventListener("fetch", function (e) {
   var req = e.request;
   if (req.method !== "GET") return;
+
+  var isPage = req.mode === "navigate" || req.destination === "document";
+  if (isPage) {
+    // network-first: always try the latest page; fall back to cache when offline
+    e.respondWith(
+      fetch(req).then(function (res) {
+        try { var copy = res.clone(); caches.open(CACHE).then(function (c) { c.put("index.html", copy); }); } catch (err) {}
+        return res;
+      }).catch(function () { return caches.match("index.html"); })
+    );
+    return;
+  }
+
+  // other GETs (fonts, etc.): cache-first, then network
   e.respondWith(
     caches.match(req).then(function (hit) {
       if (hit) return hit;
       return fetch(req).then(function (res) {
-        // cache same-origin assets and the web font so they're available offline next time
         try {
           var ok = res && res.status === 200;
           var cacheable = req.url.indexOf(self.location.origin) === 0 || req.url.indexOf("fonts.g") > -1;
-          if (ok && cacheable) {
-            var copy = res.clone();
-            caches.open(CACHE).then(function (c) { c.put(req, copy); });
-          }
+          if (ok && cacheable) { var copy = res.clone(); caches.open(CACHE).then(function (c) { c.put(req, copy); }); }
         } catch (err) {}
         return res;
-      }).catch(function () {
-        // offline fallback: serve the app shell for navigations
-        if (req.mode === "navigate") return caches.match("index.html");
       });
     })
   );
