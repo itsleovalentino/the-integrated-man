@@ -494,13 +494,12 @@
   .pillar-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
   .pillar-id { display: flex; align-items: center; gap: 12px; min-width: 0; }
   .pillar-orb {
-    width: 26px; height: 26px;
+    width: 24px; height: 24px;
     border-radius: 50%;
     flex-shrink: 0;
     background: var(--orb, var(--pc));
-    background-size: 240%; background-position: 50% 7%; /* sample the top strip — above the centered label, texture only */
-    border: 1px solid var(--gold-line);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    border: 1px solid rgba(255,255,255,0.14);
+    box-shadow: inset 0 1px 5px rgba(0,0,0,0.45), 0 0 10px -2px var(--pc);
   }
   .pillar-name { font-size: 16px; letter-spacing: 0.01em; }
   .pillar-info-btn {
@@ -791,11 +790,19 @@
   .pray-answered-toggle:hover { color: var(--ink-soft); }
   .pray-answered { display: none; margin-top: 12px; }
   .pray-answered.open { display: block; }
-  .pray-answered .pray-item { opacity: 0.72; }
+  .pray-answered .pray-item { opacity: 0.85; }
   .pray-answered .pray-check {
     border-color: var(--accent); color: var(--bg); background: var(--accent);
   }
   .pray-answered .pray-body { color: var(--ink-soft); }
+  .pray-note {
+    width: 100%; margin-top: 8px; min-height: 0;
+    background: var(--field); border: 1px solid var(--field-edge); border-radius: 8px;
+    color: var(--ink); font-family: inherit; font-size: 13.5px; line-height: 1.5; padding: 8px 10px;
+    resize: none; opacity: 1;
+  }
+  .pray-note::placeholder { color: var(--ink-faint); }
+  .pray-note:focus { outline: none; border-color: var(--accent); }
 
   /* ---- keystone habits ---- */
   .habit-list { margin-bottom: 4px; }
@@ -1240,11 +1247,10 @@
   .pillar-entry[aria-expanded="true"] { border-color: var(--accent); }
   .pe-orbs { display: flex; flex-shrink: 0; }
   .pe-orb {
-    width: 28px; height: 28px; border-radius: 50%;
+    width: 26px; height: 26px; border-radius: 50%;
     margin-left: -7px;
-    background-size: 240%; background-position: 50% 7%; /* sample the top strip — above the centered label, texture only */
     border: 2px solid var(--panel);
-    box-shadow: 0 3px 9px rgba(0,0,0,0.5);
+    box-shadow: inset 0 1px 4px rgba(0,0,0,0.4);
   }
   .pe-orb:first-child { margin-left: 0; }
   .pe-icon {
@@ -1878,7 +1884,6 @@
         <button class="label-btn" id="openBibleBtn">Open your Bible</button>
       </div>
       <div class="scripture-grid" id="readingCards"></div>
-      <div class="ob-plan-note" style="margin-top:10px;">Suggested plans — pick one or several in Settings, or tap “Open your Bible” for anything.</div>
     </section>
 
     <section data-w="journaling" data-w-title="Journaling Prompt">
@@ -2447,6 +2452,7 @@
   db.habitLog = db.habitLog || {};        // dateKey -> {habitId: true}
   db.readLog = db.readLog || {};          // dateKey -> {prov:true, rom:true}
   db.scriptureNotes = db.scriptureNotes || {}; // passage ref -> note text (builds a personal commentary)
+  db.scriptureNoteLog = db.scriptureNoteLog || {}; // dateKey -> { ref: note } so notes also land in the journal
   db.pinned = db.pinned || {};            // dateKey -> true (pinned journal entries)
   db.evening = db.evening || {};          // dateKey -> string (end-of-day reflection answer)
   db.journalPromptIdx = db.journalPromptIdx || {}; // dateKey -> chosen journaling-prompt index
@@ -3005,7 +3011,7 @@
         '<div class="pillar" id="card-' + p.key + '" style="--pc:' + p.color + ';--orb:' + p.orb + ';">' +
           '<div class="pillar-top">' +
             '<span class="pillar-id">' +
-              '<span class="pillar-orb" style="background-image:url(assets/orb-' + p.key + '.png)"></span>' +
+              '<span class="pillar-orb"></span>' +
               '<span class="pillar-name">' + p.name + '</span>' +
               '<button class="pillar-info-btn" data-info="' + p.key + '" aria-label="What ' + escapeHtml(p.name) + ' means" aria-expanded="false">i</button>' +
             '</span>' +
@@ -3038,7 +3044,7 @@
   // the seven brand circles on the collapsed entry button
   (function buildPeOrbs() {
     $("peOrbs").innerHTML = pillars.map(function (p) {
-      return '<span class="pe-orb" style="background-image:url(assets/orb-' + p.key + '.png)" title="' + p.name + '"></span>';
+      return '<span class="pe-orb" style="background:' + p.orb + '" title="' + p.name + '"></span>';
     }).join("");
   })();
 
@@ -3355,8 +3361,10 @@
   $("readingCards").addEventListener("input", function (e) {
     var ta = e.target.closest("[data-note]"); if (!ta) return;
     var card = e.target.closest(".scripture-card"), ref = card.getAttribute("data-ref");
-    if (ta.value.trim()) db.scriptureNotes[ref] = ta.value;
-    else delete db.scriptureNotes[ref];
+    if (!db.scriptureNoteLog[todayKey]) db.scriptureNoteLog[todayKey] = {};
+    if (ta.value.trim()) { db.scriptureNotes[ref] = ta.value; db.scriptureNoteLog[todayKey][ref] = ta.value; }
+    else { delete db.scriptureNotes[ref]; delete db.scriptureNoteLog[todayKey][ref]; }
+    if (!Object.keys(db.scriptureNoteLog[todayKey]).length) delete db.scriptureNoteLog[todayKey];
     card.querySelector(".sc-note-toggle").textContent = ta.value.trim() ? "Your note" : "Add a note";
     save(); grow(ta);
   });
@@ -4110,11 +4118,14 @@
   function prayItemHtml(it, answered) {
     var who = it.who && it.who.trim() ? '<span class="pray-who">' + escapeHtml(it.who) + '</span> — ' : '';
     var meta = answered ? "Answered " + shortDate(it.answered) : "Since " + shortDate(it.created);
+    var note = answered
+      ? '<textarea class="pray-note" data-note rows="1" placeholder="How was it answered? A thought of thanks…">' + escapeHtml(it.note || "") + '</textarea>'
+      : '';
     return '<div class="pray-item" data-id="' + it.id + '">' +
       '<button class="pray-check" data-act="toggle" aria-label="' + (answered ? "Reopen" : "Mark answered") + '">' +
         '<svg viewBox="0 0 24 24"><polyline points="5 12 10 17 19 7" stroke-linecap="round" stroke-linejoin="round"/></svg></button>' +
       '<div class="pray-body">' + who + escapeHtml(it.text) +
-        '<div class="pray-meta">' + meta + '</div></div>' +
+        '<div class="pray-meta">' + meta + '</div>' + note + '</div>' +
       '<button class="pray-del" data-act="del" aria-label="Remove">×</button>' +
     '</div>';
   }
@@ -4143,6 +4154,7 @@
       aToggle.textContent = (aWrap.classList.contains("open") ? "Hide" : "Show") + " Answered Prayers (" + ans.length + ")";
       ans.sort(function (a, b) { return (b.answered || "").localeCompare(a.answered || ""); });
       aWrap.innerHTML = ans.map(function (it) { return prayItemHtml(it, true); }).join("");
+      Array.prototype.forEach.call(aWrap.querySelectorAll("[data-note]"), grow);
     } else {
       aToggle.hidden = true; aWrap.innerHTML = ""; aWrap.classList.remove("open");
     }
@@ -4191,6 +4203,14 @@
   $("prayAnswered").addEventListener("click", prayListClick);
   $("prayAnsweredToggle").addEventListener("click", function () {
     $("prayAnswered").classList.toggle("open"); renderPrayers();
+  });
+  $("prayAnswered").addEventListener("input", function (e) {
+    var ta = e.target.closest("[data-note]"); if (!ta) return;
+    var row = e.target.closest(".pray-item"); if (!row) return;
+    var id = row.getAttribute("data-id"), it = null;
+    for (var i = 0; i < db.prayers.length; i++) { if (db.prayers[i].id === id) { it = db.prayers[i]; break; } }
+    if (!it) return;
+    it.note = ta.value; save(); grow(ta);
   });
   renderPrayerSummary();
 
@@ -4468,6 +4488,7 @@
     if (db.reflections[k]) return true;
     if (db.ratings[k]) return true;
     if (hasVoice(k)) return true;
+    if (db.scriptureNoteLog[k] && Object.keys(db.scriptureNoteLog[k]).length) return true;
     return false;
   }
   function fmtMonth(k) { var p = k.split("-"); return months[p[1] - 1] + " " + p[0]; }
@@ -4549,6 +4570,7 @@
     Object.keys(db.ratings).forEach(function (k) { keySet[k] = true; });
     Object.keys(db.voice.journal || {}).forEach(function (k) { keySet[k] = true; });
     Object.keys(db.voice.evening || {}).forEach(function (k) { keySet[k] = true; });
+    Object.keys(db.scriptureNoteLog).forEach(function (k) { keySet[k] = true; });
     return Object.keys(keySet).filter(dayHasContent).sort().reverse();
   }
   function renderJournal() {
@@ -4711,6 +4733,12 @@
     var m = db.morning[k]; if (m && m.trim()) html += paperSection("Morning Reflection", "", m);
     var j = db.journal[k]; if (j && j.trim()) html += paperSection("Journaling Prompt", morningPromptFor(k), j);
     var e = db.evening[k]; if (e && e.trim()) html += paperSection("End of Day", eveningPromptFor(k), e);
+    var sn = db.scriptureNoteLog[k];
+    if (sn) {
+      var snLines = Object.keys(sn).filter(function (ref) { return (sn[ref] || "").trim(); })
+        .map(function (ref) { return ref + " — " + sn[ref].trim(); }).join("\n\n");
+      if (snLines) html += paperSection("Scripture Notes", "", snLines);
+    }
     // voice memos
     ["journal", "evening"].forEach(function (sec) {
       var url = db.voice[sec] && db.voice[sec][k];
