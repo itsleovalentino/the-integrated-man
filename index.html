@@ -5228,13 +5228,15 @@
   // heavy / device-local data we don't sync into the JSON blob (kept local)
   var SYNC_SKIP = { voice: 1, bibleCache: 1 };
   function syncableData() { var o = {}; for (var k in db) { if (db.hasOwnProperty(k) && !SYNC_SKIP[k]) o[k] = db[k]; } return o; }
+  var pulled = false; // true once we've read the cloud (or confirmed it's empty) this session — GUARDS all pushes
   function cloudPush() {
-    if (!sb || !session) return;
+    if (!sb || !session || !pulled) return;             // never push before we've pulled the cloud
+    if (!(db.profile && db.profile.onboarded)) return;  // never let an empty / profile-less state overwrite real data
     sb.from("user_state").upsert({ user_id: session.user.id, data: syncableData(), updated_at: new Date().toISOString() })
       .then(function () {}, function () {});
   }
   function cloudPushSoon() {
-    if (!sb || !session) return;
+    if (!sb || !session || !pulled) return;
     clearTimeout(pushTimer); pushTimer = setTimeout(cloudPush, 1500);
   }
   function rerenderAll() {
@@ -5243,28 +5245,34 @@
     if (typeof updateTrashCount === "function") updateTrashCount();
     if (!$("journalDrawer").hidden) renderJournal();
   }
-  function mergeCloud(data) {
-    if (!data) return;
+  function applyCloud(data) {
     for (var k in data) { if (data.hasOwnProperty(k) && !SYNC_SKIP[k]) db[k] = data[k]; }
     db.voice = db.voice || { journal: {}, evening: {} };
     db.bibleCache = db.bibleCache || {};
     try { localStorage.setItem(KEY, JSON.stringify(db)); } catch (e) {}
     rerenderAll();
-    if (typeof routeAfterAuth === "function") routeAfterAuth(); // returning sign-in → leave the gate / finish setup
   }
+  // PULL FIRST, then route. The cloud is authoritative on sign-in; we never onboard or push until we've seen it.
   function cloudPull() {
     if (!sb || !session) return;
     sb.from("user_state").select("data").eq("user_id", session.user.id).maybeSingle()
       .then(function (res) {
-        var row = res && res.data;
-        if (row && row.data && Object.keys(row.data).length) {
-          // only let the cloud win if it isn't older than what's on this device —
-          // otherwise an un-pushed local change (e.g. last night's thoughts) would be lost
-          var cloudAt = +row.data.updatedAt || 0, localAt = +db.updatedAt || 0;
-          if (cloudAt >= localAt) mergeCloud(row.data);
-          else cloudPush(); // local is newer → push it up instead of overwriting
-        } else { cloudPush(); if (typeof routeAfterAuth === "function") routeAfterAuth(); } // first time on this account → seed cloud + finish setup
-      }, function () {});
+        var cloud = res && res.data && res.data.data;
+        var cloudHasProfile = !!(cloud && cloud.profile && cloud.profile.onboarded);
+        var localHasProfile = !!(db.profile && db.profile.onboarded);
+        if (cloudHasProfile) {
+          // cloud wins when this device has no profile (just signed in / was wiped);
+          // if BOTH have a profile, the newer timestamp wins (protects un-pushed local edits)
+          if (!localHasProfile || (+cloud.updatedAt || 0) >= (+db.updatedAt || 0)) applyCloud(cloud);
+        }
+        pulled = true;
+        routeAfterAuth();
+        if (!cloudHasProfile && localHasProfile) cloudPush(); // brand-new account → seed the cloud from local
+      }, function () {
+        // offline / fetch failed: fall back to local ONLY if it has a real profile; otherwise stay gated (don't risk a clobber)
+        if (db.profile && db.profile.onboarded) { pulled = true; routeAfterAuth(); }
+        else { openWelcome(); showToastMsg("Couldn't reach your journal. Check your connection, then reload.", 5000); }
+      });
   }
   // ---- account UI (in Settings) ----
   function renderAccount() {
@@ -5322,10 +5330,10 @@
         authMsg("Almost there — we sent a confirmation link to " + email + ". Tap it, then come back and sign in.", true);
         return;
       }
-      // signed in — reveal the app now (onAuthStateChange also fires + syncs)
+      // signed in — pull the cloud FIRST, then route (cloudPull decides home vs. new-account setup)
       session = (res.data && res.data.session) || session;
       $("authModal").hidden = true;
-      routeAfterAuth();
+      pulled = false; cloudPull();
     }, function () { authMsg("Something went wrong. Try again."); });
   }
   if (sb) {
@@ -5343,8 +5351,8 @@
     sb.auth.getSession().then(function (r) {
       session = (r.data && r.data.session) || null;
       renderAccount();
-      if (session) { routeAfterAuth(); cloudPull(); } // reveal app from local profile, sync in background (works offline)
-      else openWelcome();                              // no session → gate
+      if (session) cloudPull();   // pull FIRST, then route (never onboard before we've seen the cloud)
+      else openWelcome();         // no session → gate
     });
     sb.auth.onAuthStateChange(function (event, s) {
       session = s || null;
@@ -5355,7 +5363,7 @@
         return;
       }
       renderAccount();
-      if (s && event === "SIGNED_IN") { cloudPull(); routeAfterAuth(); showToastMsg("Signed in.", 2200); }
+      if (s && event === "SIGNED_IN") { pulled = false; cloudPull(); showToastMsg("Signed in.", 2200); }
     });
   }
 
