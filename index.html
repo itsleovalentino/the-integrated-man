@@ -858,6 +858,11 @@
     touch-action: none;
   }
   .fab { overflow: visible; }
+  /* no thought capture before you're in / while the app is gated */
+  body:has(#onboard:not([hidden])) .fab,
+  body:has(#authModal:not([hidden])) .fab,
+  body:has(#lock:not([hidden])) .fab,
+  body:has(#threshold:not([hidden])) .fab { display: none !important; }
   .fab:hover { transform: scale(1.06); }
   .fab:active { transform: scale(0.94); }
   .fab-bubble { width: 25px; height: 25px; stroke: var(--bg); stroke-width: 1.8; fill: none; stroke-linejoin: round; }
@@ -3568,6 +3573,9 @@
       '<button class="vm-del" id="capMemoDel" aria-label="Remove">×</button></div>';
   }
   function openCapture() {
+    // not before onboarding, and not while a gate overlay is up
+    if (!db.profile || !db.profile.onboarded) return;
+    if (!$("onboard").hidden || !$("authModal").hidden || !$("lock").hidden || !$("threshold").hidden) return;
     captureMood = null; pendingVoice = null;
     $("captureText").value = ""; $("captureMemo").innerHTML = "";
     $("capturePrompt").textContent = THOUGHT_PROMPTS[Math.floor(Math.random() * THOUGHT_PROMPTS.length)];
