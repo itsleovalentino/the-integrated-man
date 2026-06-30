@@ -463,6 +463,23 @@
     box-shadow: inset 0 1px 5px rgba(0,0,0,0.45), 0 0 10px -2px var(--pc);
   }
   .pillar-name { font-size: 16px; letter-spacing: 0.01em; }
+  .pillar-info-btn {
+    flex-shrink: 0; width: 17px; height: 17px; border-radius: 50%;
+    border: 1px solid var(--ink-faint); background: none; color: var(--ink-faint);
+    font-family: Georgia, "Times New Roman", serif; font-style: italic; font-size: 11px; line-height: 1;
+    cursor: pointer; display: inline-flex; align-items: center; justify-content: center; padding: 0;
+    transition: color 0.2s ease, border-color 0.2s ease;
+  }
+  .pillar-info-btn:hover, .pillar-info-btn.open { color: var(--accent); border-color: var(--accent); }
+  .pillar-info {
+    background: var(--field); border: 1px solid var(--field-edge); border-radius: 10px;
+    padding: 12px 14px; margin: 4px 0 12px;
+  }
+  .pillar-info[hidden] { display: none; }
+  .pi-def { font-size: 13px; color: var(--ink-soft); line-height: 1.5; margin: 0 0 9px; }
+  .pi-facets { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 5px; }
+  .pi-facets li { font-size: 12.5px; color: var(--ink-faint); line-height: 1.45; }
+  .pi-facets li b { color: var(--ink-soft); font-weight: 500; }
   .pillar-right { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
   .pillar-score {
     font-size: 16px;
@@ -566,10 +583,10 @@
   .focus-item { display: flex; gap: 13px; align-items: flex-start; margin-bottom: 15px; }
   .focus-item:last-child { margin-bottom: 0; }
   .focus-add {
-    display: inline-block; margin-top: 16px;
+    display: block; width: fit-content; max-width: 100%; margin: 14px 0 2px auto;
     background: var(--accent-soft); border: 1px solid var(--accent); color: var(--accent);
     border-radius: 999px; padding: 7px 13px; cursor: pointer;
-    font-family: inherit; font-size: 11.5px; letter-spacing: 0.03em;
+    font-family: inherit; font-size: 11.5px; letter-spacing: 0.03em; text-align: left;
     transition: background 0.2s ease, color 0.2s ease;
   }
   .focus-add:hover { background: var(--accent); color: var(--bg); }
@@ -1108,6 +1125,7 @@
     0% { opacity: 0.7; transform: translate(-50%, -50%) scale(0.4); }
     100% { opacity: 0; transform: translate(-50%, -50%) scale(2.6); }
   }
+  .spark-ring.big { width: 30px; height: 30px; animation-duration: 0.85s; }
   @media (prefers-reduced-motion: reduce) { .spark-layer { display: none; } }
 
   /* ---- pillar entry button (the seven circles) ---- */
@@ -2351,6 +2369,23 @@
       ] }
   ];
   function pillarOf(key) { for (var i = 0; i < pillars.length; i++) if (pillars[i].key === key) return pillars[i]; }
+  // plain-language definitions so a man can rate each pillar (and its breakdown) honestly
+  var PILLAR_INFO = {
+    vitality: { def: "Your physical foundation — how well your body is resourced to carry everything else.",
+      facets: { sleep: "Are you getting enough genuine rest?", nutrition: "How well you're fueling your body.", exercise: "Are you moving your body regularly?", energy: "Your physical energy and vigor through the day." } },
+    mental: { def: "Your inner world — focus, calm, and emotional steadiness.",
+      facets: { focus: "Concentrating on what matters without scattering.", calm: "How settled vs. anxious you feel.", stillness: "Quiet time with no input — reflection.", mood: "Your general emotional tone right now." } },
+    faith: { def: "Your walk with God — connection, surrender, and worship.",
+      facets: { prayer: "Honest, consistent time talking with God.", scripture: "Engaging with God's Word.", surrender: "Releasing control and trusting God with the outcome.", worship: "Gratitude and adoration that reorders your heart." } },
+    vocation: { def: "Your work and calling — doing what matters with discipline.",
+      facets: { clarity: "Knowing the one outcome that actually matters.", momentum: "Forward progress on the important things.", discipline: "Doing the non-negotiables whether you feel it or not.", calling: "Whether your work serves the mission you're made for." } },
+    wealth: { def: "Your relationship with money — provision held with open hands.",
+      facets: { income: "Generating provision.", margin: "Saving and breathing room, not living at the edge.", stewardship: "Managing what you have wisely and honestly.", peace: "Freedom from money-anxiety; worth separate from net worth." } },
+    environment: { def: "Your physical and digital surroundings — and the order they create within.",
+      facets: { order: "How ordered vs. chaotic your spaces are.", inputs: "The quality of what you let in — feeds, media, noise.", cleanliness: "How clean and cared-for your spaces are.", atmosphere: "Whether your space is one you're glad to be in." } },
+    tribe: { def: "Your relationships — being known, honest, and present with others.",
+      facets: { connection: "Real contact with people who matter.", honesty: "Being truthful and vulnerable, not performing.", service: "Giving to others without expecting return.", presence: "Being fully there, not distracted." } }
+  };
   // Journaling prompts — growth in faith, manhood, and leadership.
   var questions = [
     "Where is God inviting you to trust him today, and what makes that hard to do?",
@@ -2564,21 +2599,22 @@
   // ---------- celebration: a quick ember burst (masculine, restrained) ----------
   var REDUCED = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   var EMBER_COLORS = ["var(--accent)", "#e8c98a", "#fff3d8", "#c98a3a"];
-  function celebrate(el) {
+  function celebrate(el, big) {
     if (REDUCED || !el) return;
     var r = el.getBoundingClientRect();
     var cx = r.left + r.width / 2, cy = r.top + r.height / 2;
     var layer = document.createElement("div");
     layer.className = "spark-layer";
     var ring = document.createElement("span");
-    ring.className = "spark-ring";
+    ring.className = "spark-ring" + (big ? " big" : "");
     ring.style.left = cx + "px"; ring.style.top = cy + "px";
     layer.appendChild(ring);
-    for (var i = 0; i < 13; i++) {
+    var count = big ? 26 : 13;
+    for (var i = 0; i < count; i++) {
       var s = document.createElement("span");
       s.className = "spark-bit";
-      var ang = (Math.PI * 2 * i / 13) + Math.random() * 0.5;
-      var dist = 22 + Math.random() * 28;
+      var ang = (Math.PI * 2 * i / count) + Math.random() * 0.5;
+      var dist = (big ? 40 : 22) + Math.random() * (big ? 48 : 28);
       s.style.left = cx + "px"; s.style.top = cy + "px";
       s.style.setProperty("--tx", (Math.cos(ang) * dist).toFixed(1) + "px");
       s.style.setProperty("--ty", (Math.sin(ang) * dist - 12).toFixed(1) + "px"); // slight upward drift
@@ -2652,6 +2688,12 @@
     o.start(t); o.stop(t + 0.18);
   }
   function buzz(ms) { try { if (navigator.vibrate) navigator.vibrate(ms || 12); } catch (e) {} }
+  function buzzPattern(p) { try { if (navigator.vibrate) navigator.vibrate(p); } catch (e) {} }
+  function playFanfare() { // an earned, gentle ascending triad — warm, not cheesy
+    var notes = [261.63, 329.63, 392.0, 523.25]; // C E G C
+    notes.forEach(function (f, i) { setTimeout(function () { tone(f, 0.45, "triangle", 0.05); }, i * 95); });
+    setTimeout(function () { tone(392.0, 1.1, "sine", 0.04); tone(523.25, 1.1, "sine", 0.028); }, 380); // bloom
+  }
 
   // ---------- reusable confirm dialog ----------
   var _confirmCb = null;
@@ -2781,12 +2823,22 @@
               'id="fslider-' + p.key + '-' + f.key + '" value="' + DEFAULT_SCORE + '">' +
           '</div>';
       });
+      var info = PILLAR_INFO[p.key] || { def: "", facets: {} };
+      var infoFacets = p.facets.map(function (f) {
+        return '<li><b>' + escapeHtml(f.name) + '</b> — ' + escapeHtml(info.facets[f.key] || "") + '</li>';
+      }).join("");
+      var infoPanel =
+        '<div class="pillar-info" id="pinfo-' + p.key + '" hidden>' +
+          '<p class="pi-def">' + escapeHtml(info.def) + '</p>' +
+          '<ul class="pi-facets">' + infoFacets + '</ul>' +
+        '</div>';
       html +=
         '<div class="pillar" id="card-' + p.key + '" style="--pc:' + p.color + ';--orb:' + p.orb + ';">' +
           '<div class="pillar-top">' +
             '<span class="pillar-id">' +
               '<span class="pillar-orb"></span>' +
               '<span class="pillar-name">' + p.name + '</span>' +
+              '<button class="pillar-info-btn" data-info="' + p.key + '" aria-label="What ' + escapeHtml(p.name) + ' means" aria-expanded="false">i</button>' +
             '</span>' +
             '<span class="pillar-right">' +
               '<span class="pillar-score" id="score-' + p.key + '">' +
@@ -2796,6 +2848,7 @@
               '</button>' +
             '</span>' +
           '</div>' +
+          infoPanel +
           '<div class="pillar-slider">' +
             '<input type="range" min="0" max="10" step="1" id="slider-' + p.key + '" value="' + DEFAULT_SCORE + '">' +
           '</div>' +
@@ -3777,6 +3830,16 @@
       save();
     });
 
+    // "i" — what this pillar (and its breakdown) means
+    $("card-" + p.key).querySelector(".pillar-info-btn").addEventListener("click", function (e) {
+      e.stopPropagation();
+      var panel = $("pinfo-" + p.key), show = panel.hidden;
+      panel.hidden = !show;
+      this.classList.toggle("open", show);
+      this.setAttribute("aria-expanded", show ? "true" : "false");
+      if (show) buzz(6);
+    });
+
     // facet sliders — moving one switches the pillar to derived (average) mode
     p.facets.forEach(function (f) {
       $("fslider-" + p.key + "-" + f.key).addEventListener("input", function () {
@@ -3981,6 +4044,17 @@
     }
     return n;
   }
+  // are all of today's due habits complete? (daily/weekday/everyOther due today; weekly due this week)
+  function habitsAllDoneToday() {
+    if (!db.habits.length) return false;
+    var now = new Date(), log = db.habitLog[todayKey] || {}, due = 0, done = 0;
+    db.habits.forEach(function (h) {
+      var c = h.cadence || "daily";
+      if (c === "weekly") { due++; if (doneThisWeek(h, now)) done++; }
+      else if (expectedOn(h, now)) { due++; if (log[h.id]) done++; }
+    });
+    return due > 0 && done === due;
+  }
   function renderHabits() {
     var list = $("habitList");
     if (!db.habits.length) {
@@ -4025,7 +4099,14 @@
     if (act === "check") {
       if (!db.habitLog[todayKey]) db.habitLog[todayKey] = {};
       if (db.habitLog[todayKey][id]) delete db.habitLog[todayKey][id];
-      else { db.habitLog[todayKey][id] = true; celebrate(btn); playTick(); buzz(); }
+      else {
+        db.habitLog[todayKey][id] = true;
+        if (habitsAllDoneToday()) {
+          // every anchor done — a bigger, earned celebration
+          celebrate(btn, true); playFanfare(); buzzPattern([0, 40, 70, 40, 70, 130]);
+          showToastMsg("Every anchor, complete. Well done.", 3200);
+        } else { celebrate(btn); playTick(); buzz(); }
+      }
       save(); renderHabits(); flash("habitTick");
     } else if (act === "edit") {
       openHabitEdit(id);
