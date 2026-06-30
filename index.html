@@ -2279,22 +2279,10 @@
         <span>The Integrated Man</span>
       </div>
       <h2 class="modal-title serif">A space to be made whole.</h2>
-      <p class="modal-sub">First — what should we call you?</p>
+      <p class="modal-sub">Your account's ready. What should we call you?</p>
 
       <label class="field-label">Your name</label>
       <input type="text" id="obName" placeholder="Your name" autocomplete="off" maxlength="40" />
-
-      <div class="ob-account">
-        <div class="ob-account-head">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 10h1a3 3 0 0 1 0 6h-1M6 10H5a3 3 0 0 0 0 6h1" stroke-linecap="round"/><path d="M7 13h10" stroke-linecap="round"/></svg>
-          <div>
-            <div class="oba-title">Sync across your devices</div>
-            <div class="oba-sub">Add an account to carry your journal everywhere — or skip and stay on this device.</div>
-          </div>
-        </div>
-        <input type="email" id="obEmail" placeholder="Email" autocomplete="email" />
-        <input type="password" id="obPass" placeholder="Password — at least 6 characters" autocomplete="new-password" />
-      </div>
 
       <div class="settings-msg" id="obMsg"></div>
       <button class="modal-primary" id="obStart">Begin</button>
@@ -2469,7 +2457,7 @@
   <div class="modal-overlay" id="authModal" hidden>
     <div class="modal">
       <h2 class="modal-title serif" id="authTitle">Create your account</h2>
-      <p class="modal-sub" id="authSub">Sync your journal privately across all your devices.</p>
+      <p class="modal-sub" id="authSub">Your private journal, synced across your devices.</p>
       <label class="field-label">Email</label>
       <input type="email" id="authEmail" autocomplete="email" />
       <label class="field-label">Password</label>
@@ -2478,7 +2466,7 @@
       <button class="modal-primary" id="authSubmit">Create account</button>
       <button class="modal-text" id="authToggle">Already have an account? Sign in</button>
       <button class="modal-text" id="authForgot">Forgot password?</button>
-      <button class="modal-text" id="authGuest">Continue without an account</button>
+      <button class="modal-text" id="authBack">← Back</button>
     </div>
   </div>
 
@@ -3370,8 +3358,10 @@
     if (!host) return;
     var plans = (db.profile && db.profile.plans) || [];
     if (!plans.length) {
-      host.innerHTML = '<div class="scripture-card"><div class="kicker">No reading set</div>' +
-        '<div class="ref serif" style="font-size:18px">Pick a plan in Settings</div></div>';
+      host.innerHTML = '<button class="scripture-card reading-empty" data-act="chooseReading" style="width:100%;text-align:left;cursor:pointer">' +
+        '<div class="kicker">Choose your daily reading</div>' +
+        '<div class="sc-row"><div class="ref serif" style="font-size:18px">Pick a plan</div>' +
+        '<span class="read-btn" style="pointer-events:none">Choose <svg viewBox="0 0 24 24" style="width:13px;height:13px;vertical-align:-1px;fill:none;stroke:currentColor;stroke-width:2"><polyline points="9 6 15 12 9 18" stroke-linecap="round" stroke-linejoin="round"/></svg></span></div></button>';
       return;
     }
     var log = db.readLog[todayKey] || {};
@@ -3401,6 +3391,13 @@
     var card = e.target.closest(".scripture-card"); if (!card) return;
     var actEl = e.target.closest("[data-act]"); if (!actEl) return;
     var act = actEl.getAttribute("data-act"), ref = card.getAttribute("data-ref"), dk = card.getAttribute("data-dk");
+    if (act === "chooseReading") {
+      openSettings();
+      $("setReadingWrap").hidden = false;
+      $("setReadingToggle").querySelector(".srt-action").textContent = "Done";
+      setTimeout(function () { $("setReadingToggle").scrollIntoView({ block: "center" }); }, 60);
+      return;
+    }
     if (act === "read") { e.preventDefault(); openBible(ref); }
     else if (act === "done") {
       if (!db.readLog[todayKey]) db.readLog[todayKey] = {};
@@ -4954,13 +4951,15 @@
 
   // welcome / landing → choose create vs sign in
   function openWelcome() {
-    if (typeof sb === "undefined" || !sb) { openOnboarding(); return; } // no accounts backend → straight to setup
+    // the gate: nothing else is usable until a session exists
+    $("onboard").hidden = true; $("authModal").hidden = true;
     $("welcome").hidden = false;
   }
-  $("welcomeCreate").addEventListener("click", function () { $("welcome").hidden = true; openOnboarding(); });
+  $("welcomeCreate").addEventListener("click", function () { $("welcome").hidden = true; openAuth("signup"); });
   $("welcomeSignin").addEventListener("click", function () { $("welcome").hidden = true; openAuth("signin"); });
-  // after any successful auth: home if set up, otherwise finish setup (name)
+  // after a confirmed session: home if set up, otherwise finish setup (name)
   function routeAfterAuth() {
+    if (!session) { openWelcome(); return; }            // no session → stay gated
     $("authModal").hidden = true; $("welcome").hidden = true;
     if (!(db.profile && db.profile.onboarded)) openOnboarding();
     else $("onboard").hidden = true;
@@ -4968,17 +4967,15 @@
 
   function openOnboarding() {
     $("obName").value = (db.profile && db.profile.name) || "";
-    $("obEmail").value = ""; $("obPass").value = ""; $("obMsg").textContent = "";
-    var signedIn = (typeof session !== "undefined" && session);
-    var acct = document.querySelector("#onboard .ob-account"); if (acct) acct.hidden = !!signedIn; // already have an account
+    $("obMsg").textContent = "";
+    $("welcome").hidden = true; $("authModal").hidden = true;
     $("onboard").hidden = false;
     setTimeout(function () { $("obName").focus(); }, 50);
   }
   $("obStart").addEventListener("click", function () {
+    if (!session) { openWelcome(); return; }             // must be signed in
     var name = $("obName").value.trim();
     if (!name) { $("obName").focus(); return; }
-    var email = $("obEmail").value.trim(), pass = $("obPass").value;
-    if (email && pass.length < 6) { $("obMsg").style.color = "#d08a72"; $("obMsg").textContent = "Password needs at least 6 characters (or clear the email to skip)."; return; }
     db.profile = db.profile || {};
     db.profile.name = name;
     if (!Array.isArray(db.profile.plans) || !db.profile.plans.length) db.profile.plans = [{ key: "proverbs", seqIndex: 0 }];
@@ -4986,16 +4983,6 @@
     if (typeof db.seqIndex !== "number") db.seqIndex = 0;
     db.lastThreshold = todayKey;
     save();
-    // optionally create an account so it syncs everywhere
-    if (email && pass && typeof sb !== "undefined" && sb) {
-      $("obMsg").style.color = ""; $("obMsg").textContent = "Creating your account…";
-      sb.auth.signUp({ email: email, password: pass, options: { data: { display_name: name } } }).then(function (res) {
-        if (res.error) { $("obMsg").style.color = "#d08a72"; $("obMsg").textContent = res.error.message + " — you can still continue without an account."; return; }
-        $("onboard").hidden = true; dailyRefresh();
-        if (res.data && res.data.user && !res.data.session) showToastMsg("Check your email to confirm your account.");
-      }, function () { $("obMsg").style.color = "#d08a72"; $("obMsg").textContent = "Couldn’t create the account — continue without one, or try again."; });
-      return;
-    }
     $("onboard").hidden = true;
     dailyRefresh();
   });
@@ -5273,13 +5260,13 @@
     $("authPass").setAttribute("autocomplete", mode === "signup" ? "new-password" : "current-password");
   }
   function openAuth(mode) {
-    if (!sb) return;
+    if (!sb) { $("welcome").hidden = false; showToastMsg("Can't reach the sign-in service. Check your connection and try again.", 3500); return; }
     setAuthMode((mode === "signin" || mode === "signup") ? mode : (session ? "signin" : "signup"));
     $("authEmail").value = ""; $("authPass").value = ""; $("authMsg").textContent = "";
     $("authMsg").style.color = ""; $("authModal").hidden = false;
     setTimeout(function () { $("authEmail").focus(); }, 50);
   }
-  function closeAuth() { $("authModal").hidden = true; }
+  function closeAuth() { $("authModal").hidden = true; if (!session) $("welcome").hidden = false; } // closing the gate returns to welcome
   function authMsg(t, ok) { var m = $("authMsg"); m.textContent = t; m.style.color = ok ? "var(--accent)" : "#d08a72"; }
   function authSubmit() {
     if (!sb) return;
@@ -5295,18 +5282,17 @@
       if (authMode === "signup" && res.data && res.data.user && !res.data.session) {
         authMsg("Check your email to confirm, then sign in.", true); setAuthMode("signin"); return;
       }
-      // signed in — onAuthStateChange handles session + pull
-      closeAuth();
+      // signed in — reveal the app now (onAuthStateChange also fires + syncs)
+      session = (res.data && res.data.session) || session;
+      $("authModal").hidden = true;
+      routeAfterAuth();
     }, function () { authMsg("Something went wrong. Try again."); });
   }
   if (sb) {
     $("authSubmit").addEventListener("click", authSubmit);
     $("authPass").addEventListener("keydown", function (e) { if (e.key === "Enter") authSubmit(); });
     $("authToggle").addEventListener("click", function () { setAuthMode(authMode === "signup" ? "signin" : "signup"); authMsg(""); });
-    $("authGuest").addEventListener("click", function () {
-      closeAuth();
-      if (!(db.profile && db.profile.onboarded)) { $("welcome").hidden = true; openOnboarding(); }
-    });
+    $("authBack").addEventListener("click", function () { $("authModal").hidden = true; $("welcome").hidden = false; });
     $("authModal").addEventListener("click", function (e) { if (e.target === this) closeAuth(); });
     $("authForgot").addEventListener("click", function () {
       var email = $("authEmail").value.trim();
@@ -5317,7 +5303,8 @@
     sb.auth.getSession().then(function (r) {
       session = (r.data && r.data.session) || null;
       renderAccount();
-      if (session) cloudPull();
+      if (session) { routeAfterAuth(); cloudPull(); } // reveal app from local profile, sync in background (works offline)
+      else openWelcome();                              // no session → gate
     });
     sb.auth.onAuthStateChange(function (event, s) {
       session = s || null;
@@ -5328,7 +5315,7 @@
         return;
       }
       renderAccount();
-      if (s && event === "SIGNED_IN") { cloudPull(); showToastMsg("Signed in.", 2200); }
+      if (s && event === "SIGNED_IN") { cloudPull(); routeAfterAuth(); showToastMsg("Signed in.", 2200); }
     });
   }
 
@@ -5420,9 +5407,14 @@
   applyJournalMode();
   updateTrashCount();
 
-  // first-run onboarding, else the morning threshold (once per day)
-  if (!db.profile || !db.profile.onboarded) openWelcome();
-  else if (db.lastThreshold !== todayKey) showThreshold();
+  // Auth gate: the app is locked until a Supabase session is confirmed.
+  // Show the welcome gate now unless a session token is already stored (getSession will confirm + route).
+  function hasStoredSession() {
+    try { for (var i = 0; i < localStorage.length; i++) { var k = localStorage.key(i); if (k && k.indexOf("-auth-token") > -1) return true; } } catch (e) {}
+    return false;
+  }
+  if (typeof sb === "undefined" || !sb || !hasStoredSession()) openWelcome();
+  else if (db.profile && db.profile.onboarded && db.lastThreshold !== todayKey) showThreshold();
 
   // passcode gate on open + start the idle timer
   if (db.lockEnabled && db.passcode) showLockEnter();

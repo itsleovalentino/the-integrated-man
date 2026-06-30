@@ -1,6 +1,6 @@
 // The Integrated Man — offline service worker
 // Network-first for the page (so updates always show), cache-first for static assets.
-var CACHE = "tim-v3";
+var CACHE = "tim-v4";
 var PRECACHE = ["./", "index.html",
   "assets/orb-vitality.png", "assets/orb-mental.png", "assets/orb-faith.png",
   "assets/orb-vocation.png", "assets/orb-wealth.png", "assets/orb-environment.png",
@@ -42,8 +42,8 @@ self.addEventListener("fetch", function (e) {
       if (hit) return hit;
       return fetch(req).then(function (res) {
         try {
-          var ok = res && res.status === 200;
-          var cacheable = req.url.indexOf(self.location.origin) === 0 || req.url.indexOf("fonts.g") > -1;
+          var ok = res && (res.status === 200 || res.type === "opaque");
+          var cacheable = req.url.indexOf(self.location.origin) === 0 || req.url.indexOf("fonts.g") > -1 || req.url.indexOf("jsdelivr") > -1;
           if (ok && cacheable) { var copy = res.clone(); caches.open(CACHE).then(function (c) { c.put(req, copy); }); }
         } catch (err) {}
         return res;
