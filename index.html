@@ -906,6 +906,7 @@
   }
   .fab { overflow: visible; }
   /* no thought capture before you're in / while the app is gated */
+  body:has(#welcome:not([hidden])) .fab,
   body:has(#onboard:not([hidden])) .fab,
   body:has(#authModal:not([hidden])) .fab,
   body:has(#lock:not([hidden])) .fab,
@@ -1595,6 +1596,38 @@
     margin: auto;
   }
   .modal-title { font-size: 28px; font-weight: 300; margin: 0 0 8px; letter-spacing: -0.01em; }
+  .ob-reading-hint { font-size: 12.5px; color: var(--ink-faint); text-align: center; margin: 14px 0 0; }
+  /* ===== Welcome / landing (the one screen styled in the brand design system) ===== */
+  .welcome-overlay { background: #0a0908; backdrop-filter: none; }
+  .welcome-card {
+    width: 100%; max-width: 360px; margin: auto; padding: 8px 24px 24px;
+    display: flex; flex-direction: column; align-items: center; text-align: center;
+    font-family: "Hanken Grotesk", -apple-system, sans-serif;
+  }
+  .welcome-emblem { position: relative; width: 210px; height: 210px; margin: 0 auto 26px; }
+  .we-glow { position: absolute; left: 50%; top: 50%; width: 150px; height: 150px; transform: translate(-50%,-50%);
+    border-radius: 50%; background: radial-gradient(circle, rgba(182,146,86,0.20), rgba(10,9,8,0) 70%); animation: weGlow 6s ease-in-out infinite; }
+  .we-ring { position: absolute; left: 50%; top: 50%; width: 176px; height: 176px; transform: translate(-50%,-50%);
+    border-radius: 50%; border: 1px solid rgba(182,146,86,0.16); }
+  .we-cross { position: absolute; left: 50%; top: 50%; height: 122px; width: auto; transform: translate(-50%,-50%);
+    animation: weFloat 7s ease-in-out infinite; filter: drop-shadow(0 6px 18px rgba(0,0,0,0.7)); }
+  .we-orb { position: absolute; width: 20px; height: 20px; border-radius: 50%; transform: translate(-50%,-50%);
+    border: 1px solid rgba(182,146,86,0.30); box-shadow: 0 6px 16px rgba(0,0,0,0.5); }
+  @keyframes weFloat { 0%,100% { transform: translate(-50%,-50%); } 50% { transform: translate(-50%, calc(-50% - 7px)); } }
+  @keyframes weGlow { 0%,100% { opacity: 0.4; } 50% { opacity: 0.78; } }
+  @media (prefers-reduced-motion: reduce) { .we-cross, .we-glow { animation: none; } }
+  .welcome-title { font-family: "Fraunces", Georgia, serif; font-weight: 500; font-size: 36px; line-height: 1.08; letter-spacing: -0.01em; margin: 0; color: #f3eee4; }
+  .welcome-usp { font-size: 14px; line-height: 1.55; color: #9a9186; margin: 15px 10px 30px; }
+  .welcome-create {
+    width: 100%; background: #b69256; color: #0a0908; border: none; border-radius: 999px; padding: 16px;
+    font-family: inherit; font-size: 12px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; cursor: pointer; transition: background 0.2s ease;
+  }
+  .welcome-create:hover { background: #caa869; }
+  .welcome-signin {
+    width: 100%; background: none; color: #ece7dd; border: 1px solid rgba(236,231,221,0.28); border-radius: 999px; padding: 14px;
+    font-family: inherit; font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; cursor: pointer; margin-top: 12px; transition: border-color 0.2s ease, color 0.2s ease;
+  }
+  .welcome-signin:hover { border-color: #b69256; color: #b69256; }
   /* Settings: sticky header with a close X + scrollable body (no scroll-to-exit) */
   .settings-modal { padding: 0; display: flex; flex-direction: column; max-height: calc(100vh - 40px); overflow: hidden; }
   .modal-head {
@@ -1641,6 +1674,16 @@
   .ob-account input + input { margin-top: 8px; }
   .ob-account input:focus { background: var(--bg); }
   .ob-plans { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  /* Settings: keep the reading picker tucked away so it can't be tapped by accident */
+  .set-reading-toggle {
+    width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    background: var(--field); border: 1px solid var(--field-edge); border-radius: 10px;
+    padding: 12px 14px; cursor: pointer; font-family: inherit; font-size: 14px; color: var(--ink);
+  }
+  .set-reading-toggle .srt-action { flex-shrink: 0; font-size: 12px; color: var(--accent); letter-spacing: 0.04em; }
+  .set-reading-toggle:hover { border-color: var(--ink-faint); }
+  .set-reading-wrap { margin-top: 12px; }
+  .set-reading-wrap[hidden] { display: none; }
   .ob-plan {
     background: var(--field);
     border: 1px solid var(--field-edge);
@@ -2207,6 +2250,28 @@
   </div>
 
   <!-- Onboarding -->
+  <!-- Welcome / landing (first thing a new person sees) -->
+  <div class="modal-overlay welcome-overlay" id="welcome" hidden>
+    <div class="welcome-card">
+      <div class="welcome-emblem" aria-hidden="true">
+        <div class="we-glow"></div>
+        <div class="we-ring"></div>
+        <img class="we-cross" src="assets/cross.png" alt="" />
+        <span class="we-orb" style="left:100px;top:14px;background:radial-gradient(circle at 38% 32%,#aec07d,#6f9048 52%,#44612c)"></span>
+        <span class="we-orb" style="left:167px;top:46px;background:radial-gradient(circle at 38% 32%,#9ac0e0,#5d8cb4 52%,#345f80)"></span>
+        <span class="we-orb" style="left:184px;top:119px;background:radial-gradient(circle at 38% 32%,#f2f2ef,#cdcdca 52%,#9a9a95)"></span>
+        <span class="we-orb" style="left:137px;top:177px;background:radial-gradient(circle at 38% 32%,#b9b1e6,#897fcf 52%,#534ab0)"></span>
+        <span class="we-orb" style="left:63px;top:177px;background:radial-gradient(circle at 38% 32%,#cdbf9f,#a8997d 52%,#756650)"></span>
+        <span class="we-orb" style="left:16px;top:119px;background:radial-gradient(circle at 38% 32%,#ecc878,#d59f3b 52%,#9a6e1e)"></span>
+        <span class="we-orb" style="left:33px;top:46px;background:radial-gradient(circle at 38% 32%,#a7ccd2,#7faab0 52%,#4f7e85)"></span>
+      </div>
+      <h1 class="welcome-title serif">The Integrated<br>Man Journal</h1>
+      <p class="welcome-usp">A daily rhythm for becoming whole.</p>
+      <button class="welcome-create" id="welcomeCreate">Create your account</button>
+      <button class="welcome-signin" id="welcomeSignin">Sign in</button>
+    </div>
+  </div>
+
   <div class="modal-overlay" id="onboard" hidden>
     <div class="modal">
       <div class="wordmark" style="margin-bottom:20px;justify-content:center;">
@@ -2214,38 +2279,26 @@
         <span>The Integrated Man</span>
       </div>
       <h2 class="modal-title serif">A space to be made whole.</h2>
-      <p class="modal-sub">Seven pillars. One anchor. Set up your space below to begin.</p>
-      <button class="ob-signin-link" id="obSignin">Already have an account? <b>Sign in</b></button>
+      <p class="modal-sub">First — what should we call you?</p>
 
       <label class="field-label">Your name</label>
-      <input type="text" id="obName" placeholder="What should we call you?" autocomplete="off" maxlength="40" />
+      <input type="text" id="obName" placeholder="Your name" autocomplete="off" maxlength="40" />
 
       <div class="ob-account">
         <div class="ob-account-head">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 10h1a3 3 0 0 1 0 6h-1M6 10H5a3 3 0 0 0 0 6h1" stroke-linecap="round"/><path d="M7 13h10" stroke-linecap="round"/></svg>
           <div>
             <div class="oba-title">Sync across your devices</div>
-            <div class="oba-sub">Optional — add an account to carry your journal everywhere, or skip and stay on this device.</div>
+            <div class="oba-sub">Add an account to carry your journal everywhere — or skip and stay on this device.</div>
           </div>
         </div>
         <input type="email" id="obEmail" placeholder="Email" autocomplete="email" />
         <input type="password" id="obPass" placeholder="Password — at least 6 characters" autocomplete="new-password" />
       </div>
 
-      <label class="field-label">Daily reading <span class="lbl-opt">— pick one or several</span></label>
-      <div class="ob-plans" id="obPlans"></div>
-      <div class="ob-custom" id="obCustom" hidden>
-        <select class="ob-book" id="obBook"></select>
-        <div class="ob-perday">
-          <span>Chapters a day</span>
-          <div class="stepper"><button type="button" data-step="-1">−</button><span id="obPerday">1</span><button type="button" data-step="1">+</button></div>
-        </div>
-      </div>
-      <div class="plan-starts" id="obStarts"></div>
-      <div class="ob-plan-note">Tap to add or remove. Change anytime in Settings, or tap “Open your Bible” to read anything.</div>
-
       <div class="settings-msg" id="obMsg"></div>
       <button class="modal-primary" id="obStart">Begin</button>
+      <p class="ob-reading-hint">You'll choose your daily reading right on your home screen.</p>
     </div>
   </div>
 
@@ -2266,16 +2319,22 @@
       <label class="field-label">Your name</label>
       <input type="text" id="setName" autocomplete="off" maxlength="40" />
 
-      <label class="field-label">Daily reading <span class="lbl-opt">— pick one or several</span></label>
-      <div class="ob-plans" id="setPlans"></div>
-      <div class="ob-custom" id="setCustom" hidden>
-        <select class="ob-book" id="setBook"></select>
-        <div class="ob-perday">
-          <span>Chapters a day</span>
-          <div class="stepper"><button type="button" data-step="-1">−</button><span id="setPerday">1</span><button type="button" data-step="1">+</button></div>
+      <label class="field-label">Daily reading</label>
+      <button class="set-reading-toggle" id="setReadingToggle" type="button">
+        <span id="setReadingSummary">A Proverb a day</span>
+        <span class="srt-action">Change</span>
+      </button>
+      <div class="set-reading-wrap" id="setReadingWrap" hidden>
+        <div class="ob-plans" id="setPlans"></div>
+        <div class="ob-custom" id="setCustom" hidden>
+          <select class="ob-book" id="setBook"></select>
+          <div class="ob-perday">
+            <span>Chapters a day</span>
+            <div class="stepper"><button type="button" data-step="-1">−</button><span id="setPerday">1</span><button type="button" data-step="1">+</button></div>
+          </div>
         </div>
+        <div class="plan-starts" id="setStarts"></div>
       </div>
-      <div class="plan-starts" id="setStarts"></div>
 
       <label class="field-label">Sound &amp; haptics</label>
       <button class="toggle-row" id="soundToggle" type="button">
@@ -3797,7 +3856,7 @@
   function openCapture() {
     // not before onboarding, and not while a gate overlay is up
     if (!db.profile || !db.profile.onboarded) return;
-    if (!$("onboard").hidden || !$("authModal").hidden || !$("lock").hidden || !$("threshold").hidden) return;
+    if (!$("welcome").hidden || !$("onboard").hidden || !$("authModal").hidden || !$("lock").hidden || !$("threshold").hidden) return;
     captureMood = null; pendingVoice = null;
     $("captureText").value = ""; $("captureMemo").innerHTML = "";
     $("capturePrompt").textContent = THOUGHT_PROMPTS[Math.floor(Math.random() * THOUGHT_PROMPTS.length)];
@@ -4891,13 +4950,27 @@
       state: st
     };
   }
-  var obPicker = makePicker("ob"), setPicker = makePicker("set");
+  var setPicker = makePicker("set");
+
+  // welcome / landing → choose create vs sign in
+  function openWelcome() {
+    if (typeof sb === "undefined" || !sb) { openOnboarding(); return; } // no accounts backend → straight to setup
+    $("welcome").hidden = false;
+  }
+  $("welcomeCreate").addEventListener("click", function () { $("welcome").hidden = true; openOnboarding(); });
+  $("welcomeSignin").addEventListener("click", function () { $("welcome").hidden = true; openAuth("signin"); });
+  // after any successful auth: home if set up, otherwise finish setup (name)
+  function routeAfterAuth() {
+    $("authModal").hidden = true; $("welcome").hidden = true;
+    if (!(db.profile && db.profile.onboarded)) openOnboarding();
+    else $("onboard").hidden = true;
+  }
 
   function openOnboarding() {
     $("obName").value = (db.profile && db.profile.name) || "";
     $("obEmail").value = ""; $("obPass").value = ""; $("obMsg").textContent = "";
-    obPicker.load();
-    $("obSignin").hidden = (typeof sb === "undefined" || !sb); // no sign-in without the account backend
+    var signedIn = (typeof session !== "undefined" && session);
+    var acct = document.querySelector("#onboard .ob-account"); if (acct) acct.hidden = !!signedIn; // already have an account
     $("onboard").hidden = false;
     setTimeout(function () { $("obName").focus(); }, 50);
   }
@@ -4906,8 +4979,10 @@
     if (!name) { $("obName").focus(); return; }
     var email = $("obEmail").value.trim(), pass = $("obPass").value;
     if (email && pass.length < 6) { $("obMsg").style.color = "#d08a72"; $("obMsg").textContent = "Password needs at least 6 characters (or clear the email to skip)."; return; }
-    var s = obPicker.state;
-    db.profile = { name: name, plans: JSON.parse(JSON.stringify(s.plans)), onboarded: true };
+    db.profile = db.profile || {};
+    db.profile.name = name;
+    if (!Array.isArray(db.profile.plans) || !db.profile.plans.length) db.profile.plans = [{ key: "proverbs", seqIndex: 0 }];
+    db.profile.onboarded = true;
     if (typeof db.seqIndex !== "number") db.seqIndex = 0;
     db.lastThreshold = todayKey;
     save();
@@ -4950,6 +5025,10 @@
   function openSettings() {
     $("setName").value = (db.profile && db.profile.name) || "";
     setPicker.load();
+    ensurePlans();
+    $("setReadingSummary").textContent = plansSummary();   // show current reading, picker stays tucked away
+    $("setReadingWrap").hidden = true;
+    $("setReadingToggle").querySelector(".srt-action").textContent = "Change";
     renderSoundToggle();
     renderLockToggle();
     renderNotifyToggle();
@@ -4957,6 +5036,10 @@
     $("settingsMsg").textContent = "";
     $("settings").hidden = false;
   }
+  $("setReadingToggle").addEventListener("click", function () {
+    var w = $("setReadingWrap"); w.hidden = !w.hidden;
+    this.querySelector(".srt-action").textContent = w.hidden ? "Change" : "Done";
+  });
   $("settingsBtn").addEventListener("click", openSettings);
   $("settingsClose").addEventListener("click", function () { $("settings").hidden = true; });
   $("settingsX").addEventListener("click", function () { $("settings").hidden = true; });
@@ -5143,8 +5226,7 @@
     db.bibleCache = db.bibleCache || {};
     try { localStorage.setItem(KEY, JSON.stringify(db)); } catch (e) {}
     rerenderAll();
-    // a returning sign-in just brought this man's profile down — leave the gate screens
-    if (db.profile && db.profile.onboarded) { $("onboard").hidden = true; $("authModal").hidden = true; }
+    if (typeof routeAfterAuth === "function") routeAfterAuth(); // returning sign-in → leave the gate / finish setup
   }
   function cloudPull() {
     if (!sb || !session) return;
@@ -5157,7 +5239,7 @@
           var cloudAt = +row.data.updatedAt || 0, localAt = +db.updatedAt || 0;
           if (cloudAt >= localAt) mergeCloud(row.data);
           else cloudPush(); // local is newer → push it up instead of overwriting
-        } else cloudPush(); // first time on this account → seed the cloud from what's here
+        } else { cloudPush(); if (typeof routeAfterAuth === "function") routeAfterAuth(); } // first time on this account → seed cloud + finish setup
       }, function () {});
   }
   // ---- account UI (in Settings) ----
@@ -5221,8 +5303,10 @@
     $("authSubmit").addEventListener("click", authSubmit);
     $("authPass").addEventListener("keydown", function (e) { if (e.key === "Enter") authSubmit(); });
     $("authToggle").addEventListener("click", function () { setAuthMode(authMode === "signup" ? "signin" : "signup"); authMsg(""); });
-    $("authGuest").addEventListener("click", closeAuth);
-    $("obSignin").addEventListener("click", function () { openAuth("signin"); }); // returning user, on a new device
+    $("authGuest").addEventListener("click", function () {
+      closeAuth();
+      if (!(db.profile && db.profile.onboarded)) { $("welcome").hidden = true; openOnboarding(); }
+    });
     $("authModal").addEventListener("click", function (e) { if (e.target === this) closeAuth(); });
     $("authForgot").addEventListener("click", function () {
       var email = $("authEmail").value.trim();
@@ -5337,7 +5421,7 @@
   updateTrashCount();
 
   // first-run onboarding, else the morning threshold (once per day)
-  if (!db.profile || !db.profile.onboarded) openOnboarding();
+  if (!db.profile || !db.profile.onboarded) openWelcome();
   else if (db.lastThreshold !== todayKey) showThreshold();
 
   // passcode gate on open + start the idle timer
