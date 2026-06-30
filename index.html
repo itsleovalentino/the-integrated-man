@@ -2741,7 +2741,7 @@
   function lockErr(msg) { var p = $("lockPrompt"); p.textContent = msg; p.classList.add("err"); lockBuf = ""; renderLockDots(); buzz(30); }
   function lockComplete() {
     if (lockMode === "enter") {
-      if (lockBuf === db.passcode) { $("lock").hidden = true; lockBuf = ""; resetIdle(); }
+      if (lockBuf === db.passcode) { $("lock").hidden = true; lockBuf = ""; resetIdle(); playPage(); buzz(14); }
       else lockErr("Incorrect — try again");
     } else if (lockMode === "set") {
       lockSetFirst = lockBuf; lockBuf = ""; lockMode = "confirm";
