@@ -334,6 +334,38 @@
     margin-right: 2px;
   }
   .question::after { content: "”"; color: var(--accent); }
+  /* prompt row + switch-prompt button */
+  .prompt-row { display: flex; align-items: flex-start; gap: 12px; }
+  .prompt-row .question { flex: 1; min-width: 0; }
+  .prompt-switch {
+    flex-shrink: 0; margin-top: 4px; width: 32px; height: 32px; border-radius: 50%;
+    background: none; border: 1px solid var(--field-edge); color: var(--ink-faint);
+    cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
+    transition: color 0.2s ease, border-color 0.2s ease, transform 0.3s ease;
+  }
+  .prompt-switch svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .prompt-switch:hover { color: var(--accent); border-color: var(--accent); }
+  .prompt-switch:active { transform: rotate(-180deg); }
+  /* collapse-after-save */
+  .panel.collapsed .jp-edit { display: none; }
+  .jp-collapsed {
+    width: 100%; display: flex; align-items: center; gap: 11px; flex-wrap: wrap;
+    background: none; border: none; padding: 4px 2px; cursor: pointer; text-align: left;
+    font-family: inherit;
+  }
+  .jp-collapsed[hidden] { display: none; }
+  .jpc-check {
+    flex-shrink: 0; width: 24px; height: 24px; border-radius: 50%;
+    background: var(--accent-soft); display: inline-flex; align-items: center; justify-content: center;
+  }
+  .jpc-check svg { width: 13px; height: 13px; fill: none; stroke: var(--accent); stroke-width: 2.4; }
+  .jpc-text { font-size: 14px; color: var(--ink-soft); }
+  .jpc-another {
+    margin-left: auto; font-size: 12.5px; color: var(--accent);
+    border: 1px solid var(--accent); border-radius: 999px; padding: 5px 12px;
+    transition: background 0.2s ease, color 0.2s ease;
+  }
+  .jpc-another:hover { background: var(--accent); color: var(--bg); }
 
   /* ---- inputs ---- */
   textarea,
@@ -899,7 +931,7 @@
   @keyframes capturePop { from { transform: scale(0.96); opacity: 0; } to { transform: none; opacity: 1; } }
   .capture-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 12px; }
   .capture-prompt { font-size: 19px; font-weight: 300; color: var(--ink); }
-  #captureText { width: 100%; font-size: 16px; }
+  #captureText { width: 100%; font-size: 19px; line-height: 1.5; min-height: 92px; }
   .capture-taglabel { margin-top: 14px; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); }
   .capture-taglabel span { text-transform: none; letter-spacing: 0; font-style: italic; opacity: 0.8; }
   .capture-tags { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
@@ -1761,20 +1793,32 @@
 
     <section>
       <p class="label">Journaling Prompt <span class="saved-tick" id="journalTick">Saved</span></p>
-      <div class="panel">
-        <p class="question serif" id="question"></p>
-        <textarea class="journal-answer" id="journal" rows="3" placeholder="Write into it…"></textarea>
-        <div class="voice-bar">
-          <button class="voice-btn" data-voice="dictate" data-target="journal" aria-label="Dictate">
-            <svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><line x1="12" y1="18" x2="12" y2="21"/></svg><span>Dictate</span>
-          </button>
-          <button class="voice-btn" data-voice="record" data-target="journal" aria-label="Record voice memo">
-            <span class="rec-dot"></span><span class="rec-label">Record</span>
-          </button>
+      <div class="panel" id="journalPanel">
+        <button class="jp-collapsed" id="journalCollapsed" hidden>
+          <span class="jpc-check"><svg viewBox="0 0 24 24"><polyline points="5 12 10 17 19 7" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          <span class="jpc-text">Journaled today — tap to reopen</span>
+          <span class="jpc-another" id="journalAnother">Answer another prompt</span>
+        </button>
+        <div class="jp-edit">
+          <div class="prompt-row">
+            <p class="question serif" id="question"></p>
+            <button class="prompt-switch" id="journalSwitch" aria-label="Try a different prompt" title="Try a different prompt">
+              <svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+            </button>
+          </div>
+          <textarea class="journal-answer" id="journal" rows="3" placeholder="Write into it…"></textarea>
+          <div class="voice-bar">
+            <button class="voice-btn" data-voice="dictate" data-target="journal" aria-label="Dictate">
+              <svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><line x1="12" y1="18" x2="12" y2="21"/></svg><span>Dictate</span>
+            </button>
+            <button class="voice-btn" data-voice="record" data-target="journal" aria-label="Record voice memo">
+              <span class="rec-dot"></span><span class="rec-label">Record</span>
+            </button>
+          </div>
+          <div class="voice-memo" id="memo-journal"></div>
+          <button class="save-mini" id="journalSave" data-tone="tick">Save to journal</button>
+          <div class="save-mini-confirm" id="journalSaveMsg"></div>
         </div>
-        <div class="voice-memo" id="memo-journal"></div>
-        <button class="save-mini" id="journalSave" data-tone="tick">Save to journal</button>
-        <div class="save-mini-confirm" id="journalSaveMsg"></div>
       </div>
     </section>
 
@@ -1806,20 +1850,32 @@
 
     <section>
       <p class="label">End of Day Reflection <span class="saved-tick" id="eveningTick">Saved</span></p>
-      <div class="panel">
-        <p class="question serif" id="eveningPrompt"></p>
-        <textarea class="journal-answer" id="evening" rows="3" placeholder="Reflect before you close the day…"></textarea>
-        <div class="voice-bar">
-          <button class="voice-btn" data-voice="dictate" data-target="evening" aria-label="Dictate">
-            <svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><line x1="12" y1="18" x2="12" y2="21"/></svg><span>Dictate</span>
-          </button>
-          <button class="voice-btn" data-voice="record" data-target="evening" aria-label="Record voice memo">
-            <span class="rec-dot"></span><span class="rec-label">Record</span>
-          </button>
+      <div class="panel" id="eveningPanel">
+        <button class="jp-collapsed" id="eveningCollapsed" hidden>
+          <span class="jpc-check"><svg viewBox="0 0 24 24"><polyline points="5 12 10 17 19 7" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          <span class="jpc-text">Reflected tonight — tap to reopen</span>
+          <span class="jpc-another" id="eveningAnother">Answer another prompt</span>
+        </button>
+        <div class="jp-edit">
+          <div class="prompt-row">
+            <p class="question serif" id="eveningPrompt"></p>
+            <button class="prompt-switch" id="eveningSwitch" aria-label="Try a different prompt" title="Try a different prompt">
+              <svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+            </button>
+          </div>
+          <textarea class="journal-answer" id="evening" rows="3" placeholder="Reflect before you close the day…"></textarea>
+          <div class="voice-bar">
+            <button class="voice-btn" data-voice="dictate" data-target="evening" aria-label="Dictate">
+              <svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><line x1="12" y1="18" x2="12" y2="21"/></svg><span>Dictate</span>
+            </button>
+            <button class="voice-btn" data-voice="record" data-target="evening" aria-label="Record voice memo">
+              <span class="rec-dot"></span><span class="rec-label">Record</span>
+            </button>
+          </div>
+          <div class="voice-memo" id="memo-evening"></div>
+          <button class="save-mini" id="eveningSave" data-tone="chime">Save to journal</button>
+          <div class="save-mini-confirm" id="eveningSaveMsg"></div>
         </div>
-        <div class="voice-memo" id="memo-evening"></div>
-        <button class="save-mini" id="eveningSave" data-tone="chime">Save to journal</button>
-        <div class="save-mini-confirm" id="eveningSaveMsg"></div>
       </div>
     </section>
 
@@ -2270,6 +2326,7 @@
     catch (e) { return {}; }
   }
   function save() {
+    db.updatedAt = Date.now(); // freshness stamp so cloud sync never overwrites newer local data
     try { localStorage.setItem(KEY, JSON.stringify(db)); }
     catch (e) { /* storage blocked (sandbox / private mode) — keep running in-memory */ }
     if (typeof cloudPushSoon === "function") cloudPushSoon(); // mirror to the cloud if signed in
@@ -2288,6 +2345,8 @@
   db.scriptureNotes = db.scriptureNotes || {}; // passage ref -> note text (builds a personal commentary)
   db.pinned = db.pinned || {};            // dateKey -> true (pinned journal entries)
   db.evening = db.evening || {};          // dateKey -> string (end-of-day reflection answer)
+  db.journalPromptIdx = db.journalPromptIdx || {}; // dateKey -> chosen journaling-prompt index
+  db.eveningPromptIdx = db.eveningPromptIdx || {}; // dateKey -> chosen evening-prompt index
   db.openLog = db.openLog || {};          // dateKey -> true (days the app was opened — the chain)
   db.anchors = db.anchors || [];          // [{ref:"John 3:16", text, note, created}] — highlighted verses
   db.bibleCache = db.bibleCache || {};    // passage -> verses[] (so re-reads are instant + offline)
@@ -3393,7 +3452,51 @@
   });
 
   // Explicit "Save to journal" buttons (peace of mind) — autosave already runs, this confirms it
-  function wireSaveMini(btnId, msgId) {
+  // ----- journaling cards: switch prompt, collapse after save, answer another -----
+  var JCARDS = {
+    journal: { prompts: questions, off: 0, store: "journalPromptIdx", data: "journal",
+               promptId: "question", textId: "journal", panelId: "journalPanel",
+               collapsedId: "journalCollapsed", switchId: "journalSwitch", anotherId: "journalAnother" },
+    evening: { prompts: eveningQuestions, off: 7, store: "eveningPromptIdx", data: "evening",
+               promptId: "eveningPrompt", textId: "evening", panelId: "eveningPanel",
+               collapsedId: "eveningCollapsed", switchId: "eveningSwitch", anotherId: "eveningAnother" }
+  };
+  function jcardIdx(c) {
+    var stored = db[c.store][todayKey], n = c.prompts.length;
+    if (typeof stored === "number") return ((stored % n) + n) % n;
+    return (((dayNumOf(todayKey) + c.off) % n) + n) % n;
+  }
+  function jcardSetPrompt(c) { $(c.promptId).textContent = c.prompts[jcardIdx(c)]; }
+  function jcardCollapse(c, yes) { $(c.panelId).classList.toggle("collapsed", yes); $(c.collapsedId).hidden = !yes; }
+  function jcardLoad(c) {
+    jcardSetPrompt(c);
+    var t = $(c.textId), v = db[c.data][todayKey] || "";
+    t.value = v; grow(t);
+    jcardCollapse(c, !!v.trim());
+  }
+  function jcardSwitch(c) {
+    db[c.store][todayKey] = (jcardIdx(c) + 1) % c.prompts.length; save();
+    jcardSetPrompt(c); playPage(); buzz(8);
+  }
+  function jcardReopen(c) {
+    jcardCollapse(c, false);
+    var t = $(c.textId); t.focus(); try { t.setSelectionRange(t.value.length, t.value.length); } catch (e) {} grow(t);
+  }
+  function jcardAnother(c) {
+    jcardSwitch(c); // move to a fresh prompt
+    var t = $(c.textId);
+    if (t.value.trim()) t.value = t.value.replace(/\s+$/, "") + "\n\n— " + c.prompts[jcardIdx(c)] + " —\n";
+    t.dispatchEvent(new Event("input", { bubbles: true })); // persist the appended header
+    jcardReopen(c);
+  }
+  Object.keys(JCARDS).forEach(function (k) {
+    var c = JCARDS[k];
+    $(c.switchId).addEventListener("click", function () { jcardSwitch(c); });
+    $(c.collapsedId).addEventListener("click", function (e) { if (!e.target.closest("#" + c.anotherId)) jcardReopen(c); });
+    $(c.anotherId).addEventListener("click", function (e) { e.stopPropagation(); jcardAnother(c); });
+  });
+
+  function wireSaveMini(btnId, msgId, card) {
     $(btnId).addEventListener("click", function () {
       save();
       celebrate(this);
@@ -3405,10 +3508,11 @@
       clearTimeout(m._t);
       m._t = setTimeout(function () { m.classList.remove("show"); }, 2400);
       if (journalVisible()) renderJournal();
+      if (card && $(card.textId).value.trim()) setTimeout(function () { jcardCollapse(card, true); }, 500); // collapse after the confirmation reads
     });
   }
-  wireSaveMini("journalSave", "journalSaveMsg");
-  wireSaveMini("eveningSave", "eveningSaveMsg");
+  wireSaveMini("journalSave", "journalSaveMsg", JCARDS.journal);
+  wireSaveMini("eveningSave", "eveningSaveMsg", JCARDS.evening);
 
   // ===== Voice: dictation (speech-to-text) + voice memos =====
   var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -4813,31 +4917,20 @@
     renderChain();
     renderReading(); // one card per chosen plan
 
-    // prompts of the day (deterministic, stable across opens on the same day)
-    var dayNumber = Math.floor(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()) / 86400000);
-    $("question").textContent = questions[((dayNumber % questions.length) + questions.length) % questions.length];
-    // offset the evening prompt so it never echoes the morning one
-    var eIdx = ((dayNumber + 7) % eveningQuestions.length + eveningQuestions.length) % eveningQuestions.length;
-    $("eveningPrompt").textContent = eveningQuestions[eIdx];
-
+    // prompts of the day are resolved per-card in loadDayFields (jcardLoad),
+    // honoring any prompt the user switched to + collapsing once answered.
     loadDayFields();
     if (journalVisible()) renderJournal();
   }
 
   // load the day-scoped field VALUES (called on init and after each rollover)
   function loadDayFields() {
-    // journaling prompt answer
-    var jr = $("journal");
-    jr.value = db.journal[todayKey] || "";
-    grow(jr);
+    // journaling prompt + end-of-day reflection (prompt, answer, collapsed-if-answered)
+    jcardLoad(JCARDS.journal);
+    jcardLoad(JCARDS.evening);
 
     // scripture: read-checks + notes (one card per plan)
     renderReading();
-
-    // end of day reflection
-    var ev = $("evening");
-    ev.value = db.evening[todayKey] || "";
-    grow(ev);
 
     // voice memos for today
     if (typeof renderMemo === "function") { renderMemo("journal"); renderMemo("evening"); }
@@ -4916,8 +5009,13 @@
     sb.from("user_state").select("data").eq("user_id", session.user.id).maybeSingle()
       .then(function (res) {
         var row = res && res.data;
-        if (row && row.data && Object.keys(row.data).length) mergeCloud(row.data); // existing account → cloud wins
-        else cloudPush(); // first time on this account → seed the cloud from what's here
+        if (row && row.data && Object.keys(row.data).length) {
+          // only let the cloud win if it isn't older than what's on this device —
+          // otherwise an un-pushed local change (e.g. last night's thoughts) would be lost
+          var cloudAt = +row.data.updatedAt || 0, localAt = +db.updatedAt || 0;
+          if (cloudAt >= localAt) mergeCloud(row.data);
+          else cloudPush(); // local is newer → push it up instead of overwriting
+        } else cloudPush(); // first time on this account → seed the cloud from what's here
       }, function () {});
   }
   // ---- account UI (in Settings) ----
@@ -5026,8 +5124,11 @@
 
   // also catch the day change when the tab is reopened/refocused (covers laptop sleep)
   document.addEventListener("visibilitychange", function () {
-    if (!document.hidden && keyOf(new Date()) !== todayKey) dailyRefresh();
+    if (document.hidden) { if (pushTimer) { clearTimeout(pushTimer); pushTimer = null; cloudPush(); } } // flush before backgrounding
+    else if (keyOf(new Date()) !== todayKey) dailyRefresh();
   });
+  // last-ditch flush so a quick capture-then-close still reaches the cloud
+  window.addEventListener("pagehide", function () { if (pushTimer) { clearTimeout(pushTimer); pushTimer = null; cloudPush(); } });
   window.addEventListener("focus", function () {
     if (keyOf(new Date()) !== todayKey) dailyRefresh();
   });
