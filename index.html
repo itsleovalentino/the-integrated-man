@@ -5317,7 +5317,10 @@
     p.then(function (res) {
       if (res.error) { authMsg(res.error.message); return; }
       if (authMode === "signup" && res.data && res.data.user && !res.data.session) {
-        authMsg("Check your email to confirm, then sign in.", true); setAuthMode("signin"); return;
+        setAuthMode("signin");
+        $("authEmail").value = email; $("authPass").value = ""; // prefill so signing in after confirming is one step
+        authMsg("Almost there — we sent a confirmation link to " + email + ". Tap it, then come back and sign in.", true);
+        return;
       }
       // signed in — reveal the app now (onAuthStateChange also fires + syncs)
       session = (res.data && res.data.session) || session;
