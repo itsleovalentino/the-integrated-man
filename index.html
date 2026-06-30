@@ -1598,7 +1598,7 @@
   .modal-title { font-size: 28px; font-weight: 300; margin: 0 0 8px; letter-spacing: -0.01em; }
   .ob-reading-hint { font-size: 12.5px; color: var(--ink-faint); text-align: center; margin: 14px 0 0; }
   /* ===== Welcome / landing (the one screen styled in the brand design system) ===== */
-  .welcome-overlay { background: #0a0908; backdrop-filter: none; }
+  .welcome-overlay { background: #0a0908; backdrop-filter: none; z-index: 90; }
   .welcome-card {
     width: 100%; max-width: 360px; margin: auto; padding: 8px 24px 24px;
     display: flex; flex-direction: column; align-items: center; text-align: center;
@@ -1611,7 +1611,8 @@
     border-radius: 50%; border: 1px solid rgba(182,146,86,0.16); }
   .we-cross { position: absolute; left: 50%; top: 50%; height: 122px; width: auto; transform: translate(-50%,-50%);
     animation: weFloat 7s ease-in-out infinite; filter: drop-shadow(0 6px 18px rgba(0,0,0,0.7)); }
-  .we-orb { position: absolute; width: 20px; height: 20px; border-radius: 50%; transform: translate(-50%,-50%);
+  .we-orb { position: absolute; width: 22px; height: 22px; border-radius: 50%; transform: translate(-50%,-50%);
+    background-size: 215%; background-position: 50% 8%; /* the real marbled orb art, cropped above its baked-in label */
     border: 1px solid rgba(182,146,86,0.30); box-shadow: 0 6px 16px rgba(0,0,0,0.5); }
   @keyframes weFloat { 0%,100% { transform: translate(-50%,-50%); } 50% { transform: translate(-50%, calc(-50% - 7px)); } }
   @keyframes weGlow { 0%,100% { opacity: 0.4; } 50% { opacity: 0.78; } }
@@ -1766,6 +1767,16 @@
     background: var(--field); border: 1px solid var(--field-edge); border-radius: 10px;
     padding: 12px 14px; cursor: pointer; font-family: inherit; font-size: 14px; color: var(--ink);
   }
+  /* first-time coach mark (e.g. passcode lock) */
+  .coach-tip {
+    background: var(--accent-soft); border: 1px solid var(--accent); color: var(--ink);
+    border-radius: 10px; padding: 11px 13px; font-size: 13px; line-height: 1.5; margin: 0 0 10px;
+  }
+  .coach-tip[hidden] { display: none; }
+  .coach-tip b { color: var(--accent); font-weight: 600; }
+  .toggle-row.coach-target { border-color: var(--accent); animation: coachPulse 1.5s ease-in-out infinite; }
+  @keyframes coachPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(203,178,126,0); } 50% { box-shadow: 0 0 0 4px var(--accent-soft); } }
+  @media (prefers-reduced-motion: reduce) { .toggle-row.coach-target { animation: none; box-shadow: 0 0 0 3px var(--accent-soft); } }
   .toggle-switch {
     width: 42px; height: 24px; border-radius: 999px; background: var(--field-edge);
     position: relative; transition: background 0.2s ease; flex-shrink: 0;
@@ -2257,13 +2268,13 @@
         <div class="we-glow"></div>
         <div class="we-ring"></div>
         <img class="we-cross" src="assets/cross.png" alt="" />
-        <span class="we-orb" style="left:100px;top:14px;background:radial-gradient(circle at 38% 32%,#aec07d,#6f9048 52%,#44612c)"></span>
-        <span class="we-orb" style="left:167px;top:46px;background:radial-gradient(circle at 38% 32%,#9ac0e0,#5d8cb4 52%,#345f80)"></span>
-        <span class="we-orb" style="left:184px;top:119px;background:radial-gradient(circle at 38% 32%,#f2f2ef,#cdcdca 52%,#9a9a95)"></span>
-        <span class="we-orb" style="left:137px;top:177px;background:radial-gradient(circle at 38% 32%,#b9b1e6,#897fcf 52%,#534ab0)"></span>
-        <span class="we-orb" style="left:63px;top:177px;background:radial-gradient(circle at 38% 32%,#cdbf9f,#a8997d 52%,#756650)"></span>
-        <span class="we-orb" style="left:16px;top:119px;background:radial-gradient(circle at 38% 32%,#ecc878,#d59f3b 52%,#9a6e1e)"></span>
-        <span class="we-orb" style="left:33px;top:46px;background:radial-gradient(circle at 38% 32%,#a7ccd2,#7faab0 52%,#4f7e85)"></span>
+        <span class="we-orb" style="left:100px;top:14px;background-image:url(assets/orb-vitality.png)"></span>
+        <span class="we-orb" style="left:167px;top:46px;background-image:url(assets/orb-mental.png)"></span>
+        <span class="we-orb" style="left:184px;top:119px;background-image:url(assets/orb-faith.png)"></span>
+        <span class="we-orb" style="left:137px;top:177px;background-image:url(assets/orb-vocation.png)"></span>
+        <span class="we-orb" style="left:63px;top:177px;background-image:url(assets/orb-wealth.png)"></span>
+        <span class="we-orb" style="left:16px;top:119px;background-image:url(assets/orb-environment.png)"></span>
+        <span class="we-orb" style="left:33px;top:46px;background-image:url(assets/orb-tribe.png)"></span>
       </div>
       <h1 class="welcome-title serif">The Integrated<br>Man Journal</h1>
       <p class="welcome-usp">A daily rhythm for becoming whole.</p>
@@ -2348,23 +2359,26 @@
         <div class="voice-msg">Reminders fire while the app is open in a tab. Full background reminders come once it’s installed as an app.</div>
       </div>
 
-      <label class="field-label">Passcode lock</label>
-      <button class="toggle-row" id="lockToggle" type="button">
-        <span id="lockToggleLabel">Off</span>
-        <span class="toggle-switch" id="lockSwitch"></span>
-      </button>
-      <div class="lock-opts" id="lockOpts" hidden>
-        <div class="ob-perday" style="margin-top:12px;">
-          <span>Lock after</span>
-          <select class="ob-book" id="lockTimeout" style="width:auto;">
-            <option value="1">1 minute</option>
-            <option value="5">5 minutes</option>
-            <option value="15">15 minutes</option>
-            <option value="30">30 minutes</option>
-            <option value="60">1 hour</option>
-          </select>
+      <div id="lockSection">
+        <label class="field-label">Passcode lock</label>
+        <div class="coach-tip" id="lockCoach" hidden>Turn this on to set a 4-digit code that locks your journal. <b>Tap the switch below to begin.</b></div>
+        <button class="toggle-row" id="lockToggle" type="button">
+          <span id="lockToggleLabel">Off</span>
+          <span class="toggle-switch" id="lockSwitch"></span>
+        </button>
+        <div class="lock-opts" id="lockOpts" hidden>
+          <div class="ob-perday" style="margin-top:12px;">
+            <span>Lock after</span>
+            <select class="ob-book" id="lockTimeout" style="width:auto;">
+              <option value="1">1 minute</option>
+              <option value="5">5 minutes</option>
+              <option value="15">15 minutes</option>
+              <option value="30">30 minutes</option>
+              <option value="60">1 hour</option>
+            </select>
+          </div>
+          <button class="modal-secondary" id="changeCode" style="margin-top:10px;width:100%;">Change passcode</button>
         </div>
-        <button class="modal-secondary" id="changeCode" style="margin-top:10px;width:100%;">Change passcode</button>
       </div>
 
       <div class="settings-data">
@@ -3008,7 +3022,7 @@
     if (isWide()) { db.journalCollapsed = true; save(); applyJournalMode(); } else closeJournalOverlay();
     window.scrollTo(0, 0);
     if (db.lockEnabled && db.passcode) showLockEnter();
-    else { openSettings(); $("settingsMsg").textContent = "Turn on a passcode to lock the app."; }
+    else coachPasscode(); // first time: spotlight the passcode setting instead of dropping them in settings cold
   });
 
   // ---------- living background: a faint tint that shifts with the time of day ----------
@@ -4063,7 +4077,12 @@
   }
   $("toastBody").addEventListener("click", function () { $("toast").hidden = true; if (this._action) this._action(); });
   $("toastClose").addEventListener("click", function () { $("toast").hidden = true; });
+  // any gate/overlay that means the app isn't "in use" right now
+  function appGated() {
+    return !$("welcome").hidden || !$("onboard").hidden || !$("authModal").hidden || !$("lock").hidden || !$("threshold").hidden;
+  }
   function maybeNudge() {
+    if (appGated()) return; // never nudge over the sign-in gate / setup / lock
     var mem = findMemory();
     if (mem) { showToast("memory", mem); return; }
     var hrs = (Date.now() - lastThoughtMs()) / 3600000;
@@ -4481,6 +4500,10 @@
   }
   function applyJournalMode() {
     var drawer = $("journalDrawer"), overlay = $("journalOverlay");
+    if (typeof appGated === "function" && appGated()) { // no journal before you're in
+      drawer.hidden = true; overlay.hidden = true; document.body.classList.remove("journal-docked");
+      return;
+    }
     if (isWide()) {
       // docked: lives in the left margin, pushes content, no backdrop
       overlay.hidden = true;
@@ -4953,6 +4976,7 @@
   function openWelcome() {
     // the gate: nothing else is usable until a session exists
     $("onboard").hidden = true; $("authModal").hidden = true;
+    $("journalDrawer").hidden = true; $("journalOverlay").hidden = true; document.body.classList.remove("journal-docked");
     $("welcome").hidden = false;
   }
   $("welcomeCreate").addEventListener("click", function () { $("welcome").hidden = true; openAuth("signup"); });
@@ -4962,7 +4986,7 @@
     if (!session) { openWelcome(); return; }            // no session → stay gated
     $("authModal").hidden = true; $("welcome").hidden = true;
     if (!(db.profile && db.profile.onboarded)) openOnboarding();
-    else $("onboard").hidden = true;
+    else { $("onboard").hidden = true; if (typeof applyJournalMode === "function") applyJournalMode(); } // in the app → dock journal if wide
   }
 
   function openOnboarding() {
@@ -4978,7 +5002,7 @@
     if (!name) { $("obName").focus(); return; }
     db.profile = db.profile || {};
     db.profile.name = name;
-    if (!Array.isArray(db.profile.plans) || !db.profile.plans.length) db.profile.plans = [{ key: "proverbs", seqIndex: 0 }];
+    if (!Array.isArray(db.profile.plans)) db.profile.plans = []; // no plan yet — they pick one on the home screen
     db.profile.onboarded = true;
     if (typeof db.seqIndex !== "number") db.seqIndex = 0;
     db.lastThreshold = todayKey;
@@ -5004,6 +5028,7 @@
     $("lockTimeout").value = String(db.lockMinutes);
   }
   $("lockToggle").addEventListener("click", function () {
+    $("lockCoach").hidden = true; this.classList.remove("coach-target"); // they found it — clear the coach mark
     if (db.lockEnabled) { db.lockEnabled = false; db.passcode = null; save(); renderLockToggle(); }
     else showLockSet(); // set flow enables it on success, then re-renders the toggle
   });
@@ -5021,7 +5046,19 @@
     renderNotifyToggle();
     if (typeof renderAccount === "function") renderAccount();
     $("settingsMsg").textContent = "";
+    $("lockCoach").hidden = true; $("lockToggle").classList.remove("coach-target"); // clear any coach mark
     $("settings").hidden = false;
+  }
+  var coachT = null;
+  function coachPasscode() {
+    openSettings();
+    setTimeout(function () {
+      $("lockCoach").hidden = false;
+      $("lockToggle").classList.add("coach-target");
+      $("lockSection").scrollIntoView({ block: "center" });
+      clearTimeout(coachT);
+      coachT = setTimeout(function () { $("lockToggle").classList.remove("coach-target"); }, 6000);
+    }, 90);
   }
   $("setReadingToggle").addEventListener("click", function () {
     var w = $("setReadingWrap"); w.hidden = !w.hidden;
@@ -5422,9 +5459,7 @@
 
   // thought reminders + a gentle nudge / memory on open
   scheduleNotify();
-  setTimeout(function () {
-    if ($("lock").hidden && $("onboard").hidden && $("threshold").hidden) maybeNudge();
-  }, 2600);
+  setTimeout(function () { maybeNudge(); }, 2600); // maybeNudge() now self-guards while gated
 
   // roll over a few seconds after midnight, then keep rescheduling
   function scheduleMidnight() {
