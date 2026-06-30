@@ -336,7 +336,8 @@
   .question::after { content: "”"; color: var(--accent); }
 
   /* ---- inputs ---- */
-  textarea, input[type="text"] {
+  textarea,
+  input[type="text"], input[type="email"], input[type="password"], input[type="number"] {
     width: 100%;
     background: var(--field);
     border: 1px solid var(--field-edge);
@@ -347,6 +348,13 @@
     padding: 14px 16px;
     resize: none;
     transition: border-color 0.2s ease, background 0.2s ease;
+  }
+  /* keep email/password from picking up the OS autofill paint */
+  input:-webkit-autofill, input:-webkit-autofill:focus {
+    -webkit-text-fill-color: var(--ink);
+    -webkit-box-shadow: 0 0 0 1000px var(--field) inset;
+    caret-color: var(--ink);
+    transition: background-color 9999s ease;
   }
   textarea::placeholder, input::placeholder { color: var(--ink-faint); }
   textarea:focus, input:focus {
@@ -1477,7 +1485,22 @@
     font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase;
     color: var(--ink-faint); margin: 18px 0 8px; font-weight: 500;
   }
-  .modal input[type="text"] { width: 100%; }
+  .modal input[type="text"], .modal input[type="email"], .modal input[type="password"] { width: 100%; }
+  /* the optional sync (email + password) grouped into one calm card */
+  .ob-account {
+    margin-top: 18px;
+    background: var(--field);
+    border: 1px solid var(--field-edge);
+    border-radius: 14px;
+    padding: 16px;
+  }
+  .ob-account-head { display: flex; align-items: flex-start; gap: 11px; margin-bottom: 14px; }
+  .ob-account-head svg { width: 20px; height: 20px; flex-shrink: 0; margin-top: 1px; stroke: var(--accent); fill: none; stroke-width: 1.6; }
+  .oba-title { font-size: 14px; color: var(--ink); font-weight: 500; }
+  .oba-sub { font-size: 12px; color: var(--ink-faint); line-height: 1.45; margin-top: 3px; }
+  .ob-account input { background: var(--panel); }
+  .ob-account input + input { margin-top: 8px; }
+  .ob-account input:focus { background: var(--bg); }
   .ob-plans { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
   .ob-plan {
     background: var(--field);
@@ -2021,10 +2044,17 @@
       <label class="field-label">Your name</label>
       <input type="text" id="obName" placeholder="What should we call you?" autocomplete="off" maxlength="40" />
 
-      <label class="field-label">Email <span class="lbl-opt">— optional, to sync</span></label>
-      <input type="email" id="obEmail" placeholder="you@email.com" autocomplete="email" />
-      <label class="field-label">Password <span class="lbl-opt">— optional</span></label>
-      <input type="password" id="obPass" placeholder="At least 6 characters" autocomplete="new-password" />
+      <div class="ob-account">
+        <div class="ob-account-head">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 10h1a3 3 0 0 1 0 6h-1M6 10H5a3 3 0 0 0 0 6h1" stroke-linecap="round"/><path d="M7 13h10" stroke-linecap="round"/></svg>
+          <div>
+            <div class="oba-title">Sync across your devices</div>
+            <div class="oba-sub">Optional — add an account to carry your journal everywhere, or skip and stay on this device.</div>
+          </div>
+        </div>
+        <input type="email" id="obEmail" placeholder="Email" autocomplete="email" />
+        <input type="password" id="obPass" placeholder="Password — at least 6 characters" autocomplete="new-password" />
+      </div>
 
       <label class="field-label">Daily reading <span class="lbl-opt">— pick one or several</span></label>
       <div class="ob-plans" id="obPlans"></div>
