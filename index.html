@@ -51,45 +51,44 @@
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<!-- The Integrated Man brand type: Cormorant Garamond (display), Hanken Grotesk (body), Spline Sans Mono (eyebrows) -->
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Hanken+Grotesk:wght@300;400;500;600;700&family=Spline+Sans+Mono:wght@400;500&display=swap" rel="stylesheet">
+<!-- Fraunces echoes the TIM wordmark; falls back to a refined system serif offline. Cormorant + mono load too for the welcome/sign-in screens. -->
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..600;1,9..144,300..500&family=Cormorant+Garamond:ital,wght@0,500;1,500&family=Spline+Sans+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root {
-    /* The Integrated Man — warm near-black brand field (per brand design system) */
-    --bg: #0a0908;
-    --panel: #100f0d;
-    --panel-edge: rgba(236, 231, 221, 0.12);
-    --ink-high: #f3eee4;
-    --ink: #ece7dd;
-    --ink-soft: #b3a99b;
-    --ink-faint: #857c70;
-    --accent: #b69256;
-    --accent-hover: #caa869;
-    --accent-soft: rgba(182, 146, 86, 0.12);
-    --gold-line: rgba(182, 146, 86, 0.30);
-    --field: #15130f;
-    --field-edge: rgba(236, 231, 221, 0.12);
-    --line: rgba(236, 231, 221, 0.08);
+    /* The Integrated Man — true-black brand field */
+    --bg: #000000;
+    --panel: #0c0c0d;
+    --panel-edge: #232325;
+    --ink-high: #f6f4ee;
+    --ink: #f3f1ea;
+    --ink-soft: #a4a29b;
+    --ink-faint: #66645f;
+    --accent: #cbb27e;
+    --accent-hover: #d8c290;
+    --accent-soft: rgba(203, 178, 126, 0.12);
+    --gold-line: rgba(203, 178, 126, 0.30);
+    --field: #131314;
+    --field-edge: #2a2a2c;
+    --line: #1b1b1d;
     --shadow: 0 1px 0 rgba(255,255,255,0.02);
     color-scheme: dark;
   }
 
   [data-theme="light"] {
-    /* warm "reading" paper theme (per brand design system) */
-    --bg: #f4f0e7;
-    --panel: #faf7f0;
-    --panel-edge: rgba(10, 9, 8, 0.10);
-    --ink-high: #1c1916;
-    --ink: #1c1916;
-    --ink-soft: #5a5349;
-    --ink-faint: #8a8174;
-    --accent: #8a6f44;
-    --accent-hover: #b69256;
-    --accent-soft: rgba(138, 111, 68, 0.12);
-    --gold-line: rgba(138, 111, 68, 0.30);
-    --field: #fbf8f2;
-    --field-edge: rgba(10, 9, 8, 0.12);
-    --line: rgba(10, 9, 8, 0.08);
+    --bg: #f4f2ec;
+    --panel: #ffffff;
+    --panel-edge: #e5e1d7;
+    --ink-high: #161614;
+    --ink: #1a1a18;
+    --ink-soft: #5a5750;
+    --ink-faint: #948f86;
+    --accent: #8a6d30;
+    --accent-hover: #715a28;
+    --accent-soft: rgba(138, 109, 48, 0.12);
+    --gold-line: rgba(138, 109, 48, 0.30);
+    --field: #faf8f3;
+    --field-edge: #e1dcd1;
+    --line: #ebe7dd;
     --shadow: 0 1px 2px rgba(40,36,28,0.04);
     color-scheme: light;
   }
@@ -107,22 +106,11 @@
   @keyframes ambientBreathe { 0%,100% { opacity: 0.85; } 50% { opacity: 1; } }
   .wrap, .topbar { position: relative; z-index: 1; }
   @media (prefers-reduced-motion: reduce) { .ambient { animation: none; } }
-  /* brand atmosphere: fine film grain + edge vignette */
-  .grain {
-    position: fixed; inset: 0; z-index: 2; pointer-events: none; opacity: 0.05; mix-blend-mode: overlay;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  }
-  .vignette {
-    position: fixed; inset: 0; z-index: 1; pointer-events: none;
-    background: radial-gradient(125% 100% at 50% 38%, transparent 52%, rgba(0,0,0,0.6) 100%);
-  }
-  [data-theme="light"] .grain { mix-blend-mode: multiply; opacity: 0.035; }
-  [data-theme="light"] .vignette { background: radial-gradient(125% 100% at 50% 38%, transparent 60%, rgba(120,108,86,0.10) 100%); }
 
   body {
     background: var(--bg);
     color: var(--ink);
-    font-family: "Hanken Grotesk", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     font-size: 16px;
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
@@ -131,8 +119,8 @@
   }
 
   .serif {
-    font-family: "Cormorant Garamond", "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
-    letter-spacing: -0.015em;
+    font-family: "Fraunces", "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+    font-optical-sizing: auto;
   }
 
   .wrap {
@@ -230,11 +218,10 @@
   /* ---- sections ---- */
   section { margin-bottom: 38px; }
   .label {
-    font-family: "Spline Sans Mono", ui-monospace, monospace;
     font-size: 11px;
-    letter-spacing: 0.28em;
+    letter-spacing: 0.22em;
     text-transform: uppercase;
-    color: var(--accent);
+    color: var(--ink-faint);
     margin: 0 0 14px;
     font-weight: 500;
   }
@@ -276,7 +263,7 @@
     background: var(--panel);
     border: 1px solid var(--panel-edge);
     border-radius: 14px;
-    padding: 20px 22px;
+    padding: 15px 18px;
     box-shadow: var(--shadow);
   }
   .sc-row {
@@ -286,15 +273,14 @@
     gap: 16px;
   }
   .scripture-card .kicker {
-    font-family: "Spline Sans Mono", ui-monospace, monospace;
-    font-size: 10.5px;
-    letter-spacing: 0.2em;
+    font-size: 11px;
+    letter-spacing: 0.18em;
     text-transform: uppercase;
-    color: var(--accent);
+    color: var(--ink-faint);
     margin-bottom: 5px;
   }
   .scripture-card .ref {
-    font-size: 23px;
+    font-size: 18px;
     letter-spacing: -0.01em;
   }
   .sc-actions { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
@@ -512,7 +498,7 @@
     border-radius: 50%;
     flex-shrink: 0;
     background: var(--orb, var(--pc));
-    background-size: cover; background-position: center;
+    background-size: 240%; background-position: 50% 7%; /* sample the top strip — above the centered label, texture only */
     border: 1px solid var(--gold-line);
     box-shadow: 0 4px 12px rgba(0,0,0,0.5);
   }
@@ -631,9 +617,8 @@
     box-shadow: var(--shadow);
   }
   .focus-head {
-    font-family: "Spline Sans Mono", ui-monospace, monospace;
-    font-size: 11px; letter-spacing: 0.28em; text-transform: uppercase;
-    color: var(--accent); margin-bottom: 16px;
+    font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase;
+    color: var(--ink-faint); margin-bottom: 16px;
   }
   .focus-item { display: flex; gap: 13px; align-items: flex-start; margin-bottom: 15px; }
   .focus-item:last-child { margin-bottom: 0; }
@@ -1257,7 +1242,7 @@
   .pe-orb {
     width: 28px; height: 28px; border-radius: 50%;
     margin-left: -7px;
-    background-size: cover; background-position: center;
+    background-size: 240%; background-position: 50% 7%; /* sample the top strip — above the centered label, texture only */
     border: 2px solid var(--panel);
     box-shadow: 0 3px 9px rgba(0,0,0,0.5);
   }
@@ -1422,7 +1407,7 @@
     padding: 46px 46px 54px;
     box-shadow: 0 34px 90px -22px rgba(0,0,0,0.85), inset 0 0 90px rgba(120,90,40,0.08);
     background-image: repeating-linear-gradient(to bottom, transparent, transparent 33px, rgba(70,50,25,0.07) 34px);
-    font-family: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+    font-family: "Fraunces", Georgia, "Times New Roman", serif;
     transform-origin: left center;
     animation: pageOpen 0.42s cubic-bezier(.2,.7,.2,1);
   }
@@ -1490,7 +1475,7 @@
   .bible-hint { font-size: 12px; color: #9a8556; font-style: italic; margin-bottom: 20px; }
   .bible-body {
     color: #2c2418;
-    font-family: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+    font-family: "Fraunces", Georgia, "Times New Roman", serif;
     font-size: 18.5px; line-height: 1.95;
     text-align: justify; hyphens: auto; -webkit-hyphens: auto;
   }
@@ -1519,7 +1504,7 @@
   .anchor-ref { font-size: 13px; letter-spacing: 0.1em; text-transform: uppercase; color: #a07c42; margin-bottom: 5px; display: flex; justify-content: space-between; }
   .anchor-x { background: none; border: none; color: #b3a07a; cursor: pointer; font-size: 16px; line-height: 1; }
   .anchor-x:hover { color: #6a5c44; }
-  .anchor-text { font-family: "Cormorant Garamond", Georgia, serif; font-size: 17px; line-height: 1.6; color: #2c2418; }
+  .anchor-text { font-family: "Fraunces", Georgia, serif; font-size: 17px; line-height: 1.6; color: #2c2418; }
   .anchor-note {
     margin-top: 8px; padding-left: 11px; border-left: 2px solid rgba(176,138,74,0.5);
     font-size: 14.5px; line-height: 1.5; color: #5a4d35; font-style: italic;
@@ -1563,14 +1548,14 @@
   .th-cross { width: 26px; height: 38px; display: block; margin: 0 auto 22px; }
   .th-cross line { stroke: #cbb27e; stroke-width: 1.5; stroke-linecap: round; }
   .th-word {
-    font-family: "Cormorant Garamond", Georgia, serif; font-weight: 400;
+    font-family: "Fraunces", Georgia, serif; font-weight: 400;
     font-size: 30px; letter-spacing: 0.01em; line-height: 1.15;
     background: linear-gradient(180deg, #f3dca0, #cba85f 52%, #9a7836);
     -webkit-background-clip: text; background-clip: text; color: transparent;
     text-shadow: 0 1px 1px rgba(0,0,0,0.35);
   }
   .th-rule { width: 54px; height: 1px; background: rgba(203,178,126,0.4); margin: 20px auto; }
-  .th-verse { font-family: "Cormorant Garamond", Georgia, serif; font-style: italic; font-size: 15px; line-height: 1.55; color: #c9b48a; }
+  .th-verse { font-family: "Fraunces", Georgia, serif; font-style: italic; font-size: 15px; line-height: 1.55; color: #c9b48a; }
   .th-open {
     margin-top: 30px; font-size: 10.5px; letter-spacing: 0.32em; text-transform: uppercase;
     color: rgba(203,178,126,0.6); animation: thPulse 2.6s ease-in-out infinite;
@@ -1604,6 +1589,22 @@
     margin: auto;
   }
   .modal-title { font-size: 28px; font-weight: 300; margin: 0 0 8px; letter-spacing: -0.01em; }
+  /* Settings: sticky header with a close X + scrollable body (no scroll-to-exit) */
+  .settings-modal { padding: 0; display: flex; flex-direction: column; max-height: calc(100vh - 40px); overflow: hidden; }
+  .modal-head {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 20px 24px 14px; border-bottom: 1px solid var(--panel-edge); flex-shrink: 0;
+  }
+  .modal-head .modal-title { margin: 0; }
+  .modal-x {
+    flex-shrink: 0; width: 34px; height: 34px; border-radius: 50%;
+    background: none; border: 1px solid var(--field-edge); color: var(--ink-soft);
+    cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
+    transition: color 0.2s ease, border-color 0.2s ease;
+  }
+  .modal-x svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+  .modal-x:hover { color: var(--ink); border-color: var(--ink-faint); }
+  .settings-modal .modal-body { overflow-y: auto; padding: 6px 24px 24px; }
   .modal-sub { font-size: 14.5px; color: var(--ink-soft); line-height: 1.5; margin: 0 0 24px; }
   .ob-signin-link {
     display: block; margin: -14px 0 24px; padding: 0;
@@ -1614,8 +1615,7 @@
   .ob-signin-link:hover b { opacity: 0.85; }
   .field-label {
     display: block;
-    font-family: "Spline Sans Mono", ui-monospace, monospace;
-    font-size: 10.5px; letter-spacing: 0.24em; text-transform: uppercase;
+    font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase;
     color: var(--ink-faint); margin: 18px 0 8px; font-weight: 500;
   }
   .modal input[type="text"], .modal input[type="email"], .modal input[type="password"] { width: 100%; }
@@ -1806,7 +1806,7 @@
   .vm-btn {
     display: flex; align-items: center; gap: 11px;
     background: none; border: none; cursor: pointer;
-    padding: 13px 16px; font-family: "Cormorant Garamond", Georgia, serif; font-size: 15px; color: #2c2418;
+    padding: 13px 16px; font-family: "Fraunces", Georgia, serif; font-size: 15px; color: #2c2418;
     text-align: left; transition: background 0.12s ease;
   }
   .vm-btn + .vm-btn { border-top: 1px solid rgba(120,85,35,0.18); }
@@ -1822,14 +1822,12 @@
     .wrap { padding: 36px 18px 80px; }
     .greeting { font-size: 28px; }
     .question { font-size: 21px; }
-    .scripture-card .ref { font-size: 21px; }
+    .scripture-card .ref { font-size: 17px; }
   }
 </style>
 </head>
 <body>
   <div class="ambient" id="ambient"></div>
-  <div class="grain" id="grain" aria-hidden="true"></div>
-  <div class="vignette" id="vignette" aria-hidden="true"></div>
   <div class="wrap">
 
     <div class="topbar">
@@ -2248,8 +2246,14 @@
 
   <!-- Settings -->
   <div class="modal-overlay" id="settings" hidden>
-    <div class="modal">
-      <h2 class="modal-title serif">Settings</h2>
+    <div class="modal settings-modal">
+      <div class="modal-head">
+        <h2 class="modal-title serif">Settings</h2>
+        <button class="modal-x" id="settingsX" aria-label="Close settings">
+          <svg viewBox="0 0 24 24"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
 
       <label class="field-label">Account</label>
       <div class="account-row" id="accountRow"></div>
@@ -2320,6 +2324,7 @@
 
       <button class="modal-primary" id="settingsSave">Save</button>
       <button class="modal-text" id="settingsClose">Close</button>
+      </div>
     </div>
   </div>
 
@@ -3113,7 +3118,7 @@
     var lc = lastCheck();
     if (!lc) {
       sumEl.innerHTML = "Not checked yet";
-      note.innerHTML = "A weekly examen. Take two minutes to see where you really are across the seven.";
+      note.innerHTML = "A weekly audit. Take two minutes to see where you really are across the seven.";
       return;
     }
     var integ = (Math.round(dayIntegration(db.ratings[lc]) * 10) / 10).toFixed(1);
@@ -4926,6 +4931,7 @@
   }
   $("settingsBtn").addEventListener("click", openSettings);
   $("settingsClose").addEventListener("click", function () { $("settings").hidden = true; });
+  $("settingsX").addEventListener("click", function () { $("settings").hidden = true; });
   $("settingsSave").addEventListener("click", function () {
     var s = setPicker.state;
     db.profile = db.profile || {};
@@ -5134,7 +5140,13 @@
       el.innerHTML = '<div style="min-width:0"><div class="ac-email">' + escapeHtml(session.user.email || "Signed in") +
         '</div><div class="ac-state"><b>Synced</b> across your devices</div></div>' +
         '<button class="ac-btn ghost" id="acSignOut">Sign out</button>';
-      $("acSignOut").addEventListener("click", function () { sb.auth.signOut(); });
+      $("acSignOut").addEventListener("click", function () {
+        confirmDialog("Sign out? You'll be fully signed out and need to sign back in to reach your journal.", "Sign out", function () {
+          if (pushTimer) { clearTimeout(pushTimer); pushTimer = null; }
+          cloudPush();              // flush the latest to the cloud first
+          sb.auth.signOut();        // the SIGNED_OUT handler wipes this device + returns to the gate
+        });
+      });
     } else {
       el.innerHTML = '<div><div class="ac-email">Not signed in</div><div class="ac-state">Saving on this device only</div></div>' +
         '<button class="ac-btn" id="acSignIn">Sign in</button>';
@@ -5197,6 +5209,12 @@
     });
     sb.auth.onAuthStateChange(function (event, s) {
       session = s || null;
+      if (event === "SIGNED_OUT") {
+        // leave nothing behind on this device — back to a clean gate until sign-in
+        try { localStorage.removeItem(KEY); } catch (e) {}
+        location.reload();
+        return;
+      }
       renderAccount();
       if (s && event === "SIGNED_IN") { cloudPull(); showToastMsg("Signed in.", 2200); }
     });
