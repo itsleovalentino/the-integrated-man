@@ -557,6 +557,14 @@
   }
   .focus-item { display: flex; gap: 13px; align-items: flex-start; margin-bottom: 15px; }
   .focus-item:last-child { margin-bottom: 0; }
+  .focus-add {
+    display: inline-block; margin-top: 9px;
+    background: var(--accent-soft); border: 1px solid var(--accent); color: var(--accent);
+    border-radius: 999px; padding: 6px 12px; cursor: pointer;
+    font-family: inherit; font-size: 11.5px; letter-spacing: 0.03em;
+    transition: background 0.2s ease, color 0.2s ease;
+  }
+  .focus-add:hover { background: var(--accent); color: var(--bg); }
   .focus-dot {
     width: 10px; height: 10px; border-radius: 50%; margin-top: 6px; flex-shrink: 0;
     background: var(--fc, var(--accent));
@@ -773,8 +781,17 @@
   }
   .habit-del:hover { opacity: 1; color: var(--ink-soft); }
   .habit-empty { font-size: 14px; color: var(--ink-faint); font-style: italic; padding: 4px 0 12px; }
-  .habit-add { display: flex; gap: 8px; margin-top: 14px; }
-  .habit-add #habitInput { flex: 1; padding: 11px 13px; font-size: 14px; }
+  .habit-add { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+  .habit-add #habitInput { flex: 1; min-width: 140px; padding: 11px 13px; font-size: 14px; }
+  .habit-cad-select {
+    background: var(--field); border: 1px solid var(--field-edge); color: var(--ink-soft);
+    border-radius: 10px; padding: 0 10px; font-family: inherit; font-size: 12.5px; cursor: pointer;
+    -webkit-appearance: none; appearance: none;
+  }
+  .habit-cad-select:focus { outline: none; border-color: var(--accent); }
+  .habit-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .habit-cad { font-size: 11px; color: var(--ink-faint); letter-spacing: 0.04em; margin-top: 2px; }
+  .habit.dim { opacity: 0.5; }
 
   /* ---- voice (dictation + memos) ---- */
   .voice-bar { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
@@ -1456,6 +1473,7 @@
   .ob-plan .op-desc { font-size: 11.5px; color: var(--ink-faint); margin-top: 2px; }
   .ob-plan.sel { border-color: var(--accent); background: var(--accent-soft); }
   .ob-plan-note { font-size: 12px; color: var(--ink-faint); font-style: italic; margin-top: 10px; }
+  .lbl-opt { text-transform: none; letter-spacing: 0; color: var(--ink-faint); font-weight: 400; font-style: italic; }
   .ob-custom { margin-top: 10px; }
   .ob-book {
     width: 100%;
@@ -1661,47 +1679,32 @@
 
     <section>
       <div class="label-row">
-        <p class="label">Scripture of the Day</p>
+        <p class="label">Today's Reading</p>
         <button class="label-btn" id="openBibleBtn">Open your Bible</button>
       </div>
       <div class="scripture-grid">
         <div class="scripture-card">
           <div class="sc-row">
             <div>
-              <div class="kicker" id="provKicker">Proverbs · by the date</div>
-              <div class="ref serif" id="provRef">Proverbs 1</div>
+              <div class="kicker" id="rdKicker">Reading</div>
+              <div class="ref serif" id="rdRef">—</div>
             </div>
             <div class="sc-actions">
-              <button class="sc-check" id="provDone" aria-label="Mark as read">
+              <button class="sc-check" id="rdDone" aria-label="Mark as read">
                 <svg viewBox="0 0 24 24"><polyline points="5 12 10 17 19 7" stroke-linecap="round" stroke-linejoin="round"/></svg>
               </button>
-              <a class="read-btn" id="provBtn" target="_blank" rel="noopener">Read</a>
+              <a class="read-btn" id="rdBtn" target="_blank" rel="noopener">Read</a>
             </div>
           </div>
-          <button class="sc-note-toggle" id="provNoteToggle">Add a note</button>
-          <div class="sc-note" id="provNoteWrap" hidden>
-            <textarea id="provNote" rows="2" placeholder="What stood out…"></textarea>
-          </div>
-        </div>
-        <div class="scripture-card">
-          <div class="sc-row">
-            <div>
-              <div class="kicker" id="romKicker">In sequence</div>
-              <div class="ref serif" id="romRef">Romans 1</div>
-            </div>
-            <div class="sc-actions">
-              <button class="sc-check" id="romDone" aria-label="Mark as read">
-                <svg viewBox="0 0 24 24"><polyline points="5 12 10 17 19 7" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              </button>
-              <a class="read-btn" id="romBtn" target="_blank" rel="noopener">Read</a>
-            </div>
-          </div>
-          <button class="sc-note-toggle" id="romNoteToggle">Add a note</button>
-          <div class="sc-note" id="romNoteWrap" hidden>
-            <textarea id="romNote" rows="2" placeholder="What stood out…"></textarea>
+          <button class="sc-note-toggle" id="rdNoteToggle">Add a note</button>
+          <div class="sc-note" id="rdNoteWrap" hidden>
+            <textarea id="rdNote" rows="2" placeholder="What stood out…"></textarea>
+            <button class="save-mini" id="rdNoteSave" data-tone="tick">Save note</button>
+            <div class="save-mini-confirm" id="rdNoteMsg"></div>
           </div>
         </div>
       </div>
+      <div class="ob-plan-note" style="margin-top:10px;">A suggested plan — change it in Settings, or tap “Open your Bible” for anything.</div>
     </section>
 
     <section>
@@ -1754,6 +1757,12 @@
         <div class="habit-list" id="habitList"></div>
         <div class="habit-add">
           <input type="text" id="habitInput" placeholder="Add a habit…" autocomplete="off" maxlength="40" />
+          <select id="habitCadence" class="habit-cad-select" aria-label="How often">
+            <option value="daily">Daily</option>
+            <option value="weekdays">Weekdays</option>
+            <option value="everyOther">Every other day</option>
+            <option value="weekly">Weekly</option>
+          </select>
           <button id="habitAdd" class="pray-add-btn">Add</button>
         </div>
       </div>
@@ -1972,15 +1981,17 @@
         <span>The Integrated Man</span>
       </div>
       <h2 class="modal-title serif">A space to be made whole.</h2>
-      <p class="modal-sub">Seven pillars. One anchor. Tell us a little, and we’ll shape the morning to you.</p>
+      <p class="modal-sub">Seven pillars. One anchor. Create your account to sync across your devices — or skip and use it on this one.</p>
 
       <label class="field-label">Your name</label>
       <input type="text" id="obName" placeholder="What should we call you?" autocomplete="off" maxlength="40" />
 
-      <label class="field-label">The season you’re in</label>
-      <input type="text" id="obSeason" placeholder="e.g. building, surrender, rebuilding, waiting" autocomplete="off" maxlength="60" />
+      <label class="field-label">Email <span class="lbl-opt">— optional, to sync</span></label>
+      <input type="email" id="obEmail" placeholder="you@email.com" autocomplete="email" />
+      <label class="field-label">Password <span class="lbl-opt">— optional</span></label>
+      <input type="password" id="obPass" placeholder="At least 6 characters" autocomplete="new-password" />
 
-      <label class="field-label">Daily reading focus</label>
+      <label class="field-label">Daily reading</label>
       <div class="ob-plans" id="obPlans"></div>
       <div class="ob-custom" id="obCustom" hidden>
         <select class="ob-book" id="obBook"></select>
@@ -1989,8 +2000,9 @@
           <div class="stepper"><button type="button" data-step="-1">−</button><span id="obPerday">1</span><button type="button" data-step="1">+</button></div>
         </div>
       </div>
-      <div class="ob-plan-note">Proverbs follows the date for everyone. This sets your sequential reading.</div>
+      <div class="ob-plan-note">Just a few suggestions to start — change it anytime in Settings, or tap “Open your Bible” to read anything.</div>
 
+      <div class="settings-msg" id="obMsg"></div>
       <button class="modal-primary" id="obStart">Begin</button>
     </div>
   </div>
@@ -2261,10 +2273,10 @@
       orb: "radial-gradient(circle at 35% 30%, #e8bd5e, #b9791f)",
       tip: "Reset one space and cut one noisy input — order outside builds order inside.",
       facets: [
-        { key: "order",  name: "Order",   tip: "Reset one space — your environment shapes your mind." },
-        { key: "inputs", name: "Inputs",  tip: "Audit your feed; cut one input that pulls you off center." },
-        { key: "rhythm", name: "Rhythm",  tip: "Anchor the day with a simple morning and evening rhythm." },
-        { key: "beauty", name: "Beauty",  tip: "Add one thing that makes your space worth being in." }
+        { key: "order",       name: "Order",       tip: "Reset one space — your environment shapes your mind." },
+        { key: "inputs",      name: "Inputs",      tip: "Audit your feed; cut one input that pulls you off center." },
+        { key: "cleanliness", name: "Cleanliness", tip: "Tidy and clean one space you use every day." },
+        { key: "atmosphere",  name: "Atmosphere",  tip: "Make your space one you're glad to be in — light, air, a little life." }
       ] },
     { key: "tribe", name: "Tribe", color: "#7faab0",
       orb: "radial-gradient(circle at 35% 30%, #9cc3d6, #6f9a63)",
@@ -2332,15 +2344,18 @@
 
   // ---------- reading plans (Proverbs always follows the date; this is the sequential track) ----------
   var PLANS = {
-    romans:  { name: "Romans", desc: "Paul's letter, 16 chapters", books: [["Romans", 16]] },
+    proverbs:{ name: "A Proverb a day", desc: "By the date (Proverbs 1–31)", byDate: true },
+    psalms:  { name: "A Psalm a day", desc: "All 150, in order", books: [["Psalms", 150]] },
     gospels: { name: "The Gospels", desc: "Matthew → John", books: [["Matthew", 28], ["Mark", 16], ["Luke", 24], ["John", 21]] },
-    psalms:  { name: "Psalms", desc: "All 150, in order", books: [["Psalms", 150]] },
+    romans:  { name: "Romans", desc: "Paul's letter, 16 chapters", books: [["Romans", 16]] },
     nt:      { name: "New Testament", desc: "Matthew → Revelation", books: [
       ["Matthew",28],["Mark",16],["Luke",24],["John",21],["Acts",28],["Romans",16],["1 Corinthians",16],
       ["2 Corinthians",13],["Galatians",6],["Ephesians",6],["Philippians",4],["Colossians",4],
       ["1 Thessalonians",5],["2 Thessalonians",3],["1 Timothy",6],["2 Timothy",4],["Titus",3],["Philemon",1],
       ["Hebrews",13],["James",5],["1 Peter",5],["2 Peter",3],["1 John",5],["2 John",1],["3 John",1],
-      ["Jude",1],["Revelation",22] ] }
+      ["Jude",1],["Revelation",22] ] },
+    ot:      { name: "Old Testament", desc: "Genesis → Malachi" },   // derived from BOOKS in planRefs
+    bible:   { name: "The whole Bible", desc: "Genesis → Revelation" }
   };
   // every book of the Bible + chapter count, for "build your own"
   var BOOKS = [
@@ -2360,18 +2375,24 @@
     for (var i = 0; i < BOOKS.length; i++) if (BOOKS[i][0] === book) return BOOKS[i][1];
     return 1;
   }
-  function planRefs(planKey) {
+  function flattenBooks(books) {
     var out = [];
+    books.forEach(function (b) { for (var c = 1; c <= b[1]; c++) out.push(b[0] + " " + c); });
+    return out;
+  }
+  function planRefs(planKey) {
     if (planKey === "custom") {
-      var book = (db.profile && db.profile.customBook) || "Psalms";
+      var book = (db.profile && db.profile.customBook) || "Psalms", out = [];
       for (var c = 1; c <= chaptersOf(book); c++) out.push(book + " " + c);
       return out;
     }
+    if (planKey === "ot") return flattenBooks(BOOKS.slice(0, 39));   // Genesis → Malachi
+    if (planKey === "bible") return flattenBooks(BOOKS);             // Genesis → Revelation
     var plan = PLANS[planKey] || PLANS.romans;
-    plan.books.forEach(function (b) { for (var c = 1; c <= b[1]; c++) out.push(b[0] + " " + c); });
-    return out;
+    if (!plan.books) return [];                                     // e.g. proverbs (by date)
+    return flattenBooks(plan.books);
   }
-  function currentPlanKey() { return (db.profile && db.profile.plan) || "romans"; }
+  function currentPlanKey() { return (db.profile && db.profile.plan) || "proverbs"; }
   function perDay() {
     if (currentPlanKey() !== "custom") return 1;
     var n = db.profile && db.profile.perDay;
@@ -2383,7 +2404,7 @@
       var book = (db.profile && db.profile.customBook) || "Psalms", p = perDay();
       return book + (p > 1 ? " · " + p + " a day" : "");
     }
-    return PLANS[k].name;
+    return (PLANS[k] && PLANS[k].name) || "Reading";
   }
   function formatChunk(chunk) {
     if (chunk.length === 1) return chunk[0];
@@ -2621,7 +2642,7 @@
 
   // ---------- mutable "today" (reassigned on rollover) ----------
   var todayKey, yKey;
-  var currentProvRef = "", currentRomRef = ""; // today's passage references (for done/notes)
+  var currentReadingRef = ""; // today's reading passage (for done/notes/open)
 
   // ================= build the pillar cards once =================
   var CIRC = 326.726; // 2π·52, matches the gauge stroke-dasharray
@@ -2775,6 +2796,15 @@
   }
 
   // ---------- "Where to focus" suggestions ----------
+  var HABIT_SUGGEST = {
+    vitality:    { name: "Move for 20 minutes", cadence: "daily" },
+    mental:      { name: "Ten minutes of stillness", cadence: "daily" },
+    faith:       { name: "Read today's chapter", cadence: "daily" },
+    vocation:    { name: "Needle mover first", cadence: "weekdays" },
+    wealth:      { name: "Review the numbers", cadence: "weekly" },
+    environment: { name: "Reset one space", cadence: "daily" },
+    tribe:       { name: "Reach out to a brother", cadence: "weekly" }
+  };
   function refreshFocus(avg) {
     var focus = $("focus"), body = $("focusBody");
     focus.hidden = false;
@@ -2799,13 +2829,25 @@
         text = fr.f.tip;
         num = fr.v; // show the weak facet's own score, not the pillar average
       }
+      var sug = HABIT_SUGGEST[p.key];
+      var sugBtn = sug ? '<button class="focus-add" data-habit="' + escapeHtml(sug.name) + '" data-cadence="' + sug.cadence +
+        '">+ Habit: ' + escapeHtml(sug.name) + ' · ' + cadenceLabel(sug.cadence) + '</button>' : '';
       html += '<div class="focus-item" style="--fc:' + p.color + '">' +
         '<span class="focus-dot"></span>' +
         '<div class="focus-text"><b>' + escapeHtml(head) + ' (' + num + '/10)</b> — ' +
-        escapeHtml(text) + '</div></div>';
+        escapeHtml(text) + sugBtn + '</div></div>';
     });
     body.innerHTML = html;
   }
+  $("focusBody").addEventListener("click", function (e) {
+    var b = e.target.closest(".focus-add"); if (!b) return;
+    var name = b.getAttribute("data-habit"), cad = b.getAttribute("data-cadence");
+    if (db.habits.some(function (h) { return h.name.toLowerCase() === name.toLowerCase(); })) {
+      showToastMsg("“" + name + "” is already one of your habits."); return;
+    }
+    addHabit(name, cad); playTick(); buzz(10);
+    showToastMsg("Added: " + name + " · " + cadenceLabel(cad));
+  });
 
   // ---------- Integration trend over time ----------
   function dayIntegration(rt) {
@@ -2918,8 +2960,7 @@
   // Handlers read the live `todayKey`, so they keep working after a midnight rollover.
 
   // Read links → open the in-app Bible reader
-  $("provBtn").addEventListener("click", function (e) { e.preventDefault(); openBible(currentProvRef); });
-  $("romBtn").addEventListener("click", function (e) { e.preventDefault(); openBible(currentRomRef); });
+  $("rdBtn").addEventListener("click", function (e) { e.preventDefault(); openBible(currentReadingRef); });
 
   // ===== In-app Bible (WEB translation, fetched + cached) =====
   function anchorIndex(ref) { for (var n = 0; n < db.anchors.length; n++) if (db.anchors[n].ref === ref) return n; return -1; }
@@ -3108,38 +3149,27 @@
     flash("journalTick");
   });
 
-  // Scripture: mark-read toggles
-  function bindRead(btnId, slot) {
-    $(btnId).addEventListener("click", function () {
-      if (!db.readLog[todayKey]) db.readLog[todayKey] = {};
-      if (db.readLog[todayKey][slot]) delete db.readLog[todayKey][slot];
-      else db.readLog[todayKey][slot] = true;
-      var nowDone = !!db.readLog[todayKey][slot];
-      this.classList.toggle("done", nowDone);
-      if (nowDone) { celebrate(this); playTick(); buzz(); }
-      save();
-    });
-  }
-  bindRead("provDone", "prov");
-  bindRead("romDone", "rom");
-
-  // Scripture: optional notes (keyed by passage so they build a personal commentary)
-  function bindNote(toggleId, wrapId, areaId, refGetter, label) {
-    $(toggleId).addEventListener("click", function () {
-      var w = $(wrapId);
-      w.hidden = !w.hidden;
-      if (!w.hidden) { var a = $(areaId); a.focus(); grow(a); }
-    });
-    $(areaId).addEventListener("input", function () {
-      var ref = refGetter();
-      if (this.value.trim()) db.scriptureNotes[ref] = this.value;
-      else delete db.scriptureNotes[ref];
-      $(toggleId).textContent = this.value.trim() ? label : "Add a note";
-      save(); grow(this);
-    });
-  }
-  bindNote("provNoteToggle", "provNoteWrap", "provNote", function () { return currentProvRef; }, "Your note");
-  bindNote("romNoteToggle", "romNoteWrap", "romNote", function () { return currentRomRef; }, "Your note");
+  // Scripture: mark-read toggle (single reading)
+  $("rdDone").addEventListener("click", function () {
+    if (!db.readLog[todayKey]) db.readLog[todayKey] = {};
+    if (db.readLog[todayKey].read) delete db.readLog[todayKey].read;
+    else db.readLog[todayKey].read = true;
+    var nowDone = !!db.readLog[todayKey].read;
+    this.classList.toggle("done", nowDone);
+    if (nowDone) { celebrate(this); playTick(); buzz(); }
+    save();
+  });
+  // Scripture: optional note (keyed by passage so it builds a personal commentary), with a Save button
+  $("rdNoteToggle").addEventListener("click", function () {
+    var w = $("rdNoteWrap"); w.hidden = !w.hidden;
+    if (!w.hidden) { $("rdNote").focus(); grow($("rdNote")); }
+  });
+  $("rdNote").addEventListener("input", function () {
+    if (this.value.trim()) db.scriptureNotes[currentReadingRef] = this.value;
+    else delete db.scriptureNotes[currentReadingRef];
+    $("rdNoteToggle").textContent = this.value.trim() ? "Your note" : "Add a note";
+    save(); grow(this);
+  });
 
   // End of Day Reflection — rotating prompt, autosaves
   $("evening").addEventListener("input", function () {
@@ -3164,6 +3194,7 @@
   }
   wireSaveMini("journalSave", "journalSaveMsg");
   wireSaveMini("eveningSave", "eveningSaveMsg");
+  wireSaveMini("rdNoteSave", "rdNoteMsg");
 
   // ===== Voice: dictation (speech-to-text) + voice memos =====
   var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -3668,7 +3699,7 @@
     var aWrap = $("prayAnswered"), aToggle = $("prayAnsweredToggle");
     if (ans.length) {
       aToggle.hidden = false;
-      aToggle.textContent = (aWrap.classList.contains("open") ? "Hide" : "Show") + " answered (" + ans.length + ")";
+      aToggle.textContent = (aWrap.classList.contains("open") ? "Hide" : "Show") + " Answered Prayers (" + ans.length + ")";
       ans.sort(function (a, b) { return (b.answered || "").localeCompare(a.answered || ""); });
       aWrap.innerHTML = ans.map(function (it) { return prayItemHtml(it, true); }).join("");
     } else {
@@ -3692,8 +3723,14 @@
     if (!it) return;
     var act = btn.getAttribute("data-act");
     if (act === "toggle") {
-      it.answered = it.answered ? null : todayKey;
-      if (it.answered) { celebrate(btn); playTick(); } // an answered prayer is worth celebrating
+      if (!it.answered) {
+        confirmDialog("Move this to your Answered Prayers?", "Mark answered", function () {
+          it.answered = todayKey; save(); renderPrayers();
+          celebrate($("prayerHead")); playTick(); buzz(12);
+        });
+        return; // wait for confirmation
+      }
+      it.answered = null; // tapping an answered one returns it to the open list
     } else if (act === "del") db.prayers.splice(db.prayers.indexOf(it), 1);
     save(); renderPrayers();
   }
@@ -3754,42 +3791,75 @@
     }
     return "spark";
   }
-  function habitStreak(id) {
-    var n = 0, d = new Date();
-    if (!((db.habitLog[keyOf(d)] || {})[id])) d.setDate(d.getDate() - 1); // today not done yet — count through yesterday
-    while ((db.habitLog[keyOf(d)] || {})[id]) { n++; d.setDate(d.getDate() - 1); }
+  function habitDoneOn(h, k) { return !!(db.habitLog[k] && db.habitLog[k][h.id]); }
+  function dnum(d) { return Math.floor(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 86400000); }
+  function createdDnum(h) { if (h.created) { var p = h.created.split("-"); return Math.floor(Date.UTC(p[0], p[1] - 1, p[2]) / 86400000); } return 0; }
+  function expectedOn(h, d) {
+    var c = h.cadence || "daily";
+    if (c === "weekdays") { var w = d.getDay(); return w >= 1 && w <= 5; }
+    if (c === "everyOther") return (dnum(d) - createdDnum(h)) % 2 === 0;
+    return true; // daily + weekly are always "available"
+  }
+  function weekStart(d) { var x = new Date(d.getFullYear(), d.getMonth(), d.getDate()); x.setDate(x.getDate() - x.getDay()); return x; }
+  function doneThisWeek(h, d) {
+    var ws = weekStart(d);
+    for (var i = 0; i < 7; i++) { var dd = new Date(ws); dd.setDate(ws.getDate() + i); if (dd > d) break; if (habitDoneOn(h, keyOf(dd))) return true; }
+    return false;
+  }
+  function cadenceLabel(c) { return c === "weekdays" ? "Weekdays" : c === "everyOther" ? "Every other day" : c === "weekly" ? "Weekly" : "Daily"; }
+  function habitStreak(h) {
+    var c = h.cadence || "daily", n = 0, d = new Date(), guard = 0;
+    if (c === "weekly") {
+      if (!doneThisWeek(h, d)) { d = weekStart(d); d.setDate(d.getDate() - 1); }
+      while (guard++ < 300) {
+        var ws = weekStart(d), any = false;
+        for (var i = 0; i < 7; i++) { var dd = new Date(ws); dd.setDate(ws.getDate() + i); if (habitDoneOn(h, keyOf(dd))) { any = true; break; } }
+        if (any) { n++; d = weekStart(d); d.setDate(d.getDate() - 1); } else break;
+      }
+      return n;
+    }
+    if (expectedOn(h, d) && !habitDoneOn(h, keyOf(d))) d.setDate(d.getDate() - 1); // expected today but not done yet
+    while (guard++ < 400) {
+      if (expectedOn(h, d)) { if (habitDoneOn(h, keyOf(d))) n++; else break; }
+      d.setDate(d.getDate() - 1);
+    }
     return n;
   }
   function renderHabits() {
     var list = $("habitList");
     if (!db.habits.length) {
-      list.innerHTML = '<div class="habit-empty">No habits yet. Add 3–5 daily anchors below.</div>';
+      list.innerHTML = '<div class="habit-empty">No habits yet. Add a few daily anchors below.</div>';
       return;
     }
-    var todayLog = db.habitLog[todayKey] || {};
+    var now = new Date(), todayLog = db.habitLog[todayKey] || {};
     list.innerHTML = db.habits.map(function (h) {
       var icon = HABIT_ICONS[h.icon] || HABIT_ICONS.spark;
-      var s = habitStreak(h.id);
+      var c = h.cadence || "daily";
+      var s = habitStreak(h);
       var done = !!todayLog[h.id];
-      return '<div class="habit" data-id="' + h.id + '">' +
+      var expected = (c === "weekly") ? (!doneThisWeek(h, now) || done) : expectedOn(h, now);
+      var unit = c === "weekly" ? "w" : "d";
+      return '<div class="habit' + (!expected && !done ? " dim" : "") + '" data-id="' + h.id + '">' +
         '<span class="habit-icon"><svg viewBox="0 0 24 24">' + icon + '</svg></span>' +
-        '<span class="habit-name">' + escapeHtml(h.name) + '</span>' +
-        (s > 0 ? '<span class="habit-streak">' + s + 'd</span>' : '') +
+        '<span class="habit-main"><span class="habit-name">' + escapeHtml(h.name) + '</span>' +
+          '<span class="habit-cad">' + cadenceLabel(c) + (s > 0 ? ' · ' + s + unit + ' streak' : '') + '</span></span>' +
         '<button class="hab-check' + (done ? ' checked' : '') + '" data-act="check" aria-label="Mark done">' +
           '<svg viewBox="0 0 24 24"><polyline points="5 12 10 17 19 7"/></svg></button>' +
         '<button class="habit-del" data-act="del" aria-label="Remove">×</button>' +
       '</div>';
     }).join("");
   }
-  function addHabit() {
-    var name = $("habitInput").value.trim();
+  function addHabit(name, cadence) {
+    if (typeof name !== "string") name = $("habitInput").value;
+    name = name.trim();
     if (!name) return;
+    cadence = (typeof cadence === "string") ? cadence : ($("habitCadence").value || "daily");
     db.habits.push({ id: "h" + Date.now().toString(36) + Math.floor(Math.random() * 1e4).toString(36),
-                     name: name, icon: iconFor(name) });
+                     name: name, icon: iconFor(name), cadence: cadence, created: todayKey });
     $("habitInput").value = "";
-    save(); renderHabits(); flash("habitTick"); $("habitInput").focus();
+    save(); renderHabits(); flash("habitTick");
   }
-  $("habitAdd").addEventListener("click", addHabit);
+  $("habitAdd").addEventListener("click", function () { addHabit(); });
   $("habitInput").addEventListener("keydown", function (e) { if (e.key === "Enter") addHabit(); });
   $("habitList").addEventListener("click", function (e) {
     var btn = e.target.closest("[data-act]"); if (!btn) return;
@@ -3803,8 +3873,8 @@
     } else if (act === "del") {
       var h = null;
       for (var n = 0; n < db.habits.length; n++) if (db.habits[n].id === id) { h = db.habits[n]; break; }
-      var streak = habitStreak(id);
-      var msg = "Delete “" + (h ? h.name : "this habit") + "”?" + (streak > 0 ? " Deleting will end your " + streak + "-day streak." : "");
+      var streak = h ? habitStreak(h) : 0;
+      var msg = "Delete “" + (h ? h.name : "this habit") + "”?" + (streak > 0 ? " Deleting will end your streak." : "");
       confirmDialog(msg, "Delete", function () {
         db.habits = db.habits.filter(function (x) { return x.id !== id; });
         save(); renderHabits(); flash("habitTick");
@@ -4231,15 +4301,18 @@
 
   // ---------- profile · onboarding · settings · backup ----------
   var PLAN_OPTIONS = [
-    { key: "romans",  name: "Romans",        desc: "Paul’s letter, 16 chapters" },
-    { key: "gospels", name: "The Gospels",   desc: "Matthew → John" },
-    { key: "psalms",  name: "Psalms",        desc: "All 150, in order" },
-    { key: "nt",      name: "New Testament", desc: "Matthew → Revelation" },
-    { key: "custom",  name: "Build your own", desc: "Any book, your pace" }
+    { key: "proverbs", name: "A Proverb a day", desc: "By the date · Proverbs 1–31" },
+    { key: "psalms",   name: "A Psalm a day",   desc: "All 150, in order" },
+    { key: "gospels",  name: "The Gospels",     desc: "Matthew → John" },
+    { key: "romans",   name: "Romans",          desc: "Paul’s letter, 16 chapters" },
+    { key: "nt",       name: "New Testament",   desc: "Matthew → Revelation" },
+    { key: "ot",       name: "Old Testament",   desc: "Genesis → Malachi" },
+    { key: "bible",    name: "The whole Bible",  desc: "Genesis → Revelation" },
+    { key: "custom",   name: "Build your own",  desc: "Any book, your pace" }
   ];
   // a reusable plan picker bound to the ob… / set… element ids
   function makePicker(prefix) {
-    var st = { plan: "romans", book: "Psalms", per: 1 };
+    var st = { plan: "proverbs", book: "Psalms", per: 1 };
     var plansEl = $(prefix + "Plans"), customEl = $(prefix + "Custom"),
         bookEl = $(prefix + "Book"), perEl = $(prefix + "Perday");
     bookEl.innerHTML = BOOKS.map(function (b) { return '<option value="' + b[0] + '">' + b[0] + ' (' + b[1] + ')</option>'; }).join("");
@@ -4266,7 +4339,7 @@
     });
     return {
       load: function () {
-        st.plan = (db.profile && db.profile.plan) || "romans";
+        st.plan = (db.profile && db.profile.plan) || "proverbs";
         st.book = (db.profile && db.profile.customBook) || "Psalms";
         st.per = (db.profile && db.profile.perDay) || 1;
         render();
@@ -4278,7 +4351,7 @@
 
   function openOnboarding() {
     $("obName").value = (db.profile && db.profile.name) || "";
-    $("obSeason").value = (db.profile && db.profile.season) || "";
+    $("obEmail").value = ""; $("obPass").value = ""; $("obMsg").textContent = "";
     obPicker.load();
     $("onboard").hidden = false;
     setTimeout(function () { $("obName").focus(); }, 50);
@@ -4286,12 +4359,23 @@
   $("obStart").addEventListener("click", function () {
     var name = $("obName").value.trim();
     if (!name) { $("obName").focus(); return; }
+    var email = $("obEmail").value.trim(), pass = $("obPass").value;
+    if (email && pass.length < 6) { $("obMsg").style.color = "#d08a72"; $("obMsg").textContent = "Password needs at least 6 characters (or clear the email to skip)."; return; }
     var s = obPicker.state;
-    db.profile = { name: name, season: $("obSeason").value.trim(),
-                   plan: s.plan, customBook: s.book, perDay: s.per, onboarded: true };
+    db.profile = { name: name, plan: s.plan, customBook: s.book, perDay: s.per, onboarded: true };
     if (typeof db.seqIndex !== "number") db.seqIndex = 0;
-    db.lastThreshold = todayKey; // skip the threshold on the very first day (they just onboarded)
+    db.lastThreshold = todayKey;
     save();
+    // optionally create an account so it syncs everywhere
+    if (email && pass && typeof sb !== "undefined" && sb) {
+      $("obMsg").style.color = ""; $("obMsg").textContent = "Creating your account…";
+      sb.auth.signUp({ email: email, password: pass, options: { data: { display_name: name } } }).then(function (res) {
+        if (res.error) { $("obMsg").style.color = "#d08a72"; $("obMsg").textContent = res.error.message + " — you can still continue without an account."; return; }
+        $("onboard").hidden = true; dailyRefresh();
+        if (res.data && res.data.user && !res.data.session) showToastMsg("Check your email to confirm your account.");
+      }, function () { $("obMsg").style.color = "#d08a72"; $("obMsg").textContent = "Couldn’t create the account — continue without one, or try again."; });
+      return;
+    }
     $("onboard").hidden = true;
     dailyRefresh();
   });
@@ -4334,6 +4418,8 @@
     var s = setPicker.state;
     db.profile = db.profile || {};
     var changed = db.profile.plan !== s.plan || db.profile.customBook !== s.book || db.profile.perDay !== s.per;
+    // snapshot the reading state so a plan change can be undone (it resets the position)
+    var prev = changed ? { plan: db.profile.plan, customBook: db.profile.customBook, perDay: db.profile.perDay, seqIndex: db.seqIndex } : null;
     db.profile.name = $("setName").value.trim() || "friend";
     db.profile.plan = s.plan;
     db.profile.customBook = s.book;
@@ -4343,7 +4429,20 @@
     save();
     $("settings").hidden = true;
     dailyRefresh();
+    if (prev) offerReadingUndo(prev);
   });
+  function offerReadingUndo(prev) {
+    var b = $("toastBody");
+    b.innerHTML = '<div class="toast-kicker">Reading changed</div><div class="toast-text">Now on <em>' +
+      escapeHtml(planLabel()) + '</em>. Tap to undo and keep your place.</div>';
+    b._action = function () {
+      db.profile.plan = prev.plan; db.profile.customBook = prev.customBook;
+      db.profile.perDay = prev.perDay; db.seqIndex = prev.seqIndex;
+      save(); dailyRefresh(); showToastMsg("Reading restored.");
+    };
+    $("toast").hidden = false;
+    clearTimeout(toastTimer); toastTimer = setTimeout(function () { $("toast").hidden = true; }, 9000);
+  }
 
   // backup / restore — insurance against a cleared cache
   $("exportBtn").addEventListener("click", function () {
@@ -4394,31 +4493,34 @@
     if (typeof db.seqIndex !== "number") {
       db.seqIndex = (typeof db.romans === "number") ? (db.romans - 1) : 0;
     }
-    var refs = planRefs(currentPlanKey());
+    var plan = currentPlanKey();
+    var refs = planRefs(plan);
     var per = perDay();
 
-    // rollover: streak + sequential reading advance (by perDay), only on a genuinely new day
+    // rollover: streak + (for sequential plans) advance the reading position
     if (db.lastOpen !== todayKey) {
       db.streak = (db.lastOpen === yKey) ? (db.streak || 0) + 1 : 1;
-      if (db.lastOpen) db.seqIndex = (db.seqIndex + per) % refs.length; // don't advance on the very first run
+      if (db.lastOpen && plan !== "proverbs" && refs.length) db.seqIndex = (db.seqIndex + per) % refs.length;
       db.lastOpen = todayKey;
       save();
     }
     $("streak").textContent = "Day " + db.streak + " streak";
     renderChain();
 
-    // scripture — Proverbs by date, plus the chosen sequential reading (one or more chapters)
-    var provCh = now.getDate();
-    currentProvRef = "Proverbs " + provCh;
-    var start = ((db.seqIndex % refs.length) + refs.length) % refs.length;
-    var chunk = [];
-    for (var ci = 0; ci < per; ci++) chunk.push(refs[(start + ci) % refs.length]);
-    currentRomRef = formatChunk(chunk);
-    $("provRef").textContent = currentProvRef;
-    $("provBtn").href = gateway(currentProvRef);
-    $("romKicker").textContent = planLabel() + " · in sequence";
-    $("romRef").textContent = currentRomRef;
-    $("romBtn").href = gateway(currentRomRef);
+    // today's reading — the one chosen plan
+    if (plan === "proverbs") {
+      currentReadingRef = "Proverbs " + Math.min(now.getDate(), 31);
+      $("rdKicker").textContent = "A Proverb a day · by the date";
+    } else {
+      if (!refs.length) refs = ["John 1"];
+      var start = ((db.seqIndex % refs.length) + refs.length) % refs.length;
+      var chunk = [];
+      for (var ci = 0; ci < per; ci++) chunk.push(refs[(start + ci) % refs.length]);
+      currentReadingRef = formatChunk(chunk);
+      $("rdKicker").textContent = planLabel() + " · in sequence";
+    }
+    $("rdRef").textContent = currentReadingRef;
+    $("rdBtn").href = gateway(currentReadingRef);
 
     // prompts of the day (deterministic, stable across opens on the same day)
     var dayNumber = Math.floor(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()) / 86400000);
@@ -4460,19 +4562,12 @@
 
   // ---------- scripture: mark-read + per-passage notes ----------
   function renderScripture() {
-    var log = db.readLog[todayKey] || {};
-    $("provDone").classList.toggle("done", !!log.prov);
-    $("romDone").classList.toggle("done", !!log.rom);
-
-    var pn = db.scriptureNotes[currentProvRef] || "";
-    var rn = db.scriptureNotes[currentRomRef] || "";
-    $("provNote").value = pn; grow($("provNote"));
-    $("romNote").value = rn; grow($("romNote"));
-    // reveal the note + relabel if one already exists for this passage
-    $("provNoteWrap").hidden = !pn;
-    $("romNoteWrap").hidden = !rn;
-    $("provNoteToggle").textContent = pn ? "Your note" : "Add a note";
-    $("romNoteToggle").textContent = rn ? "Your note" : "Add a note";
+    var done = !!(db.readLog[todayKey] && db.readLog[todayKey].read);
+    $("rdDone").classList.toggle("done", done);
+    var note = db.scriptureNotes[currentReadingRef] || "";
+    $("rdNote").value = note; grow($("rdNote"));
+    $("rdNoteWrap").hidden = !note;
+    $("rdNoteToggle").textContent = note ? "Your note" : "Add a note";
   }
 
   // ===== Morning threshold (the leather journal opening) =====
