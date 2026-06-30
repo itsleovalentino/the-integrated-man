@@ -1611,9 +1611,9 @@
     border-radius: 50%; border: 1px solid rgba(182,146,86,0.16); }
   .we-cross { position: absolute; left: 50%; top: 50%; height: 122px; width: auto; transform: translate(-50%,-50%);
     animation: weFloat 7s ease-in-out infinite; filter: drop-shadow(0 6px 18px rgba(0,0,0,0.7)); }
-  .we-orb { position: absolute; width: 22px; height: 22px; border-radius: 50%; transform: translate(-50%,-50%);
-    background-size: 215%; background-position: 50% 8%; /* the real marbled orb art, cropped above its baked-in label */
-    border: 1px solid rgba(182,146,86,0.30); box-shadow: 0 6px 16px rgba(0,0,0,0.5); }
+  .we-orb { position: absolute; width: 28px; height: 28px; border-radius: 50%; transform: translate(-50%,-50%);
+    background-size: cover; background-position: center; /* the real text-free marbled orb art, full bleed */
+    border: 1px solid rgba(236,231,221,0.10); box-shadow: 0 4px 12px rgba(0,0,0,0.45); }
   @keyframes weFloat { 0%,100% { transform: translate(-50%,-50%); } 50% { transform: translate(-50%, calc(-50% - 7px)); } }
   @keyframes weGlow { 0%,100% { opacity: 0.4; } 50% { opacity: 0.78; } }
   @media (prefers-reduced-motion: reduce) { .we-cross, .we-glow { animation: none; } }
@@ -2268,13 +2268,13 @@
         <div class="we-glow"></div>
         <div class="we-ring"></div>
         <img class="we-cross" src="assets/cross.png" alt="" />
-        <span class="we-orb" style="left:100px;top:14px;background-image:url(assets/orb-vitality.png)"></span>
-        <span class="we-orb" style="left:167px;top:46px;background-image:url(assets/orb-mental.png)"></span>
-        <span class="we-orb" style="left:184px;top:119px;background-image:url(assets/orb-faith.png)"></span>
-        <span class="we-orb" style="left:137px;top:177px;background-image:url(assets/orb-vocation.png)"></span>
-        <span class="we-orb" style="left:63px;top:177px;background-image:url(assets/orb-wealth.png)"></span>
-        <span class="we-orb" style="left:16px;top:119px;background-image:url(assets/orb-environment.png)"></span>
-        <span class="we-orb" style="left:33px;top:46px;background-image:url(assets/orb-tribe.png)"></span>
+        <span class="we-orb" style="left:100px;top:14px;background-image:url(assets/orb-vitality.png?v=2)"></span>
+        <span class="we-orb" style="left:167px;top:46px;background-image:url(assets/orb-mental.png?v=2)"></span>
+        <span class="we-orb" style="left:184px;top:119px;background-image:url(assets/orb-faith.png?v=2)"></span>
+        <span class="we-orb" style="left:137px;top:177px;background-image:url(assets/orb-vocation.png?v=2)"></span>
+        <span class="we-orb" style="left:63px;top:177px;background-image:url(assets/orb-wealth.png?v=2)"></span>
+        <span class="we-orb" style="left:16px;top:119px;background-image:url(assets/orb-environment.png?v=2)"></span>
+        <span class="we-orb" style="left:33px;top:46px;background-image:url(assets/orb-tribe.png?v=2)"></span>
       </div>
       <h1 class="welcome-title serif">The Integrated<br>Man Journal</h1>
       <p class="welcome-usp">A daily rhythm for becoming whole.</p>
