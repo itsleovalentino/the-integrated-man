@@ -1531,6 +1531,13 @@
   }
   .modal-title { font-size: 28px; font-weight: 300; margin: 0 0 8px; letter-spacing: -0.01em; }
   .modal-sub { font-size: 14.5px; color: var(--ink-soft); line-height: 1.5; margin: 0 0 24px; }
+  .ob-signin-link {
+    display: block; margin: -14px 0 24px; padding: 0;
+    background: none; border: none; color: var(--ink-soft);
+    font-family: inherit; font-size: 13.5px; cursor: pointer; text-align: left;
+  }
+  .ob-signin-link b { color: var(--accent); font-weight: 500; text-decoration: underline; text-underline-offset: 3px; }
+  .ob-signin-link:hover b { opacity: 0.85; }
   .field-label {
     display: block;
     font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase;
@@ -2113,7 +2120,8 @@
         <span>The Integrated Man</span>
       </div>
       <h2 class="modal-title serif">A space to be made whole.</h2>
-      <p class="modal-sub">Seven pillars. One anchor. Create your account to sync across your devices — or skip and use it on this one.</p>
+      <p class="modal-sub">Seven pillars. One anchor. Set up your space below to begin.</p>
+      <button class="ob-signin-link" id="obSignin">Already have an account? <b>Sign in</b></button>
 
       <label class="field-label">Your name</label>
       <input type="text" id="obName" placeholder="What should we call you?" autocomplete="off" maxlength="40" />
@@ -4759,6 +4767,7 @@
     $("obName").value = (db.profile && db.profile.name) || "";
     $("obEmail").value = ""; $("obPass").value = ""; $("obMsg").textContent = "";
     obPicker.load();
+    $("obSignin").hidden = (typeof sb === "undefined" || !sb); // no sign-in without the account backend
     $("onboard").hidden = false;
     setTimeout(function () { $("obName").focus(); }, 50);
   }
@@ -5003,6 +5012,8 @@
     db.bibleCache = db.bibleCache || {};
     try { localStorage.setItem(KEY, JSON.stringify(db)); } catch (e) {}
     rerenderAll();
+    // a returning sign-in just brought this man's profile down — leave the gate screens
+    if (db.profile && db.profile.onboarded) { $("onboard").hidden = true; $("authModal").hidden = true; }
   }
   function cloudPull() {
     if (!sb || !session) return;
@@ -5030,7 +5041,7 @@
     } else {
       el.innerHTML = '<div><div class="ac-email">Not signed in</div><div class="ac-state">Saving on this device only</div></div>' +
         '<button class="ac-btn" id="acSignIn">Sign in</button>';
-      $("acSignIn").addEventListener("click", openAuth);
+      $("acSignIn").addEventListener("click", function () { openAuth("signin"); });
     }
   }
   // ---- auth modal ----
@@ -5042,9 +5053,9 @@
     $("authToggle").textContent = mode === "signup" ? "Already have an account? Sign in" : "Need an account? Create one";
     $("authPass").setAttribute("autocomplete", mode === "signup" ? "new-password" : "current-password");
   }
-  function openAuth() {
+  function openAuth(mode) {
     if (!sb) return;
-    setAuthMode(session ? "signin" : "signup");
+    setAuthMode((mode === "signin" || mode === "signup") ? mode : (session ? "signin" : "signup"));
     $("authEmail").value = ""; $("authPass").value = ""; $("authMsg").textContent = "";
     $("authMsg").style.color = ""; $("authModal").hidden = false;
     setTimeout(function () { $("authEmail").focus(); }, 50);
@@ -5074,6 +5085,7 @@
     $("authPass").addEventListener("keydown", function (e) { if (e.key === "Enter") authSubmit(); });
     $("authToggle").addEventListener("click", function () { setAuthMode(authMode === "signup" ? "signin" : "signup"); authMsg(""); });
     $("authGuest").addEventListener("click", closeAuth);
+    $("obSignin").addEventListener("click", function () { openAuth("signin"); }); // returning user, on a new device
     $("authModal").addEventListener("click", function (e) { if (e.target === this) closeAuth(); });
     $("authForgot").addEventListener("click", function () {
       var email = $("authEmail").value.trim();
