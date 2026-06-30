@@ -337,15 +337,16 @@
   /* prompt row + switch-prompt button */
   .prompt-row { display: flex; align-items: flex-start; gap: 12px; }
   .prompt-row .question { flex: 1; min-width: 0; }
-  .prompt-switch {
+  .prompt-switch, .prompt-collapse {
     flex-shrink: 0; margin-top: 4px; width: 32px; height: 32px; border-radius: 50%;
     background: none; border: 1px solid var(--field-edge); color: var(--ink-faint);
     cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
     transition: color 0.2s ease, border-color 0.2s ease, transform 0.3s ease;
   }
-  .prompt-switch svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-  .prompt-switch:hover { color: var(--accent); border-color: var(--accent); }
+  .prompt-switch svg, .prompt-collapse svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .prompt-switch:hover, .prompt-collapse:hover { color: var(--accent); border-color: var(--accent); }
   .prompt-switch:active { transform: rotate(-180deg); }
+  .prompt-collapse[hidden] { display: none; }
   /* collapse-after-save */
   .panel.collapsed .jp-edit { display: none; }
   .jp-collapsed {
@@ -1165,6 +1166,56 @@
   .spark-ring.big { width: 30px; height: 30px; animation-duration: 0.85s; }
   @media (prefers-reduced-motion: reduce) { .spark-layer { display: none; } }
 
+  /* ---- customize (widgets) mode ---- */
+  .wrap:not(.customizing) section.w-disabled { display: none; }
+  .customize-bar {
+    position: sticky; top: 0; z-index: 40; margin: 0 0 18px;
+    display: flex; align-items: center; gap: 12px; justify-content: space-between;
+    background: var(--panel); border: 1px solid var(--accent); border-radius: 12px;
+    padding: 12px 14px; box-shadow: 0 8px 24px -10px rgba(0,0,0,0.6);
+  }
+  .customize-bar[hidden] { display: none; }
+  .cb-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .cb-text b { font-size: 14px; color: var(--ink); }
+  .cb-text span { font-size: 11.5px; color: var(--ink-faint); }
+  .cb-done {
+    flex-shrink: 0; background: var(--accent); color: var(--bg); border: none; border-radius: 999px;
+    padding: 9px 20px; font-family: inherit; font-size: 12px; font-weight: 600; letter-spacing: 0.1em;
+    text-transform: uppercase; cursor: pointer;
+  }
+  .w-controls { display: none; }
+  .customizing section[data-w] {
+    position: relative; border: 1px dashed var(--field-edge); border-radius: 14px;
+    padding: 10px; margin-bottom: 12px; background: rgba(255,255,255,0.012);
+    transition: opacity 0.2s ease;
+  }
+  .customizing section[data-w].dragging { opacity: 0.5; border-color: var(--accent); border-style: solid; }
+  .customizing section[data-w].w-disabled { opacity: 0.4; }
+  /* freeze the real content; only the controls are interactive while customizing */
+  .customizing section[data-w] > :not(.w-controls) { pointer-events: none; }
+  .customizing .w-controls {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 10px;
+    padding: 4px 2px; touch-action: none;
+  }
+  .w-drag {
+    flex-shrink: 0; width: 34px; height: 34px; border-radius: 9px; cursor: grab;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: var(--field); border: 1px solid var(--field-edge); color: var(--ink-faint);
+  }
+  .w-drag:active { cursor: grabbing; }
+  .w-drag svg { width: 16px; height: 16px; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+  .w-title { flex: 1; min-width: 0; font-size: 14px; color: var(--ink); font-weight: 500; }
+  .w-switch {
+    flex-shrink: 0; width: 44px; height: 26px; border-radius: 999px; cursor: pointer;
+    background: var(--field); border: 1px solid var(--field-edge); position: relative; transition: background 0.2s ease;
+  }
+  .w-switch::after {
+    content: ""; position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; border-radius: 50%;
+    background: var(--ink-faint); transition: transform 0.2s ease, background 0.2s ease;
+  }
+  .w-switch.on { background: var(--accent); border-color: var(--accent); }
+  .w-switch.on::after { transform: translateX(18px); background: var(--bg); }
+
   /* ---- pillar entry button (the seven circles) ---- */
   .pillar-entry {
     width: 100%;
@@ -1766,10 +1817,18 @@
       <button class="icon-btn" id="lockNowBtn" aria-label="Lock now">
         <svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
       </button>
+      <button class="icon-btn" id="customizeBtn" aria-label="Customize home">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      </button>
       <button class="icon-btn" id="settingsBtn" aria-label="Settings">
         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
       </button>
       <button class="theme-toggle" id="themeToggle">Light</button>
+    </div>
+
+    <div class="customize-bar" id="customizeBar" hidden>
+      <div class="cb-text"><b>Customize your home</b><span>Drag to reorder · tap to show or hide</span></div>
+      <button class="cb-done" id="customizeDone">Done</button>
     </div>
 
     <header>
@@ -1789,7 +1848,7 @@
       </div>
     </header>
 
-    <section>
+    <section data-w="reading" data-w-title="Today's Reading">
       <div class="label-row">
         <p class="label">Today's Reading</p>
         <button class="label-btn" id="openBibleBtn">Open your Bible</button>
@@ -1798,7 +1857,7 @@
       <div class="ob-plan-note" style="margin-top:10px;">Suggested plans — pick one or several in Settings, or tap “Open your Bible” for anything.</div>
     </section>
 
-    <section>
+    <section data-w="journaling" data-w-title="Journaling Prompt">
       <p class="label">Journaling Prompt <span class="saved-tick" id="journalTick">Saved</span></p>
       <div class="panel" id="journalPanel">
         <button class="jp-collapsed" id="journalCollapsed" hidden>
@@ -1811,6 +1870,9 @@
             <p class="question serif" id="question"></p>
             <button class="prompt-switch" id="journalSwitch" aria-label="Try a different prompt" title="Try a different prompt">
               <svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+            </button>
+            <button class="prompt-collapse" id="journalCollapse" aria-label="Collapse" title="Collapse" hidden>
+              <svg viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"/></svg>
             </button>
           </div>
           <textarea class="journal-answer" id="journal" rows="3" placeholder="Write into it…"></textarea>
@@ -1829,7 +1891,7 @@
       </div>
     </section>
 
-    <section>
+    <section data-w="prayer" data-w-title="Prayer List">
       <button class="pillar-entry" id="prayerHead" aria-expanded="false">
         <span class="pe-icon"><svg viewBox="0 0 24 36" aria-hidden="true"><line x1="12" y1="3" x2="12" y2="31"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span>
         <div class="pe-meta">
@@ -1855,7 +1917,7 @@
     </section>
 
 
-    <section>
+    <section data-w="evening" data-w-title="End of Day Reflection">
       <p class="label">End of Day Reflection <span class="saved-tick" id="eveningTick">Saved</span></p>
       <div class="panel" id="eveningPanel">
         <button class="jp-collapsed" id="eveningCollapsed" hidden>
@@ -1868,6 +1930,9 @@
             <p class="question serif" id="eveningPrompt"></p>
             <button class="prompt-switch" id="eveningSwitch" aria-label="Try a different prompt" title="Try a different prompt">
               <svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+            </button>
+            <button class="prompt-collapse" id="eveningCollapse" aria-label="Collapse" title="Collapse" hidden>
+              <svg viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"/></svg>
             </button>
           </div>
           <textarea class="journal-answer" id="evening" rows="3" placeholder="Reflect before you close the day…"></textarea>
@@ -1886,7 +1951,7 @@
       </div>
     </section>
 
-    <section>
+    <section data-w="pillars" data-w-title="The Seven Pillars">
       <button class="pillar-entry" id="pillarsHead" aria-expanded="false">
         <div class="pe-orbs" id="peOrbs"></div>
         <div class="pe-meta">
@@ -1918,7 +1983,7 @@
       </div>
     </section>
 
-    <section>
+    <section data-w="habits" data-w-title="Keystone Habits">
       <p class="label">Keystone Habits <span class="saved-tick" id="habitTick">Saved</span></p>
       <div class="panel">
         <div class="habit-list" id="habitList"></div>
@@ -1935,7 +2000,7 @@
       </div>
     </section>
 
-    <section id="trendsSection">
+    <section id="trendsSection" data-w="trends" data-w-title="Trends">
       <p class="label">Trends · Integration over time</p>
       <div class="panel" id="trendsPanel">
         <div class="trend-head">
@@ -1951,7 +2016,7 @@
       </div>
     </section>
 
-    <section>
+    <section id="homeActions">
       <button class="save-entry" id="saveEntry">Save today's entry</button>
       <div class="save-confirm" id="saveConfirm"></div>
       <button class="past-toggle" id="openJournalBtn">Open your journal</button>
@@ -2355,6 +2420,7 @@
   db.evening = db.evening || {};          // dateKey -> string (end-of-day reflection answer)
   db.journalPromptIdx = db.journalPromptIdx || {}; // dateKey -> chosen journaling-prompt index
   db.eveningPromptIdx = db.eveningPromptIdx || {}; // dateKey -> chosen evening-prompt index
+  db.layout = Array.isArray(db.layout) ? db.layout : null; // [{key, on}] — home widget order + visibility
   db.openLog = db.openLog || {};          // dateKey -> true (days the app was opened — the chain)
   db.anchors = db.anchors || [];          // [{ref:"John 3:16", text, note, created}] — highlighted verses
   db.bibleCache = db.bibleCache || {};    // passage -> verses[] (so re-reads are instant + offline)
@@ -3464,11 +3530,12 @@
   var JCARDS = {
     journal: { prompts: questions, off: 0, store: "journalPromptIdx", data: "journal",
                promptId: "question", textId: "journal", panelId: "journalPanel",
-               collapsedId: "journalCollapsed", switchId: "journalSwitch", anotherId: "journalAnother" },
+               collapsedId: "journalCollapsed", switchId: "journalSwitch", anotherId: "journalAnother", collapseId: "journalCollapse" },
     evening: { prompts: eveningQuestions, off: 7, store: "eveningPromptIdx", data: "evening",
                promptId: "eveningPrompt", textId: "evening", panelId: "eveningPanel",
-               collapsedId: "eveningCollapsed", switchId: "eveningSwitch", anotherId: "eveningAnother" }
+               collapsedId: "eveningCollapsed", switchId: "eveningSwitch", anotherId: "eveningAnother", collapseId: "eveningCollapse" }
   };
+  function jcardSyncCollapseBtn(c) { $(c.collapseId).hidden = !$(c.textId).value.trim(); } // only offer "collapse" once there's something to keep
   function jcardIdx(c) {
     var stored = db[c.store][todayKey], n = c.prompts.length;
     if (typeof stored === "number") return ((stored % n) + n) % n;
@@ -3481,6 +3548,7 @@
     var t = $(c.textId), v = db[c.data][todayKey] || "";
     t.value = v; grow(t);
     jcardCollapse(c, !!v.trim());
+    jcardSyncCollapseBtn(c);
   }
   function jcardSwitch(c) {
     db[c.store][todayKey] = (jcardIdx(c) + 1) % c.prompts.length; save();
@@ -3488,6 +3556,7 @@
   }
   function jcardReopen(c) {
     jcardCollapse(c, false);
+    jcardSyncCollapseBtn(c);
     var t = $(c.textId); t.focus(); try { t.setSelectionRange(t.value.length, t.value.length); } catch (e) {} grow(t);
   }
   function jcardAnother(c) {
@@ -3500,6 +3569,8 @@
   Object.keys(JCARDS).forEach(function (k) {
     var c = JCARDS[k];
     $(c.switchId).addEventListener("click", function () { jcardSwitch(c); });
+    $(c.collapseId).addEventListener("click", function () { jcardCollapse(c, true); buzz(8); });
+    $(c.textId).addEventListener("input", function () { jcardSyncCollapseBtn(c); });
     $(c.collapsedId).addEventListener("click", function (e) { if (!e.target.closest("#" + c.anotherId)) jcardReopen(c); });
     $(c.anotherId).addEventListener("click", function (e) { e.stopPropagation(); jcardAnother(c); });
   });
@@ -5105,7 +5176,88 @@
     });
   }
 
+  // ================= customize mode (home widgets) =================
+  function widgetEls() { return Array.prototype.slice.call(document.querySelectorAll(".wrap > section[data-w]")); }
+  function widgetLayout() {
+    var els = widgetEls(), known = {};
+    els.forEach(function (s) { known[s.getAttribute("data-w")] = true; });
+    var lay = Array.isArray(db.layout) ? db.layout.filter(function (e) { return known[e.key]; }) : [];
+    var have = {}; lay.forEach(function (e) { have[e.key] = true; });
+    els.forEach(function (s) { var k = s.getAttribute("data-w"); if (!have[k]) lay.push({ key: k, on: true }); }); // new widgets appear, on by default
+    return lay;
+  }
+  function applyLayout() {
+    var lay = widgetLayout(), wrap = document.querySelector(".wrap"), anchor = $("homeActions"), map = {};
+    widgetEls().forEach(function (s) { map[s.getAttribute("data-w")] = s; });
+    lay.forEach(function (e) {
+      var s = map[e.key]; if (!s) return;
+      wrap.insertBefore(s, anchor);                 // re-sequence right before the action buttons
+      s.classList.toggle("w-disabled", !e.on);
+    });
+  }
+  function captureLayout() {
+    db.layout = widgetEls().map(function (s) { return { key: s.getAttribute("data-w"), on: !s.classList.contains("w-disabled") }; });
+    save();
+  }
+  var customizing = false, dragEl = null;
+  function enterCustomize() {
+    if (customizing) return;
+    customizing = true;
+    document.querySelector(".wrap").classList.add("customizing");
+    $("customizeBar").hidden = false;
+    widgetEls().forEach(function (s) {
+      var c = document.createElement("div");
+      c.className = "w-controls";
+      c.innerHTML =
+        '<span class="w-drag" aria-label="Drag to reorder"><svg viewBox="0 0 24 24"><line x1="5" y1="9" x2="19" y2="9"/><line x1="5" y1="15" x2="19" y2="15"/></svg></span>' +
+        '<span class="w-title">' + escapeHtml(s.getAttribute("data-w-title") || s.getAttribute("data-w")) + '</span>' +
+        '<span class="w-switch' + (s.classList.contains("w-disabled") ? "" : " on") + '" role="switch" aria-label="Show this section"></span>';
+      s.insertBefore(c, s.firstChild);
+      c.querySelector(".w-switch").addEventListener("click", function () {
+        var off = s.classList.toggle("w-disabled");
+        this.classList.toggle("on", !off);
+        buzz(8); captureLayout();
+      });
+      c.querySelector(".w-drag").addEventListener("pointerdown", function (e) { startDrag(e, s); });
+    });
+    buzz(10);
+  }
+  function exitCustomize() {
+    if (!customizing) return;
+    customizing = false;
+    Array.prototype.forEach.call(document.querySelectorAll(".w-controls"), function (c) { c.remove(); });
+    document.querySelector(".wrap").classList.remove("customizing");
+    $("customizeBar").hidden = true;
+    captureLayout();
+    playTick();
+  }
+  // pointer-based drag reorder
+  function startDrag(e, el) {
+    e.preventDefault();
+    dragEl = el; el.classList.add("dragging");
+    try { e.target.setPointerCapture(e.pointerId); } catch (err) {}
+    document.addEventListener("pointermove", onDragMove);
+    document.addEventListener("pointerup", endDrag, { once: true });
+  }
+  function onDragMove(e) {
+    if (!dragEl) return;
+    var siblings = widgetEls().filter(function (s) { return s !== dragEl; });
+    var anchor = $("homeActions"), wrap = document.querySelector(".wrap"), placed = false;
+    for (var i = 0; i < siblings.length; i++) {
+      var r = siblings[i].getBoundingClientRect();
+      if (e.clientY < r.top + r.height / 2) { wrap.insertBefore(dragEl, siblings[i]); placed = true; break; }
+    }
+    if (!placed) wrap.insertBefore(dragEl, anchor); // past the last one → drop at the end
+  }
+  function endDrag() {
+    document.removeEventListener("pointermove", onDragMove);
+    if (dragEl) { dragEl.classList.remove("dragging"); dragEl = null; buzz(10); captureLayout(); }
+  }
+  $("customizeBtn").addEventListener("click", function () { customizing ? exitCustomize() : enterCustomize(); });
+  $("customizeDone").addEventListener("click", exitCustomize);
+
   // ================= init + auto-renew =================
+  applyLayout();
   dailyRefresh();
 
   // journal: dock on wide screens, overlay on narrow
