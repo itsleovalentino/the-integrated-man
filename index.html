@@ -2934,6 +2934,17 @@
         <p class="ob-reading-hint" style="text-align:left;margin-top:6px;">Tap <a href="https://cloud.ouraring.com/personal-access-tokens" target="_blank" rel="noopener" class="oura-link">Get your Oura token&nbsp;↗</a>, create one, copy it, and paste it above. It's stored privately in your own account.</p>
       </div>
 
+      <label class="field-label">Dramatized audio (Bible Brain)</label>
+      <div class="oura-connect" id="fcbhConnect">
+        <input type="password" id="fcbhKey" placeholder="Bible Brain API key" autocomplete="off" />
+        <div class="oura-row">
+          <button class="modal-secondary" id="fcbhSave" style="flex:1;">Connect</button>
+          <button class="modal-secondary" id="fcbhDisconnect" style="flex:1;" hidden>Disconnect</button>
+        </div>
+        <div class="oura-msg" id="fcbhMsg"></div>
+        <p class="ob-reading-hint" style="text-align:left;margin-top:6px;">Adds full <b>Old + New Testament</b> dramatized audio. Request a free key at <a href="https://4.dbt.io/api_key/request" target="_blank" rel="noopener" class="oura-link">Bible Brain&nbsp;↗</a> (non-commercial), then paste it here.</p>
+      </div>
+
       <label class="field-label">Your data</label>
       <div class="settings-data">
         <button class="modal-secondary" id="exportBtn">Back up my data</button>
@@ -3216,6 +3227,7 @@
   db.gratitude = db.gratitude || {};      // dateKey -> [g1, g2, g3]
   db.oura = db.oura || null;              // { token } — personal Oura access token (private to this account)
   if (typeof db.stepGoal !== "number") db.stepGoal = 8000;   // daily steps goal (Oura activity)
+  db.fcbhKey = db.fcbhKey || null;        // Bible Brain (FCBH) API key → full OT+NT dramatized audio
   db.weather = db.weather || null;        // { name, lat, lon } — chosen city for the weather widget
   db.prayers = db.prayers || [];          // [{id, scope:'others'|'mine', who, text, created, answered}]
   db.habits = db.habits || [];            // [{id, name, icon}]
@@ -4351,19 +4363,62 @@
     clearReadingHl(); vEl.classList.add("reading");
     try { vEl.scrollIntoView({ block: "center", behavior: "smooth" }); } catch (e) {}
   }
-  function audioAvailable(passage) { return !!curVersionAudioId() && isNTPassage(passage); }   // audio must MATCH the translation
+  // Audio source resolution: FCBH Bible Brain (full OT+NT dramatized) when connected,
+  // else API.Bible's WEB Drama NT. Everything fails safe — no source → button hidden / gentle message.
+  var fcbhSets = null;
+  function fcbhDiscover(cb) {
+    if (fcbhSets) { cb(fcbhSets); return; }
+    if (!db.fcbhKey) { cb([]); return; }
+    fetch("https://4.dbt.io/api/bibles?v=4&key=" + encodeURIComponent(db.fcbhKey) + "&language_code=eng&media=audio_drama&limit=30")
+      .then(function (r) { return r.json(); })
+      .then(function (j) {
+        var ids = [];
+        ((j && j.data) || []).forEach(function (b) {
+          var fs = b.filesets || {};
+          Object.keys(fs).forEach(function (k) { (fs[k] || []).forEach(function (f) { if (f && f.id && /audio/.test(f.type || "") && ids.indexOf(f.id) < 0) ids.push(f.id); }); });
+        });
+        fcbhSets = ids; cb(ids);
+      }).catch(function () { cb([]); });
+  }
+  function fcbhChapterAudio(passage, cb) {
+    if (!db.fcbhKey) { cb(null); return; }
+    var m = (passage || "").match(/^(.*?)\s+(\d+)$/); if (!m) { cb(null); return; }
+    var book = abbrevOf(m[1].trim()), ch = m[2]; if (!book) { cb(null); return; }
+    fcbhDiscover(function (sets) {
+      if (!sets.length) { cb(null); return; }
+      var i = 0;
+      (function tryNext() {
+        if (i >= sets.length) { cb(null); return; }
+        var fid = sets[i++];
+        fetch("https://4.dbt.io/api/bibles/filesets/" + fid + "/" + book + "/" + ch + "?v=4&key=" + encodeURIComponent(db.fcbhKey))
+          .then(function (r) { return r.json(); })
+          .then(function (j) { var p = j && j.data && j.data[0] && j.data[0].path; if (p) cb(p); else tryNext(); })
+          .catch(tryNext);
+      })();
+    });
+  }
+  function apiBibleChapterAudio(passage, cb) {
+    var aid = curVersionAudioId(), cid = chapterIdOf(passage);
+    if (!aid || !cid || !isNTPassage(passage)) { cb(null); return; }
+    apiBible("/audio-bibles/" + aid + "/chapters/" + cid, function (res) { cb((res && res.data && res.data.resourceUrl) || null); });
+  }
+  function resolveAudioUrl(passage, cb) {
+    if (db.fcbhKey) { fcbhChapterAudio(passage, function (url) { if (url) cb(url); else apiBibleChapterAudio(passage, cb); }); return; }
+    apiBibleChapterAudio(passage, cb);
+  }
+  function audioAvailable(passage) { return !!db.fcbhKey || (!!curVersionAudioId() && isNTPassage(passage)); }
   function updateAudioBtn(passage) {
     var btn = $("bibleAudio"); if (!btn) return;
-    stopAudio(); audioReady = { chapterId: null, url: null, audioId: null };
+    stopAudio(); audioReady = { chapterId: null, url: null };
     btn.hidden = !audioAvailable(passage);
     if (audioAvailable(passage)) preloadAudio(passage);
   }
   function preloadAudio(passage) {
-    var aid = curVersionAudioId(), cid = chapterIdOf(passage); if (!aid || !cid) return;
-    apiBible("/audio-bibles/" + aid + "/chapters/" + cid, function (res) {
-      if (res && res.data && res.data.resourceUrl && chapterIdOf(db.lastPassage) === cid) {
-        audioReady = { chapterId: cid, url: res.data.resourceUrl, audioId: aid };
-        var el = $("bibleAudioEl"); el.src = res.data.resourceUrl; try { el.load(); } catch (e) {}   // preload so tap-to-play is gesture-synchronous (iOS)
+    var cid = chapterIdOf(passage); if (!cid) return;
+    resolveAudioUrl(passage, function (url) {
+      if (url && chapterIdOf(db.lastPassage) === cid) {
+        audioReady = { chapterId: cid, url: url };
+        var el = $("bibleAudioEl"); el.src = url; try { el.load(); } catch (e) {}   // preload so tap-to-play is gesture-synchronous (iOS)
       }
     });
   }
@@ -4376,8 +4431,7 @@
     else applyAudioRate();
   }
   function playFromVerse(vEl) {
-    var aid = curVersionAudioId();
-    if (!aid || !isNTPassage(db.lastPassage)) { showToastMsg("Audio isn’t available here."); return; }
+    if (!audioAvailable(db.lastPassage)) { showToastMsg("Audio isn’t available here."); return; }
     buildAudioVerseMap();
     var idx = audioEls.indexOf(vEl); if (idx < 0) return;
     var el = $("bibleAudioEl"), cid = chapterIdOf(db.lastPassage || "");
@@ -4387,28 +4441,23 @@
       if (p && p.then) p.then(function () { if (el.duration) go(); else el.addEventListener("loadedmetadata", go, { once: true }); });
       else go();
     }
-    if (el.src && audioReady.chapterId === cid && audioReady.audioId === aid) { seekAndGo(); }
+    if (el.src && audioReady.chapterId === cid) { seekAndGo(); }
     else {
       try { var pr = el.play(); if (pr && pr.catch) pr.catch(function () {}); } catch (e) {}
-      apiBible("/audio-bibles/" + aid + "/chapters/" + cid, function (res) {
-        if (res && res.data && res.data.resourceUrl) { audioReady = { chapterId: cid, url: res.data.resourceUrl, audioId: aid }; el.src = res.data.resourceUrl; seekAndGo(); }
-        else showToastMsg("Couldn’t load the audio.");
-      });
+      resolveAudioUrl(db.lastPassage, function (url) { if (url) { audioReady = { chapterId: cid, url: url }; el.src = url; seekAndGo(); } else showToastMsg("Couldn’t load the audio."); });
     }
   }
   function toggleBibleAudio() {
     var el = $("bibleAudioEl"), btn = $("bibleAudio");
     if (el && !el.paused) { el.pause(); return; }
-    var aid = curVersionAudioId();
-    if (!aid || !isNTPassage(db.lastPassage)) { showToastMsg("Dramatized audio is available for the New Testament in the World English translation."); return; }
+    if (!audioAvailable(db.lastPassage)) { showToastMsg("Dramatized audio isn’t available for this chapter."); return; }
     var cid = chapterIdOf(db.lastPassage || "");
-    if (el.src && audioReady.chapterId === cid && audioReady.audioId === aid) { playAudioEl(); return; }   // preloaded → play synchronously in the gesture (iOS)
-    // Not preloaded yet: unlock the element within the gesture (iOS), then fetch + play.
-    try { var pr = el.play(); if (pr && pr.catch) pr.catch(function () {}); } catch (e) {}
+    if (el.src && audioReady.chapterId === cid) { playAudioEl(); return; }   // preloaded → play synchronously in the gesture (iOS)
+    try { var pr = el.play(); if (pr && pr.catch) pr.catch(function () {}); } catch (e) {}   // unlock the element within the gesture (iOS)
     btn.classList.add("loading");
-    apiBible("/audio-bibles/" + aid + "/chapters/" + cid, function (res) {
+    resolveAudioUrl(db.lastPassage, function (url) {
       btn.classList.remove("loading");
-      if (res && res.data && res.data.resourceUrl) { audioReady = { chapterId: cid, url: res.data.resourceUrl, audioId: aid }; el.src = res.data.resourceUrl; playAudioEl(); }
+      if (url) { audioReady = { chapterId: cid, url: url }; el.src = url; playAudioEl(); }
       else { showToastMsg("Couldn’t load the audio — try again."); }
     });
   }
@@ -4915,6 +4964,35 @@
     db.oura = null; ouraCache = null; save();
     renderOuraSettings(); renderHealth();
     var m = $("ouraMsg"); m.className = "oura-msg"; m.textContent = "Disconnected.";
+  });
+
+  // Settings: connect / disconnect Bible Brain (FCBH) — full OT+NT dramatized audio
+  function renderFcbhSettings() {
+    var connected = !!db.fcbhKey;
+    $("fcbhKey").value = "";
+    $("fcbhKey").placeholder = connected ? "Connected — paste a new key to replace" : "Bible Brain API key";
+    $("fcbhDisconnect").hidden = !connected;
+    $("fcbhSave").textContent = connected ? "Update" : "Connect";
+    var m = $("fcbhMsg"); m.className = "oura-msg"; m.textContent = connected ? "Connected — full Bible dramatized audio." : "";
+  }
+  $("fcbhSave").addEventListener("click", function () {
+    var t = $("fcbhKey").value.trim(), m = $("fcbhMsg");
+    if (!t) { m.className = "oura-msg err"; m.textContent = "Paste your Bible Brain key first."; return; }
+    m.className = "oura-msg"; m.textContent = "Checking your key…";
+    fetch("https://4.dbt.io/api/bibles?v=4&key=" + encodeURIComponent(t) + "&language_code=eng&media=audio_drama&limit=5")
+      .then(function (r) { return r.json(); })
+      .then(function (j) {
+        if (j && j.data) {
+          db.fcbhKey = t; fcbhSets = null; save(); renderFcbhSettings();
+          if (typeof updateAudioBtn === "function" && currentView === "bible") updateAudioBtn(db.lastPassage);
+          m.className = "oura-msg"; m.textContent = "Connected — dramatized OT + NT audio is on.";
+        } else { m.className = "oura-msg err"; m.textContent = (j && j.error && (j.error.message || j.error)) || "That key was rejected."; }
+      }).catch(function () { m.className = "oura-msg err"; m.textContent = "Couldn’t reach Bible Brain — check the key."; });
+  });
+  $("fcbhDisconnect").addEventListener("click", function () {
+    db.fcbhKey = null; fcbhSets = null; save(); renderFcbhSettings();
+    if (typeof updateAudioBtn === "function" && currentView === "bible") updateAudioBtn(db.lastPassage);
+    var m = $("fcbhMsg"); m.className = "oura-msg"; m.textContent = "Disconnected.";
   });
 
   // ----- Local Weather (Open-Meteo — free, browser-friendly, no key) -----
@@ -6880,6 +6958,7 @@
     if (typeof renderAccount === "function") renderAccount();
     if (typeof renderSnapButton === "function") renderSnapButton();
     if (typeof renderOuraSettings === "function") renderOuraSettings();
+    if (typeof renderFcbhSettings === "function") renderFcbhSettings();
     $("settingsMsg").textContent = "";
     $("lockCoach").hidden = true; $("lockToggle").classList.remove("coach-target"); // clear any coach mark
     $("settings").hidden = false;
