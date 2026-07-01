@@ -2011,26 +2011,33 @@
   .writer-date { flex: 1; text-align: center; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-faint); }
   .writer-save { flex: 0 0 auto; background: none; border: none; color: var(--accent); font-family: inherit; font-size: 15.5px; font-weight: 600; letter-spacing: 0.01em; cursor: pointer; padding: 8px 12px; transition: opacity 0.2s ease; }
   .writer-save:active { opacity: 0.5; }
-  .writer-scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  .writer-scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding-bottom: 40px; }
+  .writer-title, .writer-body { outline: none; box-sizing: border-box; max-width: 660px; margin: 0 auto; word-wrap: break-word; caret-color: var(--accent); }
+  /* the title stays a bold serif for its whole line — until you press return */
+  .writer-title {
+    padding: 14px 26px 2px;
+    font-family: "Fraunces", Georgia, serif; font-weight: 600; font-size: 26px; line-height: 1.3;
+    letter-spacing: -0.01em; color: var(--ink);
+  }
+  .writer-title.is-empty::before { content: attr(data-ph); color: var(--ink-faint); font-style: italic; font-weight: 500; pointer-events: none; }
   .writer-body {
-    min-height: 100%; outline: none; box-sizing: border-box;
-    max-width: 660px; margin: 0 auto; padding: 14px 26px 60px;
+    min-height: 42vh; padding: 6px 26px 20px;
     font-family: inherit; font-size: 18.5px; line-height: 1.7; color: var(--ink);
-    caret-color: var(--accent); word-wrap: break-word;
   }
-  /* the first visual line reads as a bold serif title, Apple-Notes style */
-  .writer-body::first-line { font-family: "Fraunces", Georgia, serif; font-weight: 600; font-size: 26px; line-height: 1.3; letter-spacing: -0.01em; }
-  .writer-body.is-empty::before {
-    content: attr(data-ph); color: var(--ink-faint);
-    font-family: "Fraunces", Georgia, serif; font-weight: 500; font-size: 26px; font-style: italic;
-    pointer-events: none;
-  }
-  .writer-tools { display: flex; align-items: center; gap: 14px; padding: 8px 24px calc(16px + env(safe-area-inset-bottom)); }
-  .writer-mic { flex: 0 0 auto; width: 44px; height: 44px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: var(--field); border: 1px solid var(--field-edge); color: var(--ink-soft); cursor: pointer; transition: color 0.2s ease, border-color 0.2s ease; }
+  .writer-body.is-empty::before { content: attr(data-ph); color: var(--ink-faint); font-style: italic; pointer-events: none; }
+  .writer-body b, .writer-body strong { font-weight: 700; }
+  .writer-body i, .writer-body em { font-style: italic; }
+  .writer-tools { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 22px calc(14px + env(safe-area-inset-bottom)); border-top: 1px solid var(--field-edge); }
+  .writer-fmt { display: flex; gap: 8px; }
+  .fmt-btn { width: 42px; height: 40px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; background: var(--field); border: 1px solid var(--field-edge); color: var(--ink-soft); cursor: pointer; font-size: 17px; transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease; }
+  .fmt-btn .fmt-b { font-weight: 700; }
+  .fmt-btn .fmt-i { font-style: italic; font-family: "Fraunces", Georgia, serif; }
+  .fmt-btn.active { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+  .fmt-btn:active { transform: scale(0.94); }
+  .writer-mic { flex: 0 0 auto; width: 42px; height: 40px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; background: var(--field); border: 1px solid var(--field-edge); color: var(--ink-soft); cursor: pointer; transition: color 0.2s ease, border-color 0.2s ease; }
   .writer-mic:hover { color: var(--ink); }
   .writer-mic svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
   .writer-mic.recording { color: #d0806a; border-color: #d0806a; animation: jpRecPulse 1.1s ease-in-out infinite; }
-  .writer-hint { font-size: 12.5px; color: var(--ink-faint); }
   .jp-compose { background: var(--field); border: 1px solid var(--field-edge); border-radius: 16px; padding: 16px 18px; margin-bottom: 26px; transition: border-color 0.2s ease; }
   .jp-compose:focus-within { border-color: var(--accent); }
   .jp-text { min-height: 210px; background: transparent; border: none; outline: none; color: var(--ink); font-family: "Fraunces", Georgia, serif; font-size: calc(18px * var(--read-scale)); line-height: 1.62; white-space: pre-wrap; word-wrap: break-word; -webkit-user-modify: read-write-plaintext-only; }
@@ -2900,13 +2907,17 @@
       <button class="writer-save" id="writerSave">Done</button>
     </div>
     <div class="writer-scroll">
+      <div class="writer-title is-empty" id="writerTitle" contenteditable="true" data-ph="Title" autocapitalize="sentences" spellcheck="true"></div>
       <div class="writer-body is-empty" id="writerText" contenteditable="true" data-ph="Start writing…" autocapitalize="sentences" spellcheck="true"></div>
     </div>
     <div class="writer-tools">
+      <div class="writer-fmt">
+        <button class="fmt-btn" id="fmtBold" type="button" aria-label="Bold"><span class="fmt-b">B</span></button>
+        <button class="fmt-btn" id="fmtItalic" type="button" aria-label="Italic"><span class="fmt-i">I</span></button>
+      </div>
       <button class="writer-mic" id="writerRec" aria-label="Record a voice note">
         <svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><line x1="12" y1="18" x2="12" y2="22"/></svg>
       </button>
-      <span class="writer-hint">First line becomes your title</span>
     </div>
   </div>
 
@@ -5754,16 +5765,36 @@
   // ---- Focused writer: a blank canvas opened by the journal bubble / "Write a note" ----
   var writerRec = null, writerChunks = [], writerVoice = null;
   function writerTextValue() { return ($("writerText").innerText || "").replace(/ /g, " "); }
-  function syncWriterEmpty() { $("writerText").classList.toggle("is-empty", !writerTextValue().trim()); }
+  function titlePlain() { return ($("writerTitle").innerText || "").split("\n").join(" ").trim(); }
+  function syncWriterEmpty() {
+    $("writerTitle").classList.toggle("is-empty", !titlePlain());
+    $("writerText").classList.toggle("is-empty", !writerTextValue().trim());
+  }
+  function sanitizeNoteHtml(html) {
+    var tmp = document.createElement("div");
+    tmp.innerHTML = html || "";
+    var allowed = { B: 1, STRONG: 1, I: 1, EM: 1, U: 1, BR: 1, DIV: 1, P: 1 };
+    (function walk(node) {
+      Array.prototype.slice.call(node.childNodes).forEach(function (c) {
+        if (c.nodeType === 1) {
+          if (!allowed[c.tagName]) { while (c.firstChild) node.insertBefore(c.firstChild, c); node.removeChild(c); return; }
+          for (var i = c.attributes.length - 1; i >= 0; i--) c.removeAttribute(c.attributes[i].name);
+          walk(c);
+        } else if (c.nodeType === 8) { node.removeChild(c); }
+      });
+    })(tmp);
+    return tmp.innerHTML;
+  }
   function openWriter() {
     writerVoice = null;
-    $("writerText").innerHTML = "";
+    $("writerTitle").innerHTML = ""; $("writerText").innerHTML = "";
     syncWriterEmpty();
+    $("fmtBold").classList.remove("active"); $("fmtItalic").classList.remove("active");
     $("writerRec").classList.remove("recording");
     try { $("writerDate").textContent = new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" }); } catch (e) { $("writerDate").textContent = ""; }
     $("writerView").hidden = false;
     buzz(18); if (typeof playPop === "function") playPop();
-    setTimeout(function () { $("writerText").focus(); }, 90);
+    setTimeout(function () { $("writerTitle").focus(); }, 90);
   }
   function stopWriterRec() { if (writerRec && writerRec.state !== "inactive") { try { writerRec.stop(); } catch (e) {} } }
   function writerToNotes() {
@@ -5771,9 +5802,14 @@
     journalTab = "notes"; setView("journal");
   }
   function saveWriter() {
-    var text = writerTextValue().replace(/\n{3,}/g, "\n\n").trim();
-    if (!text && !writerVoice) { $("writerText").focus(); return; }
-    addThought({ text: text, voice: writerVoice });
+    var title = titlePlain();
+    var bodyText = writerTextValue().replace(/\n{3,}/g, "\n\n").trim();
+    // nothing written → just return to the notes, no entry created
+    if (!title && !bodyText && !writerVoice) { writerToNotes(); return; }
+    var combined = title + (title && bodyText ? "\n" : "") + bodyText;
+    var bodyHtml = sanitizeNoteHtml($("writerText").innerHTML);
+    var hasRich = /<(b|strong|i|em|u)\b/i.test(bodyHtml);
+    addThought({ text: combined, title: title || null, html: hasRich ? bodyHtml : null, voice: writerVoice });
     writerVoice = null;
     fb("success");
     writerToNotes();
@@ -5782,8 +5818,27 @@
   $("notesNew").addEventListener("click", openWriter);
   $("writerClose").addEventListener("click", writerToNotes);
   $("writerSave").addEventListener("click", saveWriter);
+  $("writerTitle").addEventListener("input", syncWriterEmpty);
   $("writerText").addEventListener("input", syncWriterEmpty);
+  $("writerTitle").addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); $("writerText").focus(); } });
   $("writerText").addEventListener("keydown", function (e) { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); saveWriter(); } });
+  function applyFmt(cmd) {
+    $("writerText").focus();
+    try { document.execCommand("styleWithCSS", false, false); } catch (e) {}
+    try { document.execCommand(cmd, false, null); } catch (e) {}
+    syncFmtState(); syncWriterEmpty();
+  }
+  function syncFmtState() {
+    var b = false, i = false;
+    try { b = document.queryCommandState("bold"); i = document.queryCommandState("italic"); } catch (e) {}
+    $("fmtBold").classList.toggle("active", b);
+    $("fmtItalic").classList.toggle("active", i);
+  }
+  $("fmtBold").addEventListener("mousedown", function (e) { e.preventDefault(); applyFmt("bold"); });
+  $("fmtItalic").addEventListener("mousedown", function (e) { e.preventDefault(); applyFmt("italic"); });
+  $("fmtBold").addEventListener("touchstart", function (e) { e.preventDefault(); applyFmt("bold"); }, { passive: false });
+  $("fmtItalic").addEventListener("touchstart", function (e) { e.preventDefault(); applyFmt("italic"); }, { passive: false });
+  document.addEventListener("selectionchange", function () { if (!$("writerView").hidden) syncFmtState(); });
   $("writerRec").addEventListener("click", function () {
     var btn = this;
     if (writerRec && writerRec.state === "recording") { try { writerRec.stop(); } catch (e) {} return; }
@@ -5814,11 +5869,17 @@
     try { when += " · " + new Date(t.ts).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" }); } catch (e) {}
     $("paperDate").textContent = when;
     var lines = (t.text || "").split("\n");
-    var title = (lines[0] || "").trim();
-    var body = lines.slice(1).join("\n").replace(/^\n+|\n+$/g, "");
+    var hasTitle = !!(t.title && t.title.trim());
+    var title = hasTitle ? t.title.trim() : (t.html ? "" : (lines[0] || "").trim());
     var html = "";
     if (title) html += '<div class="paper-note-title serif">' + escapeHtml(title) + '</div>';
-    if (body) html += '<div class="paper-text">' + escapeHtml(body) + '</div>';
+    if (t.html) {
+      // rich body (bold/italic) — sanitized on save; sanitize again on read to be safe
+      html += '<div class="paper-text">' + sanitizeNoteHtml(t.html) + '</div>';
+    } else {
+      var body = lines.slice(1).join("\n").replace(/^\n+|\n+$/g, "");
+      if (body) html += '<div class="paper-text">' + escapeHtml(body) + '</div>';
+    }
     if (t.voice) html += '<div class="paper-section"><audio controls src="' + t.voice + '" style="width:100%;"></audio></div>';
     if (!html) html = '<div class="paper-empty">An empty note.</div>';
     $("paperBody").innerHTML = html;
@@ -5951,6 +6012,7 @@
   function addThought(o) {
     db.thoughts.push({
       id: newId("t"), text: (o.text || "").trim(), voice: o.voice || null,
+      title: o.title || null, html: o.html || null,
       mood: (typeof o.mood === "number") ? o.mood : null, star: false,
       ts: new Date().toISOString(), dateKey: todayKey
     });
@@ -7067,7 +7129,7 @@
     db.textSize = b.getAttribute("data-ts"); save(); applyTextSize(db.textSize); buzz(8);
   });
 
-  var APP_VERSION = "v36";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v37";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
