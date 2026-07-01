@@ -257,6 +257,8 @@
   .oura-row { display: flex; gap: 8px; margin-top: 8px; }
   .oura-msg { font-size: 12.5px; color: var(--accent); margin-top: 8px; min-height: 16px; }
   .oura-msg.err { color: #d08a72; }
+  .oura-link { color: var(--accent); font-weight: 500; text-decoration: underline; text-underline-offset: 2px; }
+  .oura-link:hover { opacity: 0.85; }
   .health-rings { display: flex; gap: 16px; justify-content: center; }
   .health-ring { flex: 1; max-width: 130px; text-align: center; }
   .hr-wrap { position: relative; width: 100px; height: 100px; margin: 0 auto; }
@@ -2522,7 +2524,7 @@
           <button class="modal-secondary" id="ouraDisconnect" style="flex:1;" hidden>Disconnect</button>
         </div>
         <div class="oura-msg" id="ouraMsg"></div>
-        <p class="ob-reading-hint" style="text-align:left;margin-top:6px;">Get a token at <b>cloud.ouraring.com → Personal Access Tokens</b>. Stored privately in your own account.</p>
+        <p class="ob-reading-hint" style="text-align:left;margin-top:6px;">Tap <a href="https://cloud.ouraring.com/personal-access-tokens" target="_blank" rel="noopener" class="oura-link">Get your Oura token&nbsp;↗</a>, create one, copy it, and paste it above. It's stored privately in your own account.</p>
       </div>
 
       <label class="field-label">Your data</label>
