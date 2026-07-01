@@ -1914,6 +1914,7 @@
 
   /* Journal destination */
   .journal-page { max-width: 620px; margin: 0 auto; padding: 4px 18px 120px; }
+  .jt-seg { margin-bottom: 20px; }
   .jp-compose { background: var(--field); border: 1px solid var(--field-edge); border-radius: 16px; padding: 16px 18px; margin-bottom: 26px; transition: border-color 0.2s ease; }
   .jp-compose:focus-within { border-color: var(--accent); }
   .jp-text { min-height: 210px; background: transparent; border: none; outline: none; color: var(--ink); font-family: "Fraunces", Georgia, serif; font-size: calc(18px * var(--read-scale)); line-height: 1.62; white-space: pre-wrap; word-wrap: break-word; -webkit-user-modify: read-write-plaintext-only; }
@@ -3017,14 +3018,23 @@
   <div class="appview" id="journalView" hidden>
     <div class="fellow-chrome"><div class="fellow-title serif">Journal</div></div>
     <div class="journal-page">
-      <div class="jp-compose">
-        <div class="jp-text" id="jpText" contenteditable="true" data-placeholder="Start writing… your first line becomes the title."></div>
-        <div class="jp-actions">
-          <button class="jp-rec" id="jpRec" aria-label="Record a voice memo"><span class="rec-dot"></span></button>
-          <button class="jp-add" id="jpSubmit">Add</button>
-        </div>
+      <div class="seg jt-seg" id="journalSeg">
+        <button class="seg-btn active" data-jt="days">Days</button>
+        <button class="seg-btn" data-jt="notes">Notes</button>
       </div>
-      <div class="jp-stream" id="journalStream"></div>
+      <div id="jtDays">
+        <div class="jd-list" id="journalDays"></div>
+      </div>
+      <div id="jtNotes" hidden>
+        <div class="jp-compose">
+          <div class="jp-text" id="jpText" contenteditable="true" data-placeholder="Start writing… your first line becomes the title."></div>
+          <div class="jp-actions">
+            <button class="jp-rec" id="jpRec" aria-label="Record a voice memo"><span class="rec-dot"></span></button>
+            <button class="jp-add" id="jpSubmit">Add</button>
+          </div>
+        </div>
+        <div class="jp-stream" id="journalStream"></div>
+      </div>
     </div>
   </div>
 
@@ -5327,7 +5337,7 @@
     $("fellowshipView").hidden = (name !== "fellowship");
     ["home", "journal", "bible", "fellowship"].forEach(function (v) { var b = $("nav_" + v); if (b) b.classList.toggle("active", v === name); });
     var fab = $("fab"); if (fab) fab.hidden = true;   // the floating bubble is retired — journaling lives on the Journal tab
-    if (name === "journal") renderJournalPage();
+    if (name === "journal") renderJournalTab();
     if (name === "fellowship") { renderProfileBtn(); openWall(); }
     if (name !== "bible" && typeof closeVerseMenu === "function") closeVerseMenu();
     syncNavPosition();
@@ -5473,13 +5483,10 @@
     if (isNaN(d.getTime())) d = new Date();
     return { dow: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][d.getDay()], day: d.getDate() };
   }
-  function jpEntries() {   // one journal: free writes + voice memos + the prompt answers
-    var list = [];
-    (db.thoughts || []).forEach(function (t) { list.push({ kind: "note", id: t.id, text: t.text || "", voice: t.voice || null, star: !!t.star, ts: t.ts, dateKey: t.dateKey }); });
-    Object.keys(db.journal || {}).forEach(function (k) { var v = db.journal[k]; if (v && v.trim()) list.push({ kind: "prompt", id: "j_" + k, text: v, prompt: (typeof morningPromptFor === "function" ? morningPromptFor(k) : "Journaling prompt"), ts: k + "T12:00:00", dateKey: k }); });
-    Object.keys(db.evening || {}).forEach(function (k) { var v = db.evening[k]; if (v && v.trim()) list.push({ kind: "evening", id: "e_" + k, text: v, prompt: (typeof eveningPromptFor === "function" ? eveningPromptFor(k) : "Evening reflection"), ts: k + "T21:00:00", dateKey: k }); });
-    list.sort(function (a, b) { return a.ts < b.ts ? 1 : -1; });
-    return list;
+  function jpEntries() {   // Notes = your freeform writes + voice memos (prompts/gratitude/pillars live under Days)
+    return (db.thoughts || []).map(function (t) {
+      return { kind: "note", id: t.id, text: t.text || "", voice: t.voice || null, star: !!t.star, ts: t.ts, dateKey: t.dateKey };
+    }).sort(function (a, b) { return a.ts < b.ts ? 1 : -1; });
   }
   function renderJournalPage() {
     var el = $("journalStream"); if (!el) return;
@@ -5505,6 +5512,46 @@
         '</div></div>';
     }).join("");
   }
+  // Days = your compiled daily records (prompts + gratitude + the Seven Pillars + everything you saved that day)
+  function renderJournalDays() {
+    var el = $("journalDays"); if (!el) return;
+    var keys = journalKeys();
+    if (!keys.length) {
+      el.innerHTML = '<div class="jp-empty">No days saved yet.<br>Your reflections, gratitude, and pillar check-ins gather here.</div>';
+      return;
+    }
+    var pinned = keys.filter(function (k) { return db.pinned[k]; });
+    var rest = keys.filter(function (k) { return !db.pinned[k]; });
+    var html = "";
+    if (pinned.length) { html += '<div class="j-group">Pinned</div>'; pinned.forEach(function (k) { html += entryItemHtml(k); }); }
+    var cur = "";
+    rest.forEach(function (k) {
+      var ml = fmtMonth(k);
+      if (ml !== cur) { cur = ml; html += '<div class="j-group">' + ml + '</div>'; }
+      html += entryItemHtml(k);
+    });
+    el.innerHTML = html;
+  }
+  $("journalDays").addEventListener("click", function (e) {
+    var item = e.target.closest(".je"); if (!item) return;
+    var k = item.getAttribute("data-k");
+    if (e.target.closest('[data-act="menu"]')) { openJeMenu(e.target.closest('[data-act="menu"]'), k); return; }
+    openPage(k);   // the full compiled day page (pillars, gratitude, prompts…)
+  });
+  // Journal tab segmented control: Days (records) / Notes (freeform)
+  var journalTab = "days";
+  function renderJournalTab() {
+    var days = journalTab !== "notes";
+    $("jtDays").hidden = !days; $("jtNotes").hidden = days;
+    Array.prototype.forEach.call($("journalSeg").children, function (b) {
+      b.classList.toggle("active", b.getAttribute("data-jt") === journalTab);
+    });
+    if (days) renderJournalDays(); else renderJournalPage();
+  }
+  $("journalSeg").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-jt]"); if (!b) return;
+    journalTab = b.getAttribute("data-jt"); renderJournalTab(); buzz(8);
+  });
   $("jpSubmit").addEventListener("click", function () {
     var el = $("jpText"), text = (el.innerText || "").replace(/ /g, " ").replace(/\n{3,}/g, "\n\n").trim();
     if (!text) { el.focus(); return; }
@@ -6551,7 +6598,7 @@
   $("jePin").addEventListener("click", function () {
     if (!jeKey) return;
     if (db.pinned[jeKey]) delete db.pinned[jeKey]; else db.pinned[jeKey] = true;
-    save(); renderJournal(); closeJeMenu();
+    save(); renderJournal(); renderJournalDays(); closeJeMenu();
   });
   $("jeDelete").addEventListener("click", function () {
     if (!jeKey) return;
@@ -6574,7 +6621,7 @@
     delete db.morning[k]; delete db.journal[k]; delete db.evening[k];
     delete db.reflections[k]; delete db.ratings[k]; delete db.openLog[k]; delete db.pinned[k];
     delete db.voice.journal[k]; delete db.voice.evening[k];
-    save(); renderJournal(); renderChain(); updateTrashCount();
+    save(); renderJournal(); renderJournalDays(); renderChain(); updateTrashCount();
     if (typeof loadDayFields === "function" && k === todayKey) loadDayFields(); // clear today's fields if deleted
   }
   function restoreEntry(k) {
@@ -6589,7 +6636,7 @@
     if (t.voiceJournal != null) db.voice.journal[k] = t.voiceJournal;
     if (t.voiceEvening != null) db.voice.evening[k] = t.voiceEvening;
     delete db.trash[k];
-    save(); renderJournal(); renderChain(); renderTrash(); updateTrashCount();
+    save(); renderJournal(); renderJournalDays(); renderChain(); renderTrash(); updateTrashCount();
     if (k === todayKey) loadDayFields();
   }
   function purgeEntry(k) { delete db.trash[k]; save(); renderTrash(); updateTrashCount(); }
@@ -6778,7 +6825,7 @@
     db.textSize = b.getAttribute("data-ts"); save(); applyTextSize(db.textSize); buzz(8);
   });
 
-  var APP_VERSION = "v30";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v31";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
@@ -7334,7 +7381,7 @@
     health:     { title: "Sleep & Readiness", core: false, desc: "Your Oura readiness and sleep, pulled in each day. Connect Oura in Settings.", icon: '<path d="M12 21s-7-4.6-9.3-8.4C1 9.5 2.6 6 6 6c2 0 3.2 1.2 4 2.4C10.8 7.2 12 6 14 6c3.4 0 5 3.5 3.3 6.6C19 16.4 12 21 12 21z"/>' },
     weather:    { title: "Local Weather", core: false, desc: "Today's weather in your city — set it once, then it just shows up.", icon: '<circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="4.2" y1="4.2" x2="6.3" y2="6.3"/><line x1="17.7" y1="17.7" x2="19.8" y2="19.8"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/><line x1="4.2" y1="19.8" x2="6.3" y2="17.7"/><line x1="17.7" y1="6.3" x2="19.8" y2="4.2"/>' },
     circle:     { title: "Prayer Wall", core: false, desc: "The community prayer wall — ask for prayer, pray for others, and encourage one another.", icon: '<circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.3"/><path d="M3.5 19.5a5.5 5.5 0 0 1 11 0"/><path d="M15.5 14.5a4.6 4.6 0 0 1 5 5"/>' },
-    trends:     { title: "Trends", core: true, desc: "Your Integration score over time.", icon: '<polyline points="3 17 9 11 13 15 21 6"/>' }
+    trends:     { title: "Trends", core: false, desc: "Your Integration score over time.", icon: '<polyline points="3 17 9 11 13 15 21 6"/>' }
   };
   function widgetEls() { return Array.prototype.slice.call(document.querySelectorAll(".wrap > section[data-w]")); }
   function widgetLayout() {
@@ -7356,30 +7403,19 @@
     });
     renderZones();
   }
-  // ---- home zones: a hero "Today" and a quieter "Track", drawn from each widget's zone ----
-  var ZONE_OF = {
-    reading: "today", verse: "today", journaling: "today", evening: "today", gratitude: "today", prayer: "today",
-    pillars: "track", habits: "track", health: "track", weather: "track", trends: "track", circle: "track"
-  };
-  var ZONE_LABEL = { today: "Today", track: "Track" };
+  // ---- home: a single "Today" heading over the day's widgets (never repeats, survives reorder) ----
   function renderZones() {
     var wrap = document.querySelector(".wrap"); if (!wrap) return;
     Array.prototype.forEach.call(wrap.querySelectorAll(".zone-head"), function (h) { h.remove(); });
-    if (customizing) return;   // labels off while rearranging — the drag grid reads cleaner
-    var sections = widgetEls().filter(function (s) {
+    if (customizing) return;   // label off while rearranging — the drag grid reads cleaner
+    var first = widgetEls().filter(function (s) {
       return !s.classList.contains("w-disabled") && !s.classList.contains("w-locked");
-    });
-    var last = null;
-    sections.forEach(function (s) {
-      var z = ZONE_OF[s.getAttribute("data-w")] || "today";
-      if (z !== last) {
-        var h = document.createElement("div");
-        h.className = "zone-head zone-" + z + (last === null ? " zone-first" : "");
-        h.innerHTML = '<span class="zone-title serif">' + ZONE_LABEL[z] + '</span>';
-        wrap.insertBefore(h, s);
-        last = z;
-      }
-    });
+    })[0];
+    if (!first) return;
+    var h = document.createElement("div");
+    h.className = "zone-head zone-today zone-first";
+    h.innerHTML = '<span class="zone-title serif">Today</span>';
+    wrap.insertBefore(h, first);
   }
   function captureLayout() {
     db.layout = widgetEls().map(function (s) { return { key: s.getAttribute("data-w"), on: !s.classList.contains("w-disabled") }; });
