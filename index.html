@@ -231,6 +231,22 @@
 
   /* ---- sections ---- */
   section { margin-bottom: 38px; }
+
+  /* ---- home zones (a hero "Today", a quieter "Track") ---- */
+  .zone-head { margin: 6px 0 18px; }
+  .zone-head.zone-first { margin-top: 0; }
+  .zone-title { display: inline-block; line-height: 1.1; }
+  .zone-head.zone-today .zone-title {
+    font-size: 25px; font-weight: 500; letter-spacing: -0.01em; color: var(--ink);
+  }
+  .zone-head.zone-track {
+    margin-top: 40px; padding-top: 26px; border-top: 1px solid rgba(255,255,255,0.08);
+  }
+  :root[data-theme="light"] .zone-head.zone-track { border-top-color: rgba(0,0,0,0.08); }
+  .zone-head.zone-track .zone-title {
+    font-size: 12.5px; font-weight: 500; letter-spacing: 0.16em; text-transform: uppercase;
+    color: var(--ink-faint);
+  }
   /* gratitude widget */
   .grat-lead { font-size: 16px; color: var(--ink-soft); margin: 0 0 16px; }
   .grat-list { display: flex; flex-direction: column; gap: 12px; }
@@ -2440,8 +2456,8 @@
       </div>
     </section>
 
-    <section data-w="journaling" data-w-title="Journaling Prompt">
-      <p class="label">Journaling Prompt <span class="saved-tick" id="journalTick">Saved</span></p>
+    <section data-w="journaling" data-w-title="Daily Reflection">
+      <p class="label">Reflection <span class="saved-tick" id="journalTick">Saved</span></p>
       <div class="panel" id="journalPanel">
         <button class="jp-collapsed" id="journalCollapsed" hidden>
           <span class="jpc-check"><svg viewBox="0 0 24 24"><polyline points="5 12 10 17 19 7" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
@@ -2468,7 +2484,7 @@
             </button>
           </div>
           <div class="voice-memo" id="memo-journal"></div>
-          <button class="save-mini" id="journalSave" data-tone="tick">Save to journal</button>
+          <button class="save-mini" id="journalSave" data-tone="tick">Save reflection</button>
           <div class="save-mini-confirm" id="journalSaveMsg"></div>
         </div>
       </div>
@@ -2627,7 +2643,6 @@
     <section id="homeActions">
       <button class="save-entry" id="saveEntry">Save today's entry</button>
       <div class="save-confirm" id="saveConfirm"></div>
-      <button class="past-toggle" id="openJournalBtn">Open your journal</button>
     </section>
 
     <footer>
@@ -6366,35 +6381,15 @@
   function journalVisible() { return !$("journalDrawer").hidden; }
 
   function syncJournalBtn() {
-    $("openJournalBtn").textContent = journalVisible() ? "Close your journal" : "Open your journal";
+    var b = $("openJournalBtn"); if (b) b.textContent = journalVisible() ? "Close your journal" : "Open your journal";
   }
   function applyJournalMode() {
+    // One journal now lives in the Journal tab; the old Home drawer is retired.
     var drawer = $("journalDrawer"), overlay = $("journalOverlay");
-    if (typeof appGated === "function" && appGated()) { // no journal before you're in
-      drawer.hidden = true; overlay.hidden = true; document.body.classList.remove("journal-docked");
-      return;
-    }
-    if (isWide()) {
-      // docked: lives in the left margin, pushes content, no backdrop
-      overlay.hidden = true;
-      drawer.classList.add("docked");
-      if (db.journalCollapsed) {
-        drawer.hidden = true;
-        document.body.classList.remove("journal-docked");
-      } else {
-        drawer.hidden = false;
-        document.body.classList.add("journal-docked");
-        renderJournal();
-      }
-    } else {
-      // overlay drawer: hidden until opened
-      drawer.classList.remove("docked");
-      document.body.classList.remove("journal-docked");
-      if (!overlay.hidden || !drawer.hidden) { /* leave an open overlay as-is */ }
-      else { drawer.hidden = true; overlay.hidden = true; }
-    }
-    syncJournalBtn();
-    if (typeof syncNavPosition === "function") syncNavPosition();   // keep the nav aligned with the (un)docked Home
+    if (drawer) { drawer.hidden = true; drawer.classList.remove("docked"); }
+    if (overlay) overlay.hidden = true;
+    document.body.classList.remove("journal-docked");
+    if (typeof syncNavPosition === "function") syncNavPosition();
   }
   function openJournalOverlay() {
     $("journalOverlay").hidden = false;
@@ -6407,21 +6402,8 @@
     $("journalDrawer").hidden = true;
     syncJournalBtn();
   }
-  // top-left journal button: collapse/expand when docked, open overlay when narrow
-  $("journalBtn").addEventListener("click", function () {
-    if (isWide()) {
-      db.journalCollapsed = !db.journalCollapsed;
-      save();
-      applyJournalMode();
-    } else {
-      journalVisible() ? closeJournalOverlay() : openJournalOverlay();
-    }
-  });
-  // bottom button toggles open/closed
-  $("openJournalBtn").addEventListener("click", function () {
-    if (isWide()) { db.journalCollapsed = !db.journalCollapsed; save(); applyJournalMode(); }
-    else { journalVisible() ? closeJournalOverlay() : openJournalOverlay(); }
-  });
+  // top-left journal button → the one journal (Journal tab)
+  $("journalBtn").addEventListener("click", function () { setView("journal"); buzz(8); });
   $("journalClose").addEventListener("click", function () {
     if (isWide()) { db.journalCollapsed = true; save(); applyJournalMode(); }
     else closeJournalOverlay();
@@ -6796,7 +6778,7 @@
     db.textSize = b.getAttribute("data-ts"); save(); applyTextSize(db.textSize); buzz(8);
   });
 
-  var APP_VERSION = "v29";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v30";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
@@ -7343,7 +7325,7 @@
   var WIDGET_META = {
     reading:    { title: "Today's Reading", core: true,  desc: "Your daily scripture — mark it read and keep passage notes.", icon: '<path d="M4 5a2 2 0 0 1 2-2h5v18H6a2 2 0 0 1-2-2z"/><path d="M20 5a2 2 0 0 0-2-2h-5v18h5a2 2 0 0 0 2-2z"/>' },
     verse:      { title: "Verse of the Day", core: false, desc: "A single scripture to carry through the day — anchor it or read it in context.", icon: '<path d="M6 3h12v18l-6-4-6 4z"/>' },
-    journaling: { title: "Journaling Prompt", core: true,  desc: "A fresh prompt each day to write into — switch it if it doesn't fit.", icon: '<path d="M4 20l4-1 10-10-3-3-10 10-1 4z"/><line x1="14" y1="6" x2="18" y2="10"/>' },
+    journaling: { title: "Daily Reflection", core: true,  desc: "A fresh prompt each day to write into — it lands straight in your journal.", icon: '<path d="M4 20l4-1 10-10-3-3-10 10-1 4z"/><line x1="14" y1="6" x2="18" y2="10"/>' },
     gratitude:  { title: "Gratitude", core: false, desc: "Name a few gifts from today. Start with three, add as many as you like.", icon: '<path d="M12 21s-7-4.6-9.3-8.4C1 9.5 2.6 6 6 6c2 0 3.2 1.2 4 2.4C10.8 7.2 12 6 14 6c3.4 0 5 3.5 3.3 6.6C19 16.4 12 21 12 21z"/>' },
     prayer:     { title: "Prayer List", core: false, desc: "Requests for others and for you — pray, and mark them answered.", icon: '<line x1="12" y1="3" x2="12" y2="21"/><line x1="6" y1="9" x2="18" y2="9"/>' },
     evening:    { title: "End of Day Reflection", core: false, desc: "A closing question to reflect on before you rest.", icon: '<path d="M20 14a8 8 0 1 1-9.9-9.9A7 7 0 0 0 20 14z"/>' },
@@ -7371,6 +7353,32 @@
       var s = map[e.key]; if (!s) return;
       wrap.insertBefore(s, anchor);                 // re-sequence right before the action buttons
       s.classList.toggle("w-disabled", !e.on);
+    });
+    renderZones();
+  }
+  // ---- home zones: a hero "Today" and a quieter "Track", drawn from each widget's zone ----
+  var ZONE_OF = {
+    reading: "today", verse: "today", journaling: "today", evening: "today", gratitude: "today", prayer: "today",
+    pillars: "track", habits: "track", health: "track", weather: "track", trends: "track", circle: "track"
+  };
+  var ZONE_LABEL = { today: "Today", track: "Track" };
+  function renderZones() {
+    var wrap = document.querySelector(".wrap"); if (!wrap) return;
+    Array.prototype.forEach.call(wrap.querySelectorAll(".zone-head"), function (h) { h.remove(); });
+    if (customizing) return;   // labels off while rearranging — the drag grid reads cleaner
+    var sections = widgetEls().filter(function (s) {
+      return !s.classList.contains("w-disabled") && !s.classList.contains("w-locked");
+    });
+    var last = null;
+    sections.forEach(function (s) {
+      var z = ZONE_OF[s.getAttribute("data-w")] || "today";
+      if (z !== last) {
+        var h = document.createElement("div");
+        h.className = "zone-head zone-" + z + (last === null ? " zone-first" : "");
+        h.innerHTML = '<span class="zone-title serif">' + ZONE_LABEL[z] + '</span>';
+        wrap.insertBefore(h, s);
+        last = z;
+      }
     });
   }
   function captureLayout() {
@@ -7401,6 +7409,7 @@
     customizing = true;
     document.querySelector(".wrap").classList.add("customizing");
     $("customizeBar").hidden = false;
+    renderZones();   // strip zone labels for a clean drag grid
     widgetEls().forEach(function (s) { if (!s.classList.contains("w-disabled")) widgetControlsFor(s); }); // only widgets on the home
     buzz(10);
   }
@@ -7411,6 +7420,7 @@
     document.querySelector(".wrap").classList.remove("customizing");
     $("customizeBar").hidden = true;
     captureLayout();
+    renderZones();   // redraw zone labels over the new arrangement
     playTick();
   }
   // pointer-based drag reorder
