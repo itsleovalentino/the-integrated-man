@@ -1789,6 +1789,7 @@
   .account-row .ac-email { font-size: 14px; color: var(--ink); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .account-row .ac-state { font-size: 12px; color: var(--ink-faint); margin-top: 2px; }
   .account-row .ac-state b { color: var(--accent); font-weight: 500; }
+  .account-row .ac-state b.warn { color: #d59f3b; }
   .ac-btn {
     flex-shrink: 0; background: var(--accent-soft); border: 1px solid var(--accent); color: var(--accent);
     border-radius: 9px; padding: 9px 14px; font-family: inherit; font-size: 12px; letter-spacing: 0.06em;
@@ -5372,6 +5373,8 @@
   var SUPA_KEY = "sb_publishable_fSbx9nqmkd4KcH4hWGBpjQ_NrQTCaJZ";
   var sb = (window.supabase && SUPA_URL) ? window.supabase.createClient(SUPA_URL, SUPA_KEY) : null;
   var session = null, authMode = "signup", pushTimer = null;
+  var syncState = "synced", needsPush = false, pushRetry = null, lastSyncedAt = 0; // reliable sync: keep trying until the cloud confirms
+  function setSync(s) { syncState = s; if (typeof renderAccount === "function") renderAccount(); }
   // heavy / device-local data we don't sync into the JSON blob (kept local)
   var SYNC_SKIP = { voice: 1, bibleCache: 1 };
   function syncableData() { var o = {}; for (var k in db) { if (db.hasOwnProperty(k) && !SYNC_SKIP[k]) o[k] = db[k]; } return o; }
@@ -5379,11 +5382,22 @@
   function cloudPush() {
     if (!sb || !session || !pulled) return;             // never push before we've pulled the cloud
     if (!(db.profile && db.profile.onboarded)) return;  // never let an empty / profile-less state overwrite real data
+    needsPush = true; setSync("saving");
     sb.from("user_state").upsert({ user_id: session.user.id, data: syncableData(), updated_at: new Date().toISOString() })
-      .then(function () {}, function () {});
+      .then(function (res) {
+        if (res && res.error) return pushFailed();
+        needsPush = false; lastSyncedAt = Date.now();
+        setSync("synced");
+      }, pushFailed);
+  }
+  function pushFailed() {
+    setSync(navigator.onLine ? "retry" : "offline");
+    clearTimeout(pushRetry);
+    pushRetry = setTimeout(function () { if (needsPush) cloudPush(); }, 8000); // keep trying until it lands
   }
   function cloudPushSoon() {
     if (!sb || !session || !pulled) return;
+    needsPush = true;
     clearTimeout(pushTimer); pushTimer = setTimeout(cloudPush, 1500);
   }
   function rerenderAll() {
@@ -5426,8 +5440,12 @@
     var el = $("accountRow");
     if (!sb) { el.innerHTML = '<div class="ac-state">Offline — sign-in unavailable right now.</div>'; return; }
     if (session && session.user) {
+      var st = syncState === "saving" ? '<b>Saving…</b>'
+        : syncState === "offline" ? '<b class="warn">Offline</b> — saved here, will sync when you reconnect'
+        : syncState === "retry" ? '<b class="warn">Reconnecting…</b> — your changes are safe here'
+        : '<b>Synced</b> across your devices';
       el.innerHTML = '<div style="min-width:0"><div class="ac-email">' + escapeHtml(session.user.email || "Signed in") +
-        '</div><div class="ac-state"><b>Synced</b> across your devices</div></div>' +
+        '</div><div class="ac-state">' + st + '</div></div>' +
         '<button class="ac-btn ghost" id="acSignOut">Sign out</button>';
       $("acSignOut").addEventListener("click", function () {
         confirmDialog("Sign out? You'll be fully signed out and need to sign back in to reach your journal.", "Sign out", function () {
@@ -5635,6 +5653,9 @@
   });
   // last-ditch flush so a quick capture-then-close still reaches the cloud
   window.addEventListener("pagehide", function () { if (pushTimer) { clearTimeout(pushTimer); pushTimer = null; cloudPush(); } });
+  // came back online → push anything that never made it up
+  window.addEventListener("online", function () { if (needsPush) cloudPush(); else setSync("synced"); });
+  window.addEventListener("offline", function () { if (needsPush) setSync("offline"); });
   window.addEventListener("focus", function () {
     if (keyOf(new Date()) !== todayKey) dailyRefresh();
   });
