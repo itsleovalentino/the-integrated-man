@@ -5114,10 +5114,12 @@
         '<button class="pw-enc-send" data-act="sendEnc" data-id="' + p.id + '" aria-label="Send">' + PW_SEND + '</button></div>';
     }
     var encList = "";
-    if (mine && wallState.enc[p.id] && wallState.enc[p.id].length) {
-      encList = '<div class="pw-enc"><div class="pw-enc-label">' + PW_TINY_HEART + ' Words for you</div>' +
-        wallState.enc[p.id].map(function (e) {
-          return '<div class="pw-enc-item">' + pwAvatar(e.from, e.url, "sm") + '<div class="pw-enc-txt"><div class="pw-enc-from">' + escapeHtml(e.from) + '</div><div class="pw-enc-body">' + escapeHtml(e.body) + '</div></div></div>';
+    var encs = wallState.enc[p.id] || [];   // RLS returns only what I may see: my own sent words + (if it's my post) all of them
+    if (encs.length) {
+      encList = '<div class="pw-enc"><div class="pw-enc-label">' + PW_TINY_HEART + (mine ? ' Words for you' : ' Your encouragement') + '</div>' +
+        encs.map(function (e) {
+          var who = (e.from_id && e.from_id === myId()) ? "You" : e.from;
+          return '<div class="pw-enc-item">' + pwAvatar(who, e.url, "sm") + '<div class="pw-enc-txt"><div class="pw-enc-from">' + escapeHtml(who) + '</div><div class="pw-enc-body">' + escapeHtml(e.body) + '</div></div></div>';
         }).join("") + '</div>';
     }
     var answerRow = "";
@@ -5197,7 +5199,7 @@
         var enc = {};
         ((r[1] && r[1].data) || []).forEach(function (e) {
           var pf = profById[e.from_id] || {};
-          (enc[e.prayer_id] = enc[e.prayer_id] || []).push({ from: pf.display_name || "A brother", url: pf.avatar_url, body: e.body, created_at: e.created_at });
+          (enc[e.prayer_id] = enc[e.prayer_id] || []).push({ from: pf.display_name || "A brother", from_id: e.from_id, url: pf.avatar_url, body: e.body, created_at: e.created_at });
         });
         wallState.prays = prays; wallState.myPrays = myP; wallState.enc = enc;
         renderWall(); refreshWallBadge(); renderWallPanel(); if (cb) cb();
