@@ -380,6 +380,14 @@
   .pw-enc-input:focus { border-color: var(--accent); }
   .pw-enc-send { flex: 0 0 auto; width: 36px; height: 36px; border-radius: 50%; background: var(--accent-soft); border: 1px solid var(--accent); color: var(--accent); display: flex; align-items: center; justify-content: center; cursor: pointer; }
   .pw-enc-send svg { width: 15px; height: 15px; fill: currentColor; stroke: none; }
+  .pw-setup { display: block; width: 100%; text-align: left; background: var(--accent-soft); border: 1px solid var(--accent); border-radius: 16px; padding: 16px 18px; margin-bottom: 8px; cursor: pointer; font-family: inherit; }
+  .pw-setup-t { font-size: 17px; color: var(--accent); margin-bottom: 4px; }
+  .pw-setup-s { font-size: 13px; color: var(--ink-soft); line-height: 1.5; }
+  .pw-answer-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .pw-answer-label { font-size: 12.5px; color: var(--ink-soft); }
+  .pw-answer-x { background: none; border: none; color: var(--ink-faint); font-size: 15px; cursor: pointer; padding: 2px 4px; }
+  .pw-answer-x:hover { color: var(--ink); }
+  .pw-answer-actions { display: flex; align-items: center; justify-content: flex-end; gap: 12px; margin-top: 10px; }
   .label {
     font-size: 11px;
     letter-spacing: 0.22em;
@@ -2851,7 +2859,7 @@
       </div>
       <div class="sheet-row">
         <div class="sheet-row-label">Name</div>
-        <input type="text" id="profileName" autocomplete="off" maxlength="40" />
+        <input type="text" id="profileName" autocomplete="off" maxlength="40" placeholder="Your name" />
       </div>
     </div>
   </div>
@@ -4504,6 +4512,7 @@
   // ===== Prayer Wall (global shared prayer + encouragement) =====
   function myId() { return session && session.user && session.user.id; }
   function myName() { return (db.profile && db.profile.name && db.profile.name.trim()) || "A brother"; }
+  function hasRealName() { var n = db.profile && db.profile.name && db.profile.name.trim(); return !!n && n.toLowerCase() !== "a brother" && n.toLowerCase() !== "friend"; }
   var PW_PAL = ["#8aa85a", "#5d8cb4", "#897fcf", "#d59f3b", "#7faab0", "#a8997d", "#cdcdca"];
   var HEART = '<path d="M12 21s-7-4.6-9.3-8.4C1 9.5 2.6 6 6 6c2 0 3.2 1.2 4 2.4C10.8 7.2 12 6 14 6c3.4 0 5 3.5 3.3 6.6C19 16.4 12 21 12 21z"/>';
   var PW_SEND = '<svg viewBox="0 0 24 24"><path d="M4 12l16-7-7 16-2-7-7-2z"/></svg>';
@@ -4560,9 +4569,11 @@
 
   // ---- render ----
   function pwCard(p) {
+    var mine = p.author_id === myId();
     var name = (p.profiles && p.profiles.display_name) || "A brother";
     var url = p.profiles && p.profiles.avatar_url;
-    var mine = p.author_id === myId();
+    if (mine && hasRealName()) name = myName();                          // own post always shows my current name
+    if (mine && !url && db.profile && db.profile.avatarUrl) url = db.profile.avatarUrl;
     var prayers = wallState.prays[p.id] || [];
     var iPrayed = !!wallState.myPrays[p.id];
     var stack = prayers.slice(0, 4).map(function (m) { return pwAvatar(m.name, m.url, "sm"); }).join("");
@@ -4589,8 +4600,11 @@
     var answerRow = "";
     if (mine && !p.answered) {
       if (wallState.answerOpen[p.id]) {
-        answerRow = '<div class="pw-answer-box"><textarea class="pw-answer-input" data-id="' + p.id + '" rows="2" placeholder="How did God answer? (optional)"></textarea>' +
-          '<button class="save-mini" data-act="answerDone" data-id="' + p.id + '">Mark answered</button></div>';
+        answerRow = '<div class="pw-answer-box"><div class="pw-answer-head"><span class="pw-answer-label">How did God answer? <span class="lbl-opt">— optional</span></span>' +
+          '<button class="pw-answer-x" data-act="answerCancel" data-id="' + p.id + '" aria-label="Never mind">✕</button></div>' +
+          '<textarea class="pw-answer-input" data-id="' + p.id + '" rows="2" placeholder="Share the good news, or leave blank…"></textarea>' +
+          '<div class="pw-answer-actions"><button class="modal-text" data-act="answerCancel" data-id="' + p.id + '">Never mind</button>' +
+          '<button class="save-mini" data-act="answerDone" data-id="' + p.id + '">Mark answered</button></div></div>';
       } else {
         answerRow = '<div class="pw-answer-row"><button class="pw-answer-link" data-act="answerOpen" data-id="' + p.id + '">✦ Mark as answered</button></div>';
       }
@@ -4607,10 +4621,16 @@
     var open = wallState.prayers.filter(function (p) { return !p.answered; });
     var answered = wallState.prayers.filter(function (p) { return p.answered; });
     var meAv = pwAvatar(myName(), (db.profile && db.profile.avatarUrl) || null, "lg");
-    var compose = wallState.composing
-      ? '<div class="pw-compose-active"><textarea id="pwComposeInput" rows="3" placeholder="What’s on your heart today?"></textarea>' +
-        '<div class="pw-compose-actions"><button class="modal-text" data-act="composeCancel">Cancel</button><button class="save-mini" data-act="post">Share with the wall</button></div></div>'
-      : '<div class="pw-compose" data-act="composeOpen">' + meAv + '<span class="pw-compose-txt">What’s on your heart today?</span></div>';
+    var compose;
+    if (!hasRealName()) {
+      compose = '<button class="pw-setup" data-act="profileSetup"><div class="pw-setup-t serif">Add your name to join in</div>' +
+        '<div class="pw-setup-s">So your brothers know who’s praying. Tap to set your name and photo.</div></button>';
+    } else if (wallState.composing) {
+      compose = '<div class="pw-compose-active"><textarea id="pwComposeInput" rows="3" placeholder="What’s on your heart today?"></textarea>' +
+        '<div class="pw-compose-actions"><button class="modal-text" data-act="composeCancel">Cancel</button><button class="save-mini" data-act="post">Share with the wall</button></div></div>';
+    } else {
+      compose = '<div class="pw-compose" data-act="composeOpen">' + meAv + '<span class="pw-compose-txt">What’s on your heart today?</span></div>';
+    }
     var html = '<div class="pw-intro"><div class="pw-intro-title serif">On our hearts</div><div class="pw-intro-sub">Ask for prayer. Carry each other. Rejoice together.</div></div>' + compose;
     if (open.length) {
       html += '<div class="pw-section-label">Praying now</div>' + open.slice(0, wallState.shown).map(pwCard).join("");
@@ -4673,12 +4693,14 @@
   $("circleBody").addEventListener("click", function (e) {
     var el = e.target.closest("[data-act]"); if (!el) return;
     var act = el.getAttribute("data-act"), id = el.getAttribute("data-id");
-    if (act === "composeOpen") { wallState.composing = true; renderWall(); }
+    if (act === "profileSetup") { openProfile(); }
+    else if (act === "composeOpen") { wallState.composing = true; renderWall(); }
     else if (act === "composeCancel") { wallState.composing = false; renderWall(); }
     else if (act === "post") doPostWall();
     else if (act === "pray") doPrayWall(id);
     else if (act === "sendEnc") doSendEnc(id);
     else if (act === "answerOpen") { wallState.answerOpen[id] = true; renderWall(); }
+    else if (act === "answerCancel") { delete wallState.answerOpen[id]; renderWall(); }
     else if (act === "answerDone") doAnswerWall(id);
     else if (act === "showMore") { wallState.shown += 10; renderWall(); }
   });
@@ -4691,6 +4713,7 @@
   function doPostWall() {
     var ta = $("pwComposeInput"), body = ((ta && ta.value) || "").trim(); if (!body) { if (ta) ta.focus(); return; }
     if (typeof sb === "undefined" || !sb || !session) { showToastMsg("Sign in to share."); return; }
+    if (!hasRealName()) { showToastMsg("Add your name first so brothers know who’s praying."); openProfile(); return; }
     var btn = $("circleBody").querySelector('[data-act="post"]'); if (btn) { btn.disabled = true; btn.textContent = "Sharing…"; }
     upsertProfile().then(function () {
       return sb.from("prayers").insert({ author_id: myId(), body: body });
@@ -4793,21 +4816,25 @@
     var url = db.profile && db.profile.avatarUrl, av = $("profileAv");
     if (url) { av.style.backgroundImage = "url(" + encodeURI(url) + ")"; av.style.background = ""; av.textContent = ""; }
     else { var c = pwColor(myName()); av.style.backgroundImage = "none"; av.style.background = pwRgba(c, 0.17); av.style.color = c; av.textContent = pwInitials(myName()); }
-    $("profileName").value = myName();
+    $("profileName").value = hasRealName() ? myName() : "";
     $("profileMsg").textContent = "";
     $("profileSheet").hidden = false;
+    setTimeout(function () { if (!hasRealName()) $("profileName").focus(); }, 60);
   }
-  $("profileBtn").addEventListener("click", openProfile);
-  $("profileSheetX").addEventListener("click", function () { $("profileSheet").hidden = true; });
-  $("profileSheet").addEventListener("click", function (e) { if (e.target === this) this.hidden = true; });
-  $("profileName").addEventListener("change", function () {
-    var n = this.value.trim(); if (!n) return;
+  function commitProfileName() {
+    var n = ($("profileName").value || "").trim(); if (!n) return false;
+    if (n === (db.profile && db.profile.name)) return false;              // unchanged
     db.profile = db.profile || {}; db.profile.name = n; save();
     var sn = $("setName"); if (sn) sn.value = n;
-    var g = $("greeting"); if (g && typeof dailyRefresh === "function") { /* greeting refreshes on next render */ }
-    // push the name to the community profile, then refresh the wall so it shows everywhere (incl. past posts)
+    if (typeof dailyRefresh === "function") dailyRefresh();               // refresh greeting
     upsertProfile().then(function () { renderProfileBtn(); if (currentView === "fellowship") loadWall(); }, function () { renderProfileBtn(); });
-  });
+    return true;
+  }
+  function closeProfile() { commitProfileName(); $("profileSheet").hidden = true; renderProfileBtn(); if (currentView === "fellowship") renderWall(); }
+  $("profileBtn").addEventListener("click", openProfile);
+  $("profileSheetX").addEventListener("click", closeProfile);
+  $("profileSheet").addEventListener("click", function (e) { if (e.target === this) closeProfile(); });
+  $("profileName").addEventListener("change", commitProfileName);
   $("profileChange").addEventListener("click", function () { $("profileFile").click(); });
   $("profileFile").addEventListener("change", function () {
     var file = this.files && this.files[0]; if (!file) return;
