@@ -239,6 +239,20 @@
     font-family: inherit; font-size: 13px; letter-spacing: 0.02em; padding: 4px 2px;
   }
   .grat-add:hover { opacity: 0.8; }
+  /* verse of the day widget */
+  .verse-text { font-size: 21px; line-height: 1.5; color: var(--ink); margin: 0; font-weight: 400; }
+  .verse-text::before { content: "“"; color: var(--accent); }
+  .verse-text::after { content: "”"; color: var(--accent); }
+  .verse-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 18px; }
+  .verse-ref { font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); }
+  .verse-acts { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+  .verse-act {
+    background: none; border: none; color: var(--accent); cursor: pointer; font-family: inherit;
+    font-size: 12.5px; padding: 6px 8px; border-radius: 8px; display: inline-flex; align-items: center; gap: 4px;
+  }
+  .verse-act:hover { background: var(--accent-soft); }
+  #verseAnchor svg { width: 16px; height: 16px; fill: none; stroke: var(--accent); stroke-width: 1.7; stroke-linejoin: round; }
+  #verseAnchor.on svg { fill: var(--accent); }
   .label {
     font-size: 11px;
     letter-spacing: 0.22em;
@@ -2009,6 +2023,22 @@
         <button class="label-btn" id="openBibleBtn">Open your Bible</button>
       </div>
       <div class="scripture-grid" id="readingCards"></div>
+    </section>
+
+    <section data-w="verse" data-w-title="Verse of the Day">
+      <p class="label">Verse of the Day</p>
+      <div class="panel verse-panel">
+        <p class="verse-text serif" id="verseText"></p>
+        <div class="verse-foot">
+          <span class="verse-ref" id="verseRef"></span>
+          <div class="verse-acts">
+            <button class="verse-act" id="verseAnchor" type="button" aria-label="Save to anchor verses">
+              <svg viewBox="0 0 24 24"><path d="M6 3h12v18l-6-4-6 4z"/></svg>
+            </button>
+            <button class="verse-act" id="verseRead" type="button">Read in context →</button>
+          </div>
+        </div>
+      </div>
     </section>
 
     <section data-w="journaling" data-w-title="Journaling Prompt">
@@ -3863,6 +3893,60 @@
     save(); flash("gratTick");
   });
 
+  // ----- Verse of the Day widget -----
+  var VERSES = [
+    { ref: "Romans 12:2", text: "Do not be conformed to this world, but be transformed by the renewing of your mind." },
+    { ref: "Joshua 1:9", text: "Be strong and courageous. Do not be afraid; do not be discouraged, for the Lord your God is with you wherever you go." },
+    { ref: "Proverbs 3:5-6", text: "Trust in the Lord with all your heart, and lean not on your own understanding; in all your ways acknowledge him, and he will make your paths straight." },
+    { ref: "Philippians 4:13", text: "I can do all things through him who gives me strength." },
+    { ref: "Isaiah 40:31", text: "Those who wait for the Lord shall renew their strength; they shall mount up with wings like eagles." },
+    { ref: "Psalm 23:1", text: "The Lord is my shepherd; I shall not want." },
+    { ref: "Matthew 6:33", text: "Seek first the kingdom of God and his righteousness, and all these things will be added to you." },
+    { ref: "1 Corinthians 16:13", text: "Be watchful, stand firm in the faith, act like a man, be strong." },
+    { ref: "Galatians 2:20", text: "I have been crucified with Christ. It is no longer I who live, but Christ who lives in me." },
+    { ref: "Colossians 3:23", text: "Whatever you do, work heartily, as for the Lord and not for men." },
+    { ref: "Psalm 46:10", text: "Be still, and know that I am God." },
+    { ref: "2 Timothy 1:7", text: "God gave us a spirit not of fear but of power and love and self-control." },
+    { ref: "John 3:30", text: "He must increase, but I must decrease." },
+    { ref: "Micah 6:8", text: "Do justice, love kindness, and walk humbly with your God." },
+    { ref: "Psalm 1:2-3", text: "His delight is in the law of the Lord; he is like a tree planted by streams of water, yielding its fruit in season." },
+    { ref: "James 1:22", text: "Be doers of the word, and not hearers only, deceiving yourselves." },
+    { ref: "Proverbs 27:17", text: "As iron sharpens iron, so one man sharpens another." },
+    { ref: "Romans 8:28", text: "God works all things together for good for those who love him, who are called according to his purpose." },
+    { ref: "Lamentations 3:22-23", text: "The steadfast love of the Lord never ceases; his mercies are new every morning." },
+    { ref: "Ephesians 6:10", text: "Be strong in the Lord and in the strength of his might." },
+    { ref: "Psalm 27:1", text: "The Lord is my light and my salvation; whom shall I fear?" },
+    { ref: "Hebrews 12:1", text: "Let us run with endurance the race that is set before us." },
+    { ref: "1 Peter 5:7", text: "Cast all your anxiety on him, because he cares for you." },
+    { ref: "Matthew 11:28", text: "Come to me, all who labor and are heavy laden, and I will give you rest." },
+    { ref: "Deuteronomy 31:6", text: "Be strong and courageous. Do not fear, for the Lord your God goes with you." },
+    { ref: "Psalm 37:4", text: "Delight yourself in the Lord, and he will give you the desires of your heart." },
+    { ref: "Proverbs 16:3", text: "Commit your work to the Lord, and your plans will be established." },
+    { ref: "John 15:5", text: "I am the vine; you are the branches. Apart from me you can do nothing." },
+    { ref: "Colossians 1:17", text: "He is before all things, and in him all things hold together." },
+    { ref: "Psalm 51:10", text: "Create in me a clean heart, O God, and renew a right spirit within me." },
+    { ref: "Isaiah 41:10", text: "Fear not, for I am with you; I will strengthen you, I will help you." },
+    { ref: "2 Corinthians 12:9", text: "My grace is sufficient for you, for my power is made perfect in weakness." },
+    { ref: "Psalm 119:105", text: "Your word is a lamp to my feet and a light to my path." },
+    { ref: "Jeremiah 29:11", text: "I know the plans I have for you, plans for welfare and not for evil, to give you a future and a hope." },
+    { ref: "Matthew 5:16", text: "Let your light shine before others, that they may see your good works and give glory to your Father." },
+    { ref: "Philippians 1:6", text: "He who began a good work in you will bring it to completion." }
+  ];
+  function verseIdx() { var L = VERSES.length, n = dayNumOf(todayKey); return ((n % L) + L) % L; }
+  function verseChapter(ref) { return ref.replace(/:\d.*$/, "").trim(); } // "Romans 12:2" → "Romans 12"
+  function renderVerse() {
+    var v = VERSES[verseIdx()];
+    $("verseText").textContent = v.text;
+    $("verseRef").textContent = v.ref;
+    $("verseAnchor").classList.toggle("on", isAnchored(v.ref));
+  }
+  $("verseRead").addEventListener("click", function () { openBible(verseChapter(VERSES[verseIdx()].ref)); });
+  $("verseAnchor").addEventListener("click", function () {
+    var v = VERSES[verseIdx()];
+    if (isAnchored(v.ref)) removeAnchor(v.ref); else { addAnchor(v.ref, v.text); playTick(); }
+    renderVerse(); buzz(10);
+  });
+
   // ===== Voice: dictation (speech-to-text) + voice memos =====
   var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   var canRecord = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.MediaRecorder);
@@ -5384,6 +5468,7 @@
     jcardLoad(JCARDS.journal);
     jcardLoad(JCARDS.evening);
     loadGratitude();
+    renderVerse();
 
     // scripture: read-checks + notes (one card per plan)
     renderReading();
@@ -5597,6 +5682,7 @@
   // widget library — description + icon for the gallery; `core` widgets are on by default, others are opt-in
   var WIDGET_META = {
     reading:    { title: "Today's Reading", core: true,  desc: "Your daily scripture — mark it read and keep passage notes.", icon: '<path d="M4 5a2 2 0 0 1 2-2h5v18H6a2 2 0 0 1-2-2z"/><path d="M20 5a2 2 0 0 0-2-2h-5v18h5a2 2 0 0 0 2-2z"/>' },
+    verse:      { title: "Verse of the Day", core: false, desc: "A single scripture to carry through the day — anchor it or read it in context.", icon: '<path d="M6 3h12v18l-6-4-6 4z"/>' },
     journaling: { title: "Journaling Prompt", core: true,  desc: "A fresh prompt each day to write into — switch it if it doesn't fit.", icon: '<path d="M4 20l4-1 10-10-3-3-10 10-1 4z"/><line x1="14" y1="6" x2="18" y2="10"/>' },
     gratitude:  { title: "Gratitude", core: false, desc: "Name a few gifts from today. Start with three, add as many as you like.", icon: '<path d="M12 21s-7-4.6-9.3-8.4C1 9.5 2.6 6 6 6c2 0 3.2 1.2 4 2.4C10.8 7.2 12 6 14 6c3.4 0 5 3.5 3.3 6.6C19 16.4 12 21 12 21z"/>' },
     prayer:     { title: "Prayer List", core: true,  desc: "Requests for others and for you — pray, and mark them answered.", icon: '<line x1="12" y1="3" x2="12" y2="21"/><line x1="6" y1="9" x2="18" y2="9"/>' },
