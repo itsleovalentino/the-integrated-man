@@ -1691,7 +1691,7 @@
   #bibleView[data-bg="light"] { --read-bg: #ffffff; --read-ink: #1c1b19; --read-soft: #8b8880; --read-line: rgba(0,0,0,0.09); --read-ctl: rgba(0,0,0,0.045); --read-sup: #b09153; --read-sel: rgba(0,0,0,0.055); --read-hl: rgba(210,168,74,0.40); }
   #bibleView[data-bg="dark"] { --read-bg: #0b0b0c; --read-ink: #e9e5db; --read-soft: #8a867d; --read-line: rgba(255,255,255,0.10); --read-ctl: rgba(255,255,255,0.06); --read-sup: #cbb27e; --read-sel: rgba(255,255,255,0.08); --read-hl: rgba(203,178,126,0.32); }
   #bibleView { background: var(--read-bg); color: var(--read-ink); transition: background 0.3s ease, color 0.3s ease; }
-  .bible-paper { background: none; box-shadow: none; border: none; border-radius: 0; }
+  #bibleView .bible-paper { background: none; box-shadow: none; border: none; border-radius: 0; }   /* seamless only in the reader; anchors keep their paper bg */
   .bible-paper::before { display: none; }
   .bible-body {
     color: var(--read-ink);
@@ -1747,22 +1747,37 @@
   .fab[hidden] { display: none !important; }
   .appview { position: fixed; inset: 0; z-index: 40; overflow-y: auto; -webkit-overflow-scrolling: touch; background: var(--bg); }
   .appview[hidden] { display: none; }
+  /* Glassy floating iOS-style nav */
   .bottom-nav {
-    position: fixed; left: 0; right: 0; bottom: 0; z-index: 45;
-    display: flex; align-items: stretch; justify-content: center;
-    background: var(--bg); border-top: 1px solid var(--panel-edge);
-    padding: 5px 8px calc(5px + env(safe-area-inset-bottom));
+    position: fixed; left: 50%; transform: translateX(-50%);
+    bottom: calc(11px + env(safe-area-inset-bottom)); z-index: 45;
+    display: flex; align-items: stretch; justify-content: center; gap: 2px;
+    width: auto; max-width: calc(100% - 20px);
+    border-radius: 999px; padding: 6px 9px;
+    background: rgba(38,38,42,0.55);
+    -webkit-backdrop-filter: blur(26px) saturate(1.6); backdrop-filter: blur(26px) saturate(1.6);
+    border: 1px solid rgba(255,255,255,0.10);
+    box-shadow: 0 10px 34px -10px rgba(0,0,0,0.65), inset 0 1px 0 rgba(255,255,255,0.10), inset 0 -1px 0 rgba(0,0,0,0.2);
+  }
+  :root[data-theme="light"] .bottom-nav {
+    background: rgba(255,255,255,0.6); border-color: rgba(0,0,0,0.08);
+    box-shadow: 0 10px 34px -12px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.7);
   }
   .bottom-nav[hidden] { display: none; }
+  .nav-sep { width: 1px; align-self: center; height: 26px; margin: 0 4px; background: rgba(255,255,255,0.14); border-radius: 1px; }
+  :root[data-theme="light"] .nav-sep { background: rgba(0,0,0,0.10); }
   .nav-btn {
-    flex: 1; max-width: 150px; background: none; border: none; cursor: pointer;
+    flex: 0 0 auto; min-width: 60px; background: none; border: none; cursor: pointer;
     display: flex; flex-direction: column; align-items: center; gap: 3px;
-    color: var(--ink-faint); font-family: inherit; font-size: 10.5px; letter-spacing: 0.03em;
-    padding: 7px 4px 5px; position: relative; transition: color 0.2s ease;
+    color: var(--ink-soft); font-family: inherit; font-size: 10px; letter-spacing: 0.02em;
+    padding: 8px 8px 6px; position: relative; border-radius: 18px;
+    transition: color 0.2s ease, background 0.25s ease;
   }
-  .nav-btn svg { width: 23px; height: 23px; fill: none; stroke: currentColor; stroke-width: 1.6; }
-  .nav-btn.active { color: var(--accent); }
-  .nav-badge { position: absolute; top: 4px; right: calc(50% - 19px); width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 2px var(--bg); opacity: 0; transform: scale(0.4); transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.34,1.56,0.64,1); }
+  .nav-btn svg { width: 23px; height: 23px; fill: none; stroke: currentColor; stroke-width: 1.6; transition: transform 0.2s ease; }
+  .nav-btn.active { color: var(--ink); background: rgba(255,255,255,0.12); }
+  :root[data-theme="light"] .nav-btn.active { background: rgba(0,0,0,0.06); color: var(--ink); }
+  .nav-btn.active svg { stroke: var(--accent); }
+  .nav-badge { position: absolute; top: 5px; right: calc(50% - 18px); width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 2px rgba(38,38,42,0.9); opacity: 0; transform: scale(0.4); transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.34,1.56,0.64,1); }
   .nav-badge.on { opacity: 1; transform: scale(1); }
 
   /* Bible destination — chrome blends into the reading surface (uses --read-* tokens) */
@@ -3024,10 +3039,6 @@
       <svg viewBox="0 0 24 24"><path d="M4 11.5 12 5l8 6.5"/><path d="M5.5 10.5V19a1 1 0 0 0 1 1H10v-5h4v5h3.5a1 1 0 0 0 1-1v-8.5"/></svg>
       <span>Home</span>
     </button>
-    <button class="nav-btn" id="nav_journal">
-      <svg viewBox="0 0 24 24"><path d="M4 20.5l4.5-1L19 9l-3.5-3.5L5 16z"/><line x1="14" y1="7" x2="17.5" y2="10.5"/></svg>
-      <span>Journal</span>
-    </button>
     <button class="nav-btn" id="nav_bible">
       <svg viewBox="0 0 24 24"><path d="M5 4a2 2 0 0 1 2-2h11v18H7a2 2 0 0 0-2 2z"/><path d="M5 20a2 2 0 0 1 2-2h11"/><line x1="12" y1="6" x2="12" y2="13"/><line x1="9" y1="9" x2="15" y2="9"/></svg>
       <span>Bible</span>
@@ -3036,6 +3047,11 @@
       <svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.3"/><path d="M3.5 19.5a5.5 5.5 0 0 1 11 0"/><path d="M15.5 14.5a4.6 4.6 0 0 1 5 5"/></svg>
       <span>Fellowship</span>
       <span class="nav-badge" id="navFellowshipBadge"></span>
+    </button>
+    <span class="nav-sep" aria-hidden="true"></span>
+    <button class="nav-btn nav-journal" id="nav_journal">
+      <svg viewBox="0 0 24 24"><path d="M4 20.5l4.5-1L19 9l-3.5-3.5L5 16z"/><line x1="14" y1="7" x2="17.5" y2="10.5"/></svg>
+      <span>Journal</span>
     </button>
   </nav>
 
