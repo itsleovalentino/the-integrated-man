@@ -1774,6 +1774,7 @@
   .bible-ctl svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.6; flex: 0 0 auto; }
   .bible-ctl .aa { font-weight: 600; font-size: 16px; letter-spacing: 0.02em; }
   .bible-chrome-r { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
+  .bible-ctl[hidden] { display: none; }
   .bible-ctl.playing { background: var(--accent); color: var(--read-bg); border-color: var(--accent); }
   .bible-ctl.loading { opacity: 0.6; }
   #bibleAudio .ic-pause { display: none; }
@@ -4173,6 +4174,15 @@
       if (db.lastPassage) loadChapter(db.lastPassage);
     });
   }
+  function isNTPassage(passage) {
+    var m = (passage || "").match(/^(.*?)\s+\d+$/); if (!m) return false;
+    return BOOKS.slice(39).some(function (b) { return b[0] === m[1].trim(); });
+  }
+  function updateAudioBtn(passage) {
+    var btn = $("bibleAudio"); if (!btn) return;
+    var el = $("bibleAudioEl"); if (el && !el.paused) el.pause();   // stop when changing chapters
+    btn.hidden = !isNTPassage(passage);   // the only audio recording is New-Testament only
+  }
   function toggleBibleAudio() {
     var el = $("bibleAudioEl"), btn = $("bibleAudio");
     if (el && !el.paused) { el.pause(); return; }
@@ -4181,8 +4191,8 @@
     btn.classList.add("loading");
     bibleProxy({ action: "audio", audioId: AUDIO_BIBLE, chapterId: chapterId }, function (res) {
       btn.classList.remove("loading");
-      if (res && res.url) { el.src = res.url; el.play().catch(function () { showToastMsg("Couldn’t play the audio."); }); }
-      else { showToastMsg("Audio is available for the New Testament (once the Bible proxy is set up)."); }
+      if (res && res.url) { el.src = res.url; el.play().catch(function () { showToastMsg("Couldn’t play the audio here."); }); }
+      else { showToastMsg("No audio for this chapter."); }
     });
   }
   var contextRef = null;   // when opened from Verse of the Day, the verse to spotlight
@@ -4192,6 +4202,7 @@
     $("bibleRefBtn").textContent = passage;
     $("bibleGateway").href = gateway(passage);
     if (typeof applyReaderPrefs === "function") applyReaderPrefs();
+    updateAudioBtn(passage);
     loadChapter(passage);
     setView("bible");
     $("bibleView").scrollTop = 0;
