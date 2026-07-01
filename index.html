@@ -323,6 +323,63 @@
   .circle-switch { background: none; border: 1px solid var(--field-edge); color: var(--ink-soft); border-radius: 999px; padding: 6px 12px; cursor: pointer; font-family: inherit; font-size: 12px; margin-top: 12px; }
   .circle-leave { background: none; border: none; color: var(--ink-faint); font-family: inherit; font-size: 12px; cursor: pointer; margin-top: 8px; }
   .circle-leave:hover { color: #d08a72; }
+  /* ===== Prayer Wall (warm, alive, non-blocky) ===== */
+  .pw-intro { text-align: center; padding: 2px 0 20px; }
+  .pw-intro-title { font-size: 23px; color: var(--ink); margin-bottom: 6px; }
+  .pw-intro-sub { font-size: 13px; color: var(--ink-soft); line-height: 1.5; }
+  /* compose entry */
+  .pw-compose { display: flex; align-items: center; gap: 12px; background: var(--field); border: 1px solid var(--field-edge); border-radius: 16px; padding: 13px 15px; margin-bottom: 8px; cursor: text; transition: border-color 0.2s ease; }
+  .pw-compose:hover { border-color: var(--ink-faint); }
+  .pw-compose-txt { font-family: "Fraunces", Georgia, serif; font-size: 16px; color: var(--ink-faint); font-style: italic; }
+  .pw-section-label { font-family: "Spline Sans Mono", ui-monospace, monospace; font-size: 11px; letter-spacing: 0.24em; text-transform: uppercase; color: var(--ink-faint); margin: 26px 0 14px; }
+  /* avatar monogram */
+  .pw-av { border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-weight: 600; letter-spacing: 0.01em; flex: 0 0 auto; background-size: cover; background-position: center; overflow: hidden; }
+  .pw-av-lg { width: 42px; height: 42px; font-size: 14.5px; }
+  .pw-av-sm { width: 26px; height: 26px; font-size: 9.5px; }
+  /* prayer card */
+  .pw-card { background: var(--field); border: 1px solid var(--field-edge); border-radius: 18px; padding: 17px 18px 15px; margin-bottom: 14px; transition: border-color 0.2s ease; }
+  .pw-card.answered { background: linear-gradient(180deg, var(--accent-soft), var(--field)); }
+  .pw-head { display: flex; align-items: center; gap: 12px; margin-bottom: 13px; }
+  .pw-who { min-width: 0; flex: 1; }
+  .pw-name { font-size: 15px; color: var(--ink); font-weight: 500; }
+  .pw-meta { font-size: 12px; color: var(--ink-faint); margin-top: 2px; display: flex; align-items: center; gap: 6px; }
+  .pw-answered-tag { color: var(--accent); }
+  .pw-body { font-family: "Fraunces", Georgia, serif; font-size: 18px; line-height: 1.52; color: var(--ink); margin-bottom: 16px; }
+  .pw-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .pw-praying { display: flex; align-items: center; gap: 9px; min-width: 0; }
+  .pw-stack { display: flex; }
+  .pw-stack .pw-av-sm { margin-left: -8px; box-shadow: 0 0 0 2px var(--field); }
+  .pw-stack .pw-av-sm:first-child { margin-left: 0; }
+  .pw-praying-txt { font-size: 12.5px; color: var(--ink-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .pw-pray-btn { display: inline-flex; align-items: center; gap: 7px; background: var(--accent-soft); border: 1px solid var(--accent); color: var(--accent); border-radius: 999px; padding: 8px 16px; font-family: inherit; font-size: 13.5px; cursor: pointer; flex: 0 0 auto; transition: background 0.2s ease, color 0.2s ease, transform 0.15s ease; }
+  .pw-pray-btn svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.6; }
+  .pw-pray-btn:active { transform: scale(0.96); }
+  .pw-pray-btn.on { background: var(--accent); color: var(--bg); }
+  /* encouragement (private to the asker, non-anonymous) */
+  .pw-enc { margin-top: 15px; padding-top: 14px; border-top: 1px solid var(--panel-edge); }
+  .pw-enc-label { font-size: 11.5px; color: var(--ink-faint); margin-bottom: 11px; display: flex; align-items: center; gap: 6px; }
+  .pw-enc-item { display: flex; gap: 10px; margin-bottom: 11px; }
+  .pw-enc-item .pw-av-sm { margin-top: 1px; }
+  .pw-enc-txt { min-width: 0; }
+  .pw-enc-from { font-size: 12px; color: var(--accent); margin-bottom: 2px; }
+  .pw-enc-body { font-size: 14px; color: var(--ink); line-height: 1.45; }
+  .pw-empty { text-align: center; font-size: 14px; color: var(--ink-faint); font-style: italic; padding: 30px 20px; line-height: 1.6; }
+  .pw-compose-active { background: var(--field); border: 1px solid var(--accent); border-radius: 16px; padding: 14px; margin-bottom: 8px; }
+  .pw-compose-active textarea { width: 100%; background: transparent; border: none; color: var(--ink); font-family: "Fraunces", Georgia, serif; font-size: 16px; line-height: 1.5; resize: none; outline: none; }
+  .pw-compose-actions { display: flex; align-items: center; justify-content: flex-end; gap: 12px; margin-top: 8px; }
+  .pw-more { display: block; width: 100%; background: none; border: 1px solid var(--field-edge); color: var(--ink-soft); border-radius: 12px; padding: 11px; font-family: inherit; font-size: 13px; cursor: pointer; margin: 4px 0 8px; }
+  .pw-more:hover { border-color: var(--ink-faint); color: var(--ink); }
+  .pw-answered-note { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 13.5px; font-style: italic; color: var(--ink-soft); line-height: 1.5; margin-top: 10px; }
+  .pw-answer-row { margin-top: 2px; }
+  .pw-answer-link { background: none; border: none; color: var(--accent); font-family: inherit; font-size: 13px; cursor: pointer; padding: 4px 0; }
+  .pw-answer-box { margin-top: 12px; }
+  .pw-answer-input { width: 100%; background: var(--panel); border: 1px solid var(--field-edge); border-radius: 12px; color: var(--ink); font-family: inherit; font-size: 14px; padding: 11px 12px; resize: none; outline: none; margin-bottom: 10px; box-sizing: border-box; }
+  .pw-answer-box .save-mini { display: block; margin-left: auto; }
+  .pw-enc-compose { display: flex; align-items: center; gap: 8px; margin-top: 13px; padding-top: 13px; border-top: 1px solid var(--panel-edge); }
+  .pw-enc-input { flex: 1; min-width: 0; background: var(--panel); border: 1px solid var(--field-edge); border-radius: 999px; color: var(--ink); font-family: inherit; font-size: 13.5px; padding: 9px 14px; outline: none; }
+  .pw-enc-input:focus { border-color: var(--accent); }
+  .pw-enc-send { flex: 0 0 auto; width: 36px; height: 36px; border-radius: 50%; background: var(--accent-soft); border: 1px solid var(--accent); color: var(--accent); display: flex; align-items: center; justify-content: center; cursor: pointer; }
+  .pw-enc-send svg { width: 15px; height: 15px; fill: currentColor; stroke: none; }
   .label {
     font-size: 11px;
     letter-spacing: 0.22em;
@@ -1654,6 +1711,10 @@
   .bv sup { color: #b08a4a; font-size: 0.6em; font-weight: 600; margin: 0 4px 0 2px; vertical-align: super; line-height: 0; }
   .bv:hover { background: rgba(176,138,74,0.12); }
   .bv.hl { background: rgba(214,170,74,0.34); box-shadow: 0 0 0 1px rgba(176,138,74,0.25); }
+  /* context highlight from Verse of the Day — cool tint, distinct from the gold anchor */
+  .bv.context { background: rgba(93,140,180,0.22); box-shadow: 0 0 0 1px rgba(93,140,180,0.45); border-radius: 4px; }
+  @keyframes bvFlash { 0%, 100% { background: rgba(93,140,180,0.22); } 45% { background: rgba(93,140,180,0.44); } }
+  .bv.context.flash { animation: bvFlash 0.85s ease-in-out 2; }
   .bible-gateway {
     display: inline-block; margin-top: 26px;
     font-size: 13px; letter-spacing: 0.04em; color: #8a6a2e; text-decoration: none;
@@ -2084,7 +2145,6 @@
       <button class="icon-btn" id="settingsBtn" aria-label="Settings">
         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
       </button>
-      <button class="theme-toggle" id="themeToggle">Light</button>
     </div>
 
     <div class="customize-bar" id="customizeBar" hidden>
@@ -2299,8 +2359,8 @@
       <div class="panel" id="weatherPanel"></div>
     </section>
 
-    <section data-w="circle" data-w-title="Your Circle">
-      <p class="label">Your Circle</p>
+    <section data-w="circle" data-w-title="Prayer Wall">
+      <p class="label">Prayer</p>
       <div class="panel" id="circlePanel"></div>
     </section>
 
@@ -2533,6 +2593,12 @@
       </div>
       <div class="modal-body">
 
+      <label class="field-label">Appearance</label>
+      <button class="toggle-row" id="themeToggle" type="button">
+        <span id="themeLabel">Dark</span>
+        <span class="toggle-switch" id="themeSwitch"></span>
+      </button>
+
       <label class="field-label">Account</label>
       <div class="account-row" id="accountRow"></div>
 
@@ -2649,7 +2715,7 @@
   <div class="modal-overlay" id="circleModal" hidden>
     <div class="modal settings-modal">
       <div class="modal-head">
-        <h2 class="modal-title serif" id="circleTitle">Your Circle</h2>
+        <h2 class="modal-title serif" id="circleTitle">Prayer</h2>
         <button class="modal-x" id="circleClose" aria-label="Close">
           <svg viewBox="0 0 24 24"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>
         </button>
@@ -3800,6 +3866,11 @@
         '" data-text="' + escapeHtml(txt) + '"><sup>' + v.verse + "</sup>" + escapeHtml(txt) + " </span>";
     });
     $("bibleBody").innerHTML = html;
+    if (contextRef) {
+      var matchRef = contextRef.replace(/\s*[-–]\s*\d+$/, "");   // "Romans 12:1-2" -> first verse
+      var el = findVerseEl(matchRef);
+      if (el) { el.classList.add("context", "flash"); setTimeout(function () { el.scrollIntoView({ block: "center" }); }, 40); }
+    }
   }
   function loadChapter(passage) {
     if (db.bibleCache[passage]) { renderVerses(db.bibleCache[passage]); return; }
@@ -3816,7 +3887,9 @@
           'use the Bible Gateway link below to read this passage.</div>';
       });
   }
-  function openBible(passage) {
+  var contextRef = null;   // when opened from Verse of the Day, the verse to spotlight
+  function openBible(passage, focusRef) {
+    contextRef = focusRef || null;
     $("bibleRef").textContent = passage;
     $("bibleGateway").href = gateway(passage);
     $("biblePaper").scrollTop = 0;
@@ -4103,7 +4176,7 @@
     $("verseRef").textContent = v.ref;
     $("verseAnchor").classList.toggle("on", isAnchored(v.ref));
   }
-  $("verseRead").addEventListener("click", function () { openBible(verseChapter(VERSES[verseIdx()].ref)); });
+  $("verseRead").addEventListener("click", function () { var ref = VERSES[verseIdx()].ref; openBible(verseChapter(ref), ref); });
   $("verseAnchor").addEventListener("click", function () {
     var v = VERSES[verseIdx()];
     if (isAnchored(v.ref)) removeAnchor(v.ref); else { addAnchor(v.ref, v.text); playTick(); }
@@ -4279,241 +4352,211 @@
     });
   }
 
-  // ===== Your Circle (Tribes: shared prayer + encouragement) =====
-  var circleState = { tribes: [], active: null, members: [], prayers: [], interc: {}, nudges: [] };
-  var nudgeState = { kind: "encouragement" };
-  var NUDGE_KINDS = [
-    { k: "encouragement", label: "Encouragement" }, { k: "verse", label: "A verse" },
-    { k: "thinking", label: "Praying for you" }, { k: "proud", label: "Proud of you" }, { k: "backup", label: "I need backup" }
-  ];
-  var HEART = '<path d="M12 21s-7-4.6-9.3-8.4C1 9.5 2.6 6 6 6c2 0 3.2 1.2 4 2.4C10.8 7.2 12 6 14 6c3.4 0 5 3.5 3.3 6.6C19 16.4 12 21 12 21z"/>';
+  // ===== Prayer Wall (global shared prayer + encouragement) =====
   function myId() { return session && session.user && session.user.id; }
   function myName() { return (db.profile && db.profile.name && db.profile.name.trim()) || "A brother"; }
-  function circleMsg(t, err) { var m = $("circleMsg"); if (!m) return; m.style.color = err ? "#d08a72" : "var(--accent)"; m.textContent = t; }
+  var PW_PAL = ["#8aa85a", "#5d8cb4", "#897fcf", "#d59f3b", "#7faab0", "#a8997d", "#cdcdca"];
+  var HEART = '<path d="M12 21s-7-4.6-9.3-8.4C1 9.5 2.6 6 6 6c2 0 3.2 1.2 4 2.4C10.8 7.2 12 6 14 6c3.4 0 5 3.5 3.3 6.6C19 16.4 12 21 12 21z"/>';
+  var PW_SEND = '<svg viewBox="0 0 24 24"><path d="M4 12l16-7-7 16-2-7-7-2z"/></svg>';
+  var PW_TINY_HEART = '<svg viewBox="0 0 24 24" style="width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:1.7;vertical-align:-1px">' + HEART + '</svg>';
+  var wallState = { prayers: [], prays: {}, myPrays: {}, enc: {}, shown: 10, composing: false, answerOpen: {} };
 
-  function renderCirclePanel() {
+  function pwColor(name) { var s = 0, n = name || ""; for (var i = 0; i < n.length; i++) s = (s + n.charCodeAt(i)) % PW_PAL.length; return PW_PAL[s]; }
+  function pwInitials(name) { var p = (name || "?").trim().split(/\s+/); return ((p[0] ? p[0][0] : "?") + (p[1] ? p[1][0] : "")).toUpperCase(); }
+  function pwRgba(hex, a) { var n = parseInt(hex.slice(1), 16); return "rgba(" + ((n >> 16) & 255) + "," + ((n >> 8) & 255) + "," + (n & 255) + "," + a + ")"; }
+  function pwAvatar(name, url, sz) {
+    if (url) return '<span class="pw-av pw-av-' + sz + '" style="background-image:url(' + encodeURI(url) + ')"></span>';
+    var c = pwColor(name);
+    return '<span class="pw-av pw-av-' + sz + '" style="background:' + pwRgba(c, 0.17) + ';color:' + c + '">' + escapeHtml(pwInitials(name)) + '</span>';
+  }
+  function pwAgo(iso) {
+    if (!iso) return "";
+    var s = (Date.now() - new Date(iso).getTime()) / 1000;
+    if (s < 90) return "just now";
+    if (s < 3600) return Math.round(s / 60) + "m";
+    if (s < 86400) return Math.round(s / 3600) + "h";
+    if (s < 604800) return Math.round(s / 86400) + "d";
+    return Math.round(s / 604800) + "w";
+  }
+  function upsertProfile() {
+    if (typeof sb === "undefined" || !sb || !session) return;
+    sb.from("profiles").upsert({ id: myId(), display_name: myName(), updated_at: new Date().toISOString() }).then(function () {}, function () {});
+  }
+
+  // ---- optional widget summary panel ----
+  function renderWallPanel() {
     var p = $("circlePanel"); if (!p) return;
-    if (typeof sb === "undefined" || !sb) { p.innerHTML = '<div class="circle-empty">Circles need an account.</div>'; return; }
-    var t = circleState.active;
-    if (!t) {
-      p.innerHTML = '<div class="circle-empty">A small circle of brothers — pray for one another, and cheer each other on.</div>' +
-        '<button class="modal-secondary" id="circleOpenBtn" style="width:100%;margin-top:12px">Start or join a circle</button>';
-    } else {
-      var openP = circleState.prayers.filter(function (x) { return !x.answered; }).length;
-      var unseen = circleState.nudges.filter(function (n) { return !n.seen && n.to_id === myId(); }).length;
-      p.innerHTML = '<div class="circle-sum"><div style="min-width:0"><div class="circle-name">' + escapeHtml(t.name) + '</div>' +
-        '<div class="circle-sub">' + circleState.members.length + ' brother' + (circleState.members.length === 1 ? "" : "s") + ' · ' + openP + ' open prayer' + (openP === 1 ? "" : "s") +
-        (unseen ? ' · <b style="color:var(--accent)">' + unseen + ' new</b>' : '') + '</div></div>' +
-        '<button class="ac-btn" id="circleOpenBtn">Open</button></div>';
+    if (typeof sb === "undefined" || !sb) { p.innerHTML = '<div class="circle-empty">Prayer needs an account.</div>'; return; }
+    var open = wallState.prayers.filter(function (x) { return !x.answered; }).length;
+    var unread = wallUnread();
+    p.innerHTML = '<div class="circle-sum"><div style="min-width:0"><div class="circle-name">On our hearts</div>' +
+      '<div class="circle-sub">' + (open ? open + ' request' + (open === 1 ? "" : "s") + ' to pray over' : 'Be the first to share') +
+      (unread ? ' · <b style="color:var(--accent)">' + unread + ' new</b>' : '') + '</div></div>' +
+      '<button class="ac-btn" id="wallOpenBtn">Open</button></div>';
+    var b = $("wallOpenBtn"); if (b) b.onclick = openWall;
+  }
+
+  // ---- badge: someone reached for you / new activity ----
+  function wallUnread() {
+    var since = db.wallSeen || "";
+    var n = 0;
+    wallState.prayers.forEach(function (p) { if (p.author_id !== myId() && (p.created_at || "") > since) n++; });
+    Object.keys(wallState.enc).forEach(function (pid) {
+      wallState.enc[pid].forEach(function (e) { if ((e.created_at || "") > since) n++; });
+    });
+    return n;
+  }
+  function refreshWallBadge() { var b = $("circleBadge"); if (b) b.classList.toggle("on", wallUnread() > 0); }
+  function markWallSeen() { db.wallSeen = new Date().toISOString(); save(); refreshWallBadge(); renderWallPanel(); }
+
+  // ---- render ----
+  function pwCard(p) {
+    var name = (p.profiles && p.profiles.display_name) || "A brother";
+    var url = p.profiles && p.profiles.avatar_url;
+    var mine = p.author_id === myId();
+    var prayers = wallState.prays[p.id] || [];
+    var iPrayed = !!wallState.myPrays[p.id];
+    var stack = prayers.slice(0, 4).map(function (m) { return pwAvatar(m.name, m.url, "sm"); }).join("");
+    var count = prayers.length;
+    var foot = "";
+    if (!p.answered) {
+      foot = '<div class="pw-foot"><div class="pw-praying">' +
+        (count ? '<div class="pw-stack">' + stack + '</div><span class="pw-praying-txt">' + count + ' praying</span>' : '<span class="pw-praying-txt">Be the first to pray</span>') +
+        '</div><button class="pw-pray-btn' + (iPrayed ? ' on' : '') + '" data-act="pray" data-id="' + p.id + '"><svg viewBox="0 0 24 24">' + HEART + '</svg>' + (iPrayed ? 'Praying' : 'Pray') + '</button></div>';
     }
-    var b = $("circleOpenBtn"); if (b) b.onclick = openCircle;
+    var encInput = "";
+    if (iPrayed && !mine && !p.answered) {
+      encInput = '<div class="pw-enc-compose">' +
+        '<input type="text" class="pw-enc-input" data-id="' + p.id + '" placeholder="Add a word of encouragement…" maxlength="240" />' +
+        '<button class="pw-enc-send" data-act="sendEnc" data-id="' + p.id + '" aria-label="Send">' + PW_SEND + '</button></div>';
+    }
+    var encList = "";
+    if (mine && wallState.enc[p.id] && wallState.enc[p.id].length) {
+      encList = '<div class="pw-enc"><div class="pw-enc-label">' + PW_TINY_HEART + ' Words for you</div>' +
+        wallState.enc[p.id].map(function (e) {
+          return '<div class="pw-enc-item">' + pwAvatar(e.from, e.url, "sm") + '<div class="pw-enc-txt"><div class="pw-enc-from">' + escapeHtml(e.from) + '</div><div class="pw-enc-body">' + escapeHtml(e.body) + '</div></div></div>';
+        }).join("") + '</div>';
+    }
+    var answerRow = "";
+    if (mine && !p.answered) {
+      if (wallState.answerOpen[p.id]) {
+        answerRow = '<div class="pw-answer-box"><textarea class="pw-answer-input" data-id="' + p.id + '" rows="2" placeholder="How did God answer? (optional)"></textarea>' +
+          '<button class="save-mini" data-act="answerDone" data-id="' + p.id + '">Mark answered</button></div>';
+      } else {
+        answerRow = '<div class="pw-answer-row"><button class="pw-answer-link" data-act="answerOpen" data-id="' + p.id + '">✦ Mark as answered</button></div>';
+      }
+    }
+    var meta = (p.answered ? '<span class="pw-answered-tag">✦ Answered</span> · ' : '') + (mine ? 'you · ' : '') + pwAgo(p.created_at);
+    var bodyHtml = escapeHtml(p.body) + (p.answered && p.answered_note ? '<div class="pw-answered-note">' + escapeHtml(p.answered_note) + '</div>' : '');
+    return '<div class="pw-card' + (p.answered ? ' answered' : '') + '">' +
+      '<div class="pw-head">' + pwAvatar(name, url, "lg") + '<div class="pw-who"><div class="pw-name">' + escapeHtml(name) + '</div><div class="pw-meta">' + meta + '</div></div></div>' +
+      '<div class="pw-body">' + bodyHtml + '</div>' + foot + encInput + answerRow + encList + '</div>';
   }
-  function prayerItemHtml(p) {
-    var ic = circleState.interc[p.id] || { count: 0, mine: false }, mine = p.author_id === myId();
-    return '<div class="cp-item' + (p.answered ? ' done' : '') + '" data-id="' + p.id + '">' +
-      '<div class="cp-who">' + escapeHtml(p.author_name || "A brother") + (p.answered ? ' · answered' : '') + '</div>' +
-      '<div class="cp-body">' + escapeHtml(p.body) + '</div>' +
-      (p.answered ? (p.answered_note ? '<div class="cp-note">' + escapeHtml(p.answered_note) + '</div>' : '') :
-        '<div class="cp-acts">' +
-          '<button class="pray-btn' + (ic.mine ? ' on' : '') + '" data-act="pray"><svg viewBox="0 0 24 24">' + HEART + '</svg>' + (ic.mine ? 'Prayed' : 'I prayed') + '</button>' +
-          (ic.count ? '<span class="pray-count">' + ic.count + ' prayed</span>' : '') +
-          (mine ? '<button class="cp-answer" data-act="answered">Mark answered</button>' : '') +
-        '</div>') + '</div>';
+
+  function renderWall() {
+    var body = $("circleBody"); if (!body) return;
+    var open = wallState.prayers.filter(function (p) { return !p.answered; });
+    var answered = wallState.prayers.filter(function (p) { return p.answered; });
+    var meAv = pwAvatar(myName(), (db.profile && db.profile.avatarUrl) || null, "lg");
+    var compose = wallState.composing
+      ? '<div class="pw-compose-active"><textarea id="pwComposeInput" rows="3" placeholder="What’s on your heart today?"></textarea>' +
+        '<div class="pw-compose-actions"><button class="modal-text" data-act="composeCancel">Cancel</button><button class="save-mini" data-act="post">Share with the wall</button></div></div>'
+      : '<div class="pw-compose" data-act="composeOpen">' + meAv + '<span class="pw-compose-txt">What’s on your heart today?</span></div>';
+    var html = '<div class="pw-intro"><div class="pw-intro-title serif">On our hearts</div><div class="pw-intro-sub">Ask for prayer. Carry each other. Rejoice together.</div></div>' + compose;
+    if (open.length) {
+      html += '<div class="pw-section-label">Praying now</div>' + open.slice(0, wallState.shown).map(pwCard).join("");
+      if (open.length > wallState.shown) html += '<button class="pw-more" data-act="showMore">Show more (' + (open.length - wallState.shown) + ')</button>';
+    } else {
+      html += '<div class="pw-empty">No requests yet.<br>Be the first to share what’s on your heart.</div>';
+    }
+    if (answered.length) html += '<div class="pw-section-label">Answered · He is faithful</div>' + answered.slice(0, 10).map(pwCard).join("");
+    body.innerHTML = html;
+    if (wallState.composing) { var ta = $("pwComposeInput"); if (ta) ta.focus(); }
   }
-  function nudgeItemHtml(n) {
-    var kind = (NUDGE_KINDS.filter(function (x) { return x.k === n.kind; })[0] || {}).label || "Encouragement";
-    var to = n.to_id == null ? " → the circle" : (n.to_id === myId() ? " → you" : "");
-    return '<div class="nudge-item"><div class="nudge-from">' + escapeHtml(n.from_name || "A brother") + to + ' · ' + kind + '</div>' +
-      (n.body && n.body.trim() ? '<div class="nudge-text">' + escapeHtml(n.body) + '</div>' : '') + '</div>';
-  }
-  function circleHtml() {
-    var t = circleState.active;
-    var memberNames = circleState.members.map(function (m) { return escapeHtml(m.display_name || "A brother"); }).join(" · ");
-    var open = circleState.prayers.filter(function (p) { return !p.answered; });
-    var answered = circleState.prayers.filter(function (p) { return p.answered; });
-    var recv = circleState.nudges.filter(function (n) { return n.from_id !== myId() && (n.to_id === myId() || n.to_id == null); }).slice(0, 8);
-    var html = '<div class="circle-hero"><div class="circle-name-lg serif">' + escapeHtml(t.name) + '</div>' +
-      '<div class="circle-members">' + memberNames + '</div>' +
-      '<div class="circle-code">Invite code <b>' + escapeHtml(t.join_code) + '</b> <button class="circle-copy" data-act="copy">Copy</button></div>' +
-      (circleState.tribes.length > 1 ? '<button class="circle-switch" data-act="switch">Switch circle</button>' : '') + '</div>';
-    html += '<div class="circle-section"><div class="circle-sh">Shared prayer</div>' +
-      '<div class="cp-add"><textarea id="cpBody" rows="2" placeholder="Share a prayer request with your circle…"></textarea>' +
-      '<button class="save-mini" data-act="post" data-tone="tick">Post to the circle</button></div>' +
-      (open.length ? open.map(prayerItemHtml).join("") : '<div class="circle-empty-list">No open requests. Add one above, or carry a brother’s.</div>') +
-      (answered.length ? '<div class="circle-sh" style="margin-top:22px">Answered</div>' + answered.slice(0, 10).map(prayerItemHtml).join("") : '') + '</div>';
-    html += '<div class="circle-section"><div class="circle-sh">Encouragement</div>' +
-      '<button class="modal-secondary" data-act="nudge" style="width:100%;margin-bottom:14px">Send encouragement</button>' +
-      (recv.length ? recv.map(nudgeItemHtml).join("") : '<div class="circle-empty-list">Encouragements from your brothers land here.</div>') + '</div>';
-    html += '<button class="circle-leave" data-act="leave">Leave this circle</button>';
-    return html;
-  }
-  function noCircleHtml() {
-    return '<div class="circle-section"><h3 class="circle-h serif">Start a circle</h3>' +
-      '<p class="circle-p">A private space for a few brothers to pray for one another. You’ll get a code to invite them.</p>' +
-      '<div class="circle-form"><input type="text" id="circleName" placeholder="Name your circle" maxlength="60" autocomplete="off" />' +
-      '<button class="modal-primary" data-act="create">Create circle</button></div></div>' +
-      '<div class="circle-section"><h3 class="circle-h serif">Join a circle</h3>' +
-      '<p class="circle-p">Enter the code a brother shared with you.</p>' +
-      '<div class="circle-form"><input type="text" id="circleCode" placeholder="6-character code" maxlength="6" autocomplete="off" style="text-transform:uppercase;letter-spacing:0.18em" />' +
-      '<button class="modal-secondary" data-act="join">Join circle</button></div></div>' +
-      '<div class="settings-msg" id="circleMsg"></div>';
-  }
-  function renderCircleModal() { $("circleBody").innerHTML = circleState.active ? circleHtml() : noCircleHtml(); }
-  function loadTribeData(cb) {
-    if (!circleState.active) { if (cb) cb(); return; }
-    var id = circleState.active.id;
-    Promise.all([
-      sb.from("tribe_members").select("user_id,display_name,role").eq("tribe_id", id),
-      sb.from("prayers").select("*").eq("tribe_id", id).order("created_at", { ascending: false }),
-      sb.from("prayer_intercessions").select("prayer_id,user_id"),
-      sb.from("nudges").select("*").eq("tribe_id", id).order("created_at", { ascending: false })
-    ]).then(function (r) {
-      circleState.members = (r[0] && r[0].data) || [];
-      circleState.prayers = (r[1] && r[1].data) || [];
-      var ic = {}; ((r[2] && r[2].data) || []).forEach(function (i) { if (!ic[i.prayer_id]) ic[i.prayer_id] = { count: 0, mine: false }; ic[i.prayer_id].count++; if (i.user_id === myId()) ic[i.prayer_id].mine = true; });
-      circleState.interc = ic;
-      circleState.nudges = (r[3] && r[3].data) || [];
-      renderCirclePanel(); refreshCircleBadge(); if (cb) cb();
+
+  function loadWall(cb) {
+    if (typeof sb === "undefined" || !sb || !session) { if (cb) cb(); return; }
+    sb.from("prayers").select("*, profiles(display_name, avatar_url)").order("created_at", { ascending: false }).then(function (res) {
+      wallState.prayers = (res && res.data) || [];
+      var ids = wallState.prayers.map(function (p) { return p.id; });
+      if (!ids.length) { wallState.prays = {}; wallState.myPrays = {}; wallState.enc = {}; renderWall(); refreshWallBadge(); renderWallPanel(); if (cb) cb(); return; }
+      Promise.all([
+        sb.from("prayer_prays").select("prayer_id, user_id, profiles(display_name, avatar_url)").in("prayer_id", ids),
+        sb.from("prayer_encouragements").select("prayer_id, from_id, body, created_at, profiles(display_name, avatar_url)").in("prayer_id", ids).order("created_at", { ascending: true })
+      ]).then(function (r) {
+        var prays = {}, myP = {};
+        ((r[0] && r[0].data) || []).forEach(function (x) {
+          (prays[x.prayer_id] = prays[x.prayer_id] || []).push({ name: (x.profiles && x.profiles.display_name) || "A brother", url: x.profiles && x.profiles.avatar_url });
+          if (x.user_id === myId()) myP[x.prayer_id] = true;
+        });
+        var enc = {};
+        ((r[1] && r[1].data) || []).forEach(function (e) {
+          (enc[e.prayer_id] = enc[e.prayer_id] || []).push({ from: (e.profiles && e.profiles.display_name) || "A brother", url: e.profiles && e.profiles.avatar_url, body: e.body, created_at: e.created_at });
+        });
+        wallState.prays = prays; wallState.myPrays = myP; wallState.enc = enc;
+        renderWall(); refreshWallBadge(); renderWallPanel(); if (cb) cb();
+      });
     });
   }
-  function loadCircles(cb) {
-    if (typeof sb === "undefined" || !sb || !session) { circleState.tribes = []; circleState.active = null; if (cb) cb(); return; }
-    sb.from("tribes").select("*").then(function (res) {
-      circleState.tribes = (res && res.data) || [];
-      if (!circleState.tribes.length) { circleState.active = null; circleState.prayers = []; circleState.members = []; circleState.nudges = []; circleState.interc = {}; renderCirclePanel(); refreshCircleBadge(); if (cb) cb(); return; }
-      circleState.active = circleState.tribes.filter(function (t) { return t.id === db.activeTribe; })[0] || circleState.tribes[0];
-      db.activeTribe = circleState.active.id;
-      loadTribeData(cb);
-    }, function () { if (cb) cb(); });
-  }
-  function openCircle() {
-    if (typeof sb === "undefined" || !sb || !session) { showToastMsg("Sign in to use circles."); return; }
-    $("circleBody").innerHTML = '<div class="circle-empty">Loading your circle…</div>';
+
+  function openWall() {
+    if (typeof sb === "undefined" || !sb || !session) { showToastMsg("Sign in to use prayer."); return; }
+    wallState.composing = false; wallState.answerOpen = {}; wallState.shown = 10;
+    $("circleTitle").textContent = "Prayer";
+    $("circleBody").innerHTML = '<div class="circle-empty">Gathering the wall…</div>';
     $("circleModal").hidden = false;
-    loadCircles(function () { renderCircleModal(); markCircleSeen(); });
+    upsertProfile();
+    loadWall(function () { markWallSeen(); });
   }
-  function circleUnread() {
-    if (!circleState.active) return 0;
-    var since = (db.circleSeen && db.circleSeen[circleState.active.id]) || "";
-    var newNudges = circleState.nudges.filter(function (n) { return n.from_id !== myId() && (n.to_id === myId() || n.to_id == null) && (!n.seen || (n.created_at || "") > since); }).length;
-    var newPrayers = circleState.prayers.filter(function (p) { return !p.answered && p.author_id !== myId() && (p.created_at || "") > since; }).length;
-    return newNudges + newPrayers;
-  }
-  function refreshCircleBadge() {
-    var b = $("circleBadge"); if (!b) return;
-    b.classList.toggle("on", circleUnread() > 0);
-  }
-  function markCircleSeen() {
-    if (!circleState.active) return;
-    db.circleSeen = db.circleSeen || {};
-    db.circleSeen[circleState.active.id] = new Date().toISOString();
-    save();
-    var toSee = circleState.nudges.filter(function (n) { return !n.seen && n.to_id === myId(); });
-    if (toSee.length) {
-      sb.from("nudges").update({ seen: true }).eq("tribe_id", circleState.active.id).eq("to_id", myId()).then(function () {
-        circleState.nudges.forEach(function (n) { if (n.to_id === myId()) n.seen = true; });
-      });
-    }
-    refreshCircleBadge(); renderCirclePanel();
-  }
-  $("circleBtn").addEventListener("click", openCircle);
-  $("circleClose").addEventListener("click", function () { $("circleModal").hidden = true; renderCirclePanel(); });
-  $("circleModal").addEventListener("click", function (e) { if (e.target === this) { this.hidden = true; renderCirclePanel(); } });
+
+  $("circleBtn").addEventListener("click", openWall);
+  $("circleClose").addEventListener("click", function () { $("circleModal").hidden = true; renderWallPanel(); });
+  $("circleModal").addEventListener("click", function (e) { if (e.target === this) { this.hidden = true; renderWallPanel(); } });
   $("circleBody").addEventListener("click", function (e) {
     var el = e.target.closest("[data-act]"); if (!el) return;
-    var act = el.getAttribute("data-act"), item = e.target.closest(".cp-item");
-    if (act === "create") return doCreateCircle();
-    if (act === "join") return doJoinCircle();
-    if (act === "post") return doPostPrayer();
-    if (act === "copy") return doCopyCode(el);
-    if (act === "switch") return doSwitchCircle();
-    if (act === "leave") return doLeaveCircle();
-    if (act === "nudge") return openNudge();
-    if (item) { var id = item.getAttribute("data-id"); if (act === "pray") doPray(id); else if (act === "answered") doAnswer(id); }
+    var act = el.getAttribute("data-act"), id = el.getAttribute("data-id");
+    if (act === "composeOpen") { wallState.composing = true; renderWall(); }
+    else if (act === "composeCancel") { wallState.composing = false; renderWall(); }
+    else if (act === "post") doPostWall();
+    else if (act === "pray") doPrayWall(id);
+    else if (act === "sendEnc") doSendEnc(id);
+    else if (act === "answerOpen") { wallState.answerOpen[id] = true; renderWall(); }
+    else if (act === "answerDone") doAnswerWall(id);
+    else if (act === "showMore") { wallState.shown += 10; renderWall(); }
   });
-  function doCreateCircle() {
-    var name = ($("circleName").value || "").trim(); if (!name) { $("circleName").focus(); return; }
-    circleMsg("Creating your circle…");
-    sb.rpc("create_tribe", { p_name: name, p_display: myName() }).then(function (res) {
-      if (res.error) { circleMsg(res.error.message, true); return; }
-      db.activeTribe = res.data.id; save(); playChime(); buzz(14);
-      loadCircles(renderCircleModal);
-    });
-  }
-  function doJoinCircle() {
-    var code = ((($("circleCode").value) || "").trim()).toUpperCase(); if (!code) { $("circleCode").focus(); return; }
-    circleMsg("Joining…");
-    sb.rpc("join_tribe", { p_code: code, p_display: myName() }).then(function (res) {
-      if (res.error) { circleMsg(res.error.message, true); return; }
-      db.activeTribe = res.data.id; save(); playChime(); buzz(14);
-      loadCircles(renderCircleModal);
-    });
-  }
-  function doPostPrayer() {
-    var ta = $("cpBody"), body = ((ta && ta.value) || "").trim(); if (!body) { if (ta) ta.focus(); return; }
-    sb.from("prayers").insert({ tribe_id: circleState.active.id, author_id: myId(), author_name: myName(), body: body }).then(function (res) {
+
+  function doPostWall() {
+    var ta = $("pwComposeInput"), body = ((ta && ta.value) || "").trim(); if (!body) { if (ta) ta.focus(); return; }
+    upsertProfile();
+    sb.from("prayers").insert({ author_id: myId(), body: body }).then(function (res) {
       if (res.error) { showToastMsg(res.error.message); return; }
-      playTick(); buzz(12); loadTribeData(renderCircleModal);
+      wallState.composing = false; playChime(); buzz(12); loadWall();
     });
   }
-  function doPray(id) {
-    var ic = circleState.interc[id] || { mine: false };
-    var q = ic.mine
-      ? sb.from("prayer_intercessions").delete().eq("prayer_id", id).eq("user_id", myId())
-      : sb.from("prayer_intercessions").insert({ prayer_id: id, user_id: myId() });
-    q.then(function (res) { if (res.error) { showToastMsg(res.error.message); return; } if (!ic.mine) { playTick(); buzz(10); } loadTribeData(renderCircleModal); });
+  function doPrayWall(id) {
+    var prayed = !!wallState.myPrays[id];
+    upsertProfile();
+    var q = prayed
+      ? sb.from("prayer_prays").delete().eq("prayer_id", id).eq("user_id", myId())
+      : sb.from("prayer_prays").insert({ prayer_id: id, user_id: myId() });
+    q.then(function (res) { if (res.error) { showToastMsg(res.error.message); return; } if (!prayed) { playTick(); buzz(10); } loadWall(); });
   }
-  function doAnswer(id) {
-    confirmDialog("Mark this answered? Your circle will see the good news.", "Answered", function () {
-      sb.from("prayers").update({ answered: true, answered_at: new Date().toISOString() }).eq("id", id).then(function (res) {
-        if (res.error) { showToastMsg(res.error.message); return; }
-        playChime(); buzz(14); loadTribeData(renderCircleModal);
-      });
+  function doSendEnc(id) {
+    var inp = $("circleBody").querySelector('.pw-enc-input[data-id="' + id + '"]');
+    var body = ((inp && inp.value) || "").trim(); if (!body) { if (inp) inp.focus(); return; }
+    sb.from("prayer_encouragements").insert({ prayer_id: id, from_id: myId(), body: body }).then(function (res) {
+      if (res.error) { showToastMsg(res.error.message); return; }
+      playChime(); buzz(12); showToastMsg("Sent."); loadWall();
     });
   }
-  function doCopyCode(btn) {
-    var code = circleState.active.join_code;
-    try { navigator.clipboard.writeText(code); btn.textContent = "Copied"; setTimeout(function () { btn.textContent = "Copy"; }, 1600); }
-    catch (e) { showToastMsg("Your invite code: " + code); }
-  }
-  function doSwitchCircle() {
-    var ids = circleState.tribes.map(function (t) { return t.id; });
-    circleState.active = circleState.tribes[(ids.indexOf(circleState.active.id) + 1) % circleState.tribes.length];
-    db.activeTribe = circleState.active.id; save();
-    $("circleBody").innerHTML = '<div class="circle-empty">Loading…</div>';
-    loadTribeData(renderCircleModal);
-  }
-  function doLeaveCircle() {
-    confirmDialog("Leave “" + circleState.active.name + "”? You can rejoin anytime with the code.", "Leave", function () {
-      sb.from("tribe_members").delete().eq("tribe_id", circleState.active.id).eq("user_id", myId()).then(function () {
-        db.activeTribe = null; save(); loadCircles(renderCircleModal);
-      });
+  function doAnswerWall(id) {
+    var inp = $("circleBody").querySelector('.pw-answer-input[data-id="' + id + '"]');
+    var note = ((inp && inp.value) || "").trim();
+    sb.from("prayers").update({ answered: true, answered_at: new Date().toISOString(), answered_note: note || null }).eq("id", id).then(function (res) {
+      if (res.error) { showToastMsg(res.error.message); return; }
+      delete wallState.answerOpen[id]; playChime(); buzz(14); showToastMsg("Answered — He is faithful."); loadWall();
     });
   }
-  // ---- send encouragement ----
-  function openNudge() {
-    nudgeState.kind = "encouragement";
-    $("nudgeTo").innerHTML = '<option value="all">The whole circle</option>' +
-      circleState.members.filter(function (m) { return m.user_id !== myId(); }).map(function (m) { return '<option value="' + m.user_id + '">' + escapeHtml(m.display_name || "A brother") + '</option>'; }).join("");
-    $("nudgeKinds").innerHTML = NUDGE_KINDS.map(function (k) { return '<button type="button" class="nudge-kind' + (k.k === "encouragement" ? " sel" : "") + '" data-k="' + k.k + '">' + k.label + '</button>'; }).join("");
-    $("nudgeBody").value = ""; $("nudgeMsg").textContent = "";
-    $("nudgeModal").hidden = false;
-  }
-  $("nudgeKinds").addEventListener("click", function (e) {
-    var b = e.target.closest(".nudge-kind"); if (!b) return;
-    nudgeState.kind = b.getAttribute("data-k");
-    Array.prototype.forEach.call(this.children, function (c) { c.classList.toggle("sel", c === b); });
-  });
-  $("nudgeSend").addEventListener("click", function () {
-    if (!circleState.active) return;
-    var to = $("nudgeTo").value, body = ($("nudgeBody").value || "").trim();
-    sb.from("nudges").insert({ tribe_id: circleState.active.id, from_id: myId(), from_name: myName(), to_id: (to === "all" ? null : to), kind: nudgeState.kind, body: body || null }).then(function (res) {
-      if (res.error) { $("nudgeMsg").style.color = "#d08a72"; $("nudgeMsg").textContent = res.error.message; return; }
-      $("nudgeModal").hidden = true; showToastMsg("Sent to your circle."); playChime(); buzz(12); loadTribeData(renderCircleModal);
-    });
-  });
-  $("nudgeCancel").addEventListener("click", function () { $("nudgeModal").hidden = true; });
-  $("nudgeModal").addEventListener("click", function (e) { if (e.target === this) this.hidden = true; });
 
   // ===== Voice: dictation (speech-to-text) + voice memos =====
   var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -5007,7 +5050,7 @@
   });
 
   // ---------- Prayer (click-in, ongoing — not day-scoped) ----------
-  var prayScope = "others";
+  var prayScope = "others", prayShown = 10, praysAnsShown = 10;
   function prayId() { return "p" + Date.now().toString(36) + Math.floor(Math.random() * 1e4).toString(36); }
   function shortDate(k) {
     if (!k) return "";
@@ -5049,7 +5092,10 @@
         '</div>';
     } else {
       open.sort(function (a, b) { return (b.created || "").localeCompare(a.created || ""); });
-      $("prayList").innerHTML = open.map(function (it) { return prayItemHtml(it, false); }).join("");
+      var shownOpen = open.slice(0, prayShown);
+      var listHtml = shownOpen.map(function (it) { return prayItemHtml(it, false); }).join("");
+      if (open.length > prayShown) listHtml += '<button class="pw-more" data-act="prayMore">Show more (' + (open.length - prayShown) + ')</button>';
+      $("prayList").innerHTML = listHtml;
     }
 
     var aWrap = $("prayAnswered"), aToggle = $("prayAnsweredToggle");
@@ -5057,7 +5103,10 @@
       aToggle.hidden = false;
       aToggle.textContent = (aWrap.classList.contains("open") ? "Hide" : "Show") + " Answered Prayers (" + ans.length + ")";
       ans.sort(function (a, b) { return (b.answered || "").localeCompare(a.answered || ""); });
-      aWrap.innerHTML = ans.map(function (it) { return prayItemHtml(it, true); }).join("");
+      var shownAns = ans.slice(0, praysAnsShown);
+      var ansHtml = shownAns.map(function (it) { return prayItemHtml(it, true); }).join("");
+      if (ans.length > praysAnsShown) ansHtml += '<button class="pw-more" data-act="prayAnsMore">Show more (' + (ans.length - praysAnsShown) + ')</button>';
+      aWrap.innerHTML = ansHtml;
       Array.prototype.forEach.call(aWrap.querySelectorAll("[data-note]"), grow);
     } else {
       aToggle.hidden = true; aWrap.innerHTML = ""; aWrap.classList.remove("open");
@@ -5074,6 +5123,9 @@
   }
   function prayListClick(e) {
     var btn = e.target.closest("[data-act]"); if (!btn) return;
+    var a0 = btn.getAttribute("data-act");
+    if (a0 === "prayMore") { prayShown += 10; renderPrayers(); return; }
+    if (a0 === "prayAnsMore") { praysAnsShown += 10; renderPrayers(); return; }
     var row = e.target.closest(".pray-item"); if (!row) return;
     var id = row.getAttribute("data-id"), it = null;
     for (var i = 0; i < db.prayers.length; i++) { if (db.prayers[i].id === id) { it = db.prayers[i]; break; } }
@@ -5098,7 +5150,7 @@
     if (opening) renderPrayers();
   });
   Array.prototype.forEach.call(document.querySelectorAll("#praySeg .seg-btn"), function (b) {
-    b.addEventListener("click", function () { prayScope = this.getAttribute("data-scope"); renderPrayers(); });
+    b.addEventListener("click", function () { prayScope = this.getAttribute("data-scope"); prayShown = 10; praysAnsShown = 10; renderPrayers(); });
   });
   $("prayAdd").addEventListener("click", addPrayer);
   $("prayText").addEventListener("keydown", function (e) { if (e.key === "Enter") addPrayer(); });
@@ -5728,7 +5780,8 @@
   var toggle = $("themeToggle");
   function applyTheme(t) {
     root.setAttribute("data-theme", t);
-    toggle.textContent = t === "dark" ? "Light" : "Dark";
+    var lbl = $("themeLabel"); if (lbl) lbl.textContent = t === "dark" ? "Dark" : "Light";
+    var sw = $("themeSwitch"); if (sw) sw.classList.toggle("on", t === "light");
   }
   applyTheme(db.theme === "light" ? "light" : "dark");
   toggle.addEventListener("click", function () {
@@ -5830,7 +5883,8 @@
     $("authModal").hidden = true; $("welcome").hidden = true;
     if (!(db.profile && db.profile.onboarded)) openOnboarding();
     else { $("onboard").hidden = true; if (typeof applyJournalMode === "function") applyJournalMode(); } // in the app → dock journal if wide
-    if (typeof loadCircles === "function") loadCircles();  // warm the circle summary in the background
+    if (typeof upsertProfile === "function") upsertProfile();       // ensure a community profile row exists
+    if (typeof loadWall === "function") loadWall();                 // warm the prayer wall + badge in the background
   }
 
   function openOnboarding() {
@@ -6048,7 +6102,7 @@
     renderVerse();
     renderHealth();
     renderWeather();
-    renderCirclePanel();
+    renderWallPanel();
 
     // scripture: read-checks + notes (one card per plan)
     renderReading();
@@ -6271,7 +6325,7 @@
     habits:     { title: "Keystone Habits", core: true, desc: "The daily anchors that hold everything else together.", icon: '<polyline points="4 12 9 17 20 6"/>' },
     health:     { title: "Sleep & Readiness", core: false, desc: "Your Oura readiness and sleep, pulled in each day. Connect Oura in Settings.", icon: '<path d="M12 21s-7-4.6-9.3-8.4C1 9.5 2.6 6 6 6c2 0 3.2 1.2 4 2.4C10.8 7.2 12 6 14 6c3.4 0 5 3.5 3.3 6.6C19 16.4 12 21 12 21z"/>' },
     weather:    { title: "Local Weather", core: false, desc: "Today's weather in your city — set it once, then it just shows up.", icon: '<circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="4.2" y1="4.2" x2="6.3" y2="6.3"/><line x1="17.7" y1="17.7" x2="19.8" y2="19.8"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/><line x1="4.2" y1="19.8" x2="6.3" y2="17.7"/><line x1="17.7" y1="6.3" x2="19.8" y2="4.2"/>' },
-    circle:     { title: "Your Circle", core: false, desc: "A small, private circle of brothers — shared prayer and encouragement.", icon: '<circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.3"/><path d="M3.5 19.5a5.5 5.5 0 0 1 11 0"/><path d="M15.5 14.5a4.6 4.6 0 0 1 5 5"/>' },
+    circle:     { title: "Prayer Wall", core: false, desc: "The community prayer wall — ask for prayer, pray for others, and encourage one another.", icon: '<circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.3"/><path d="M3.5 19.5a5.5 5.5 0 0 1 11 0"/><path d="M15.5 14.5a4.6 4.6 0 0 1 5 5"/>' },
     trends:     { title: "Trends", core: true, desc: "Your Integration score over time.", icon: '<polyline points="3 17 9 11 13 15 21 6"/>' }
   };
   function widgetEls() { return Array.prototype.slice.call(document.querySelectorAll(".wrap > section[data-w]")); }
