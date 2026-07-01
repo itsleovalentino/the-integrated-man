@@ -1219,6 +1219,7 @@
 
   /* ---- customize (widgets) mode ---- */
   .wrap section.w-disabled { display: none; } /* off widgets live in the gallery, never on the home */
+  .wrap section.w-locked { display: none !important; } /* not yet earned (e.g. Trends before enough check-ins) */
   .customize-bar {
     position: sticky; top: 0; z-index: 40; margin: 0 0 18px;
     display: flex; align-items: center; gap: 12px; justify-content: space-between;
@@ -3435,15 +3436,15 @@
       .sort();
     var pts = keys.map(function (k) { return { k: k, v: dayIntegration(db.ratings[k]) }; }).slice(-30);
 
-    var MIN_POINTS = 4;
+    // Trends is a gift that appears once there's a real trend to see — hidden entirely until then.
+    var MIN_POINTS = 3;
+    var section = $("trendsSection");
     if (pts.length < MIN_POINTS) {
-      panel.hidden = true; empty.hidden = false;
-      var left = MIN_POINTS - pts.length;
-      $("trendEmpty").querySelector(".focus-empty").textContent = pts.length === 0
-        ? "Your Integration trend will appear here once you’ve done a few pillar check-ins."
-        : left + (left === 1 ? " more check-in" : " more check-ins") + " and your trend line appears (" + pts.length + " of " + MIN_POINTS + ").";
+      if (section) section.classList.add("w-locked");
+      panel.hidden = true; empty.hidden = true;
       return;
     }
+    if (section) section.classList.remove("w-locked");
     panel.hidden = false; empty.hidden = true;
 
     var W = 600, H = 180, padL = 10, padR = 10, padT = 14, padB = 14;
@@ -5685,8 +5686,8 @@
     verse:      { title: "Verse of the Day", core: false, desc: "A single scripture to carry through the day — anchor it or read it in context.", icon: '<path d="M6 3h12v18l-6-4-6 4z"/>' },
     journaling: { title: "Journaling Prompt", core: true,  desc: "A fresh prompt each day to write into — switch it if it doesn't fit.", icon: '<path d="M4 20l4-1 10-10-3-3-10 10-1 4z"/><line x1="14" y1="6" x2="18" y2="10"/>' },
     gratitude:  { title: "Gratitude", core: false, desc: "Name a few gifts from today. Start with three, add as many as you like.", icon: '<path d="M12 21s-7-4.6-9.3-8.4C1 9.5 2.6 6 6 6c2 0 3.2 1.2 4 2.4C10.8 7.2 12 6 14 6c3.4 0 5 3.5 3.3 6.6C19 16.4 12 21 12 21z"/>' },
-    prayer:     { title: "Prayer List", core: true,  desc: "Requests for others and for you — pray, and mark them answered.", icon: '<line x1="12" y1="3" x2="12" y2="21"/><line x1="6" y1="9" x2="18" y2="9"/>' },
-    evening:    { title: "End of Day Reflection", core: true, desc: "A closing question to reflect on before you rest.", icon: '<path d="M20 14a8 8 0 1 1-9.9-9.9A7 7 0 0 0 20 14z"/>' },
+    prayer:     { title: "Prayer List", core: false, desc: "Requests for others and for you — pray, and mark them answered.", icon: '<line x1="12" y1="3" x2="12" y2="21"/><line x1="6" y1="9" x2="18" y2="9"/>' },
+    evening:    { title: "End of Day Reflection", core: false, desc: "A closing question to reflect on before you rest.", icon: '<path d="M20 14a8 8 0 1 1-9.9-9.9A7 7 0 0 0 20 14z"/>' },
     pillars:    { title: "The Seven Pillars", core: true, desc: "A gentle weekly audit of the seven areas of a whole life.", icon: '<circle cx="12" cy="5" r="2.4"/><circle cx="18.5" cy="9" r="2.4"/><circle cx="18.5" cy="15" r="2.4"/><circle cx="12" cy="19" r="2.4"/><circle cx="5.5" cy="15" r="2.4"/><circle cx="5.5" cy="9" r="2.4"/>' },
     habits:     { title: "Keystone Habits", core: true, desc: "The daily anchors that hold everything else together.", icon: '<polyline points="4 12 9 17 20 6"/>' },
     trends:     { title: "Trends", core: true, desc: "Your Integration score over time.", icon: '<polyline points="3 17 9 11 13 15 21 6"/>' }
