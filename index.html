@@ -4671,7 +4671,8 @@
     var tok = db.oura && db.oura.token;
     // require a signed-in session — the proxy verifies the user's JWT, so only real app users can call it
     if (!tok || typeof sb === "undefined" || !sb || !session || !session.access_token) { cb({ error: "not connected" }); return; }
-    var end = todayKey, start = keyOf(new Date(Date.now() - 6 * 86400000));
+    // end_date is treated as exclusive by Oura — use tomorrow so TODAY's record is included
+    var end = keyOf(new Date(Date.now() + 86400000)), start = keyOf(new Date(Date.now() - 6 * 86400000));
     fetch(SUPA_URL + "/functions/v1/oura", {
       method: "POST",
       headers: { "content-type": "application/json", "apikey": SUPA_KEY, "Authorization": "Bearer " + session.access_token },
@@ -4718,15 +4719,26 @@
   var FOOT_ICON = '<svg viewBox="0 0 24 24"><path d="M7 13c-1.5 0-2.5-1.5-2.5-4S5.5 4 7 4s2 2 2 4.5S8.5 13 7 13z"/><path d="M5.5 15c1.5 0 2 1 2 2.5S7 20 5.5 20 4 18.8 4 17.3 4.2 15 5.5 15z"/><path d="M17 12c1.5 0 2.5-1.5 2.5-4S18.5 3 17 3s-2 2-2 4.5S15.5 12 17 12z"/><path d="M18.5 14c-1.5 0-2 1-2 2.5s.5 2.5 2 2.5 1.5-1.2 1.5-2.7-.2-2.3-1.5-2.3z"/></svg>';
   function fmtNum(n) { return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ","); }
   var stepsGoalOpen = false;
+  function stepDayLabel(k) {
+    if (k === todayKey) return "today";
+    if (k === keyOf(new Date(Date.now() - 86400000))) return "yesterday";
+    try { return new Date(k + "T12:00:00").toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" }); } catch (e) { return k; }
+  }
   function stepsBar(activity) {
-    var a = latestDay(activity), steps = a && isNum(a.steps) ? a.steps : null;
+    if (!activity || !activity.length) return "";
+    // use TODAY's record specifically; only fall back to the latest synced day if today isn't there yet
+    var rec = activity.filter(function (a) { return a.day === todayKey; })[0] || latestDay(activity);
+    var steps = rec && isNum(rec.steps) ? rec.steps : null;
     if (steps == null) return "";
+    var isToday = rec.day === todayKey;
     var goal = db.stepGoal || 8000, pct = Math.max(0, Math.min(100, Math.round(steps / goal * 100))), hit = steps >= goal;
-    var sub = hit ? "Goal reached — well walked. 🎉" : fmtNum(goal - steps) + " to go · " + pct + "% there";
+    var title = isToday ? "Steps today" : "Steps · " + stepDayLabel(rec.day);
+    var sub = !isToday ? "Latest synced day — today’s steps appear once your ring syncs." :
+      (hit ? "Goal reached — well walked. 🎉" : fmtNum(goal - steps) + " to go · " + pct + "% there");
     var chips = [5000, 8000, 10000, 12000, 15000];
     var editor = stepsGoalOpen ? '<div class="steps-goals">' + chips.map(function (g) { return '<button class="steps-goal-chip' + (g === goal ? " sel" : "") + '" data-act="setGoal" data-g="' + g + '">' + fmtNum(g) + '</button>'; }).join("") + '</div>' : '';
     return '<div class="steps-wrap' + (hit ? " hit" : "") + '">' +
-      '<div class="steps-head"><div class="steps-title">' + FOOT_ICON + ' Steps today</div>' +
+      '<div class="steps-head"><div class="steps-title">' + FOOT_ICON + ' ' + title + '</div>' +
       '<button class="steps-goal-btn" data-act="goalToggle">Goal ' + fmtNum(goal) + ' <span class="sgb-edit">✎</span></button></div>' +
       '<div class="steps-count-row"><span class="steps-count">' + fmtNum(steps) + '</span><span class="steps-goal-lbl">/ ' + fmtNum(goal) + '</span></div>' +
       '<div class="steps-bar"><div class="steps-fill" style="width:' + pct + '%"></div></div>' +
