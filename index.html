@@ -1677,51 +1677,43 @@
     .paper-text { font-size: 17px; }
   }
 
-  /* ---- in-app Bible (leather page) ---- */
-  .bible-paper {
-    background: #f1e4c9;
-    background-image:
-      radial-gradient(130% 80% at 50% 0%, rgba(150,110,55,0.10), transparent 55%),
-      radial-gradient(100% 60% at 50% 100%, rgba(90,60,25,0.12), transparent 60%);
-    box-shadow: 0 34px 90px -22px rgba(0,0,0,0.85), inset 0 0 70px rgba(120,85,35,0.14), inset 0 0 0 1px rgba(120,85,35,0.12);
-  }
+  /* ---- in-app Bible (seamless, themeable reading surface) ---- */
+  /* theme tokens live on #bibleView[data-bg] and drive the whole page — no card, no box */
+  #bibleView[data-bg="paper"] { --read-bg: #f2e6cb; --read-ink: #2c2418; --read-soft: #9a7d45; --read-line: rgba(120,85,35,0.16); --read-ctl: rgba(120,85,35,0.09); --read-sup: #b48a45; --read-sel: rgba(120,85,35,0.11); --read-hl: rgba(214,170,74,0.42); }
+  #bibleView[data-bg="light"] { --read-bg: #ffffff; --read-ink: #1c1b19; --read-soft: #8b8880; --read-line: rgba(0,0,0,0.09); --read-ctl: rgba(0,0,0,0.045); --read-sup: #b09153; --read-sel: rgba(0,0,0,0.055); --read-hl: rgba(210,168,74,0.40); }
+  #bibleView[data-bg="dark"] { --read-bg: #0b0b0c; --read-ink: #e9e5db; --read-soft: #8a867d; --read-line: rgba(255,255,255,0.10); --read-ctl: rgba(255,255,255,0.06); --read-sup: #cbb27e; --read-sel: rgba(255,255,255,0.08); --read-hl: rgba(203,178,126,0.32); }
+  #bibleView { background: var(--read-bg); color: var(--read-ink); transition: background 0.3s ease, color 0.3s ease; }
+  .bible-paper { background: none; box-shadow: none; border: none; border-radius: 0; }
   .bible-paper::before { display: none; }
-  .bible-top { display: flex; justify-content: space-between; align-items: center; }
-  .bible-icon { background: none; border: none; cursor: pointer; color: #b08a4a; padding: 2px; }
-  .bible-icon svg { width: 18px; height: 18px; stroke: currentColor; stroke-width: 1.6; fill: none; }
-  .bible-icon.saved svg { fill: #b08a4a; }
-  .bible-ref { font-size: 26px; color: #3a2f1d; margin: 6px 0 4px; letter-spacing: -0.01em; }
-  .bible-hint { font-size: 12px; color: #9a8556; font-style: italic; margin-bottom: 20px; }
   .bible-body {
-    color: #2c2418;
+    color: var(--read-ink);
     font-family: "Fraunces", Georgia, "Times New Roman", serif;
-    font-size: 18.5px; line-height: 1.95;
-    text-align: justify; hyphens: auto; -webkit-hyphens: auto;
+    font-size: 22px; line-height: 1.85; text-align: left; hyphens: none; -webkit-hyphens: none;
   }
+  .bible-body.font-sans { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; letter-spacing: -0.006em; line-height: 1.72; }
   .bible-chap-h {
-    font-size: 12px; letter-spacing: 0.24em; text-transform: uppercase; color: #a07c42;
-    margin: 26px 0 12px; text-align: center;
+    font-size: 11px; letter-spacing: 0.26em; text-transform: uppercase; color: var(--read-soft);
+    margin: 30px 0 16px; text-align: center;
   }
-  .bible-chap-h:first-child { margin-top: 0; }
+  .bible-chap-h:first-child { margin-top: 2px; }
   .bv {
-    cursor: pointer; border-radius: 3px;
-    transition: background 0.15s ease;
-    padding: 1px 0;
+    cursor: pointer; border-radius: 5px; transition: background 0.15s ease, box-shadow 0.15s ease;
+    padding: 2px 3px; margin: 0 -3px; -webkit-tap-highlight-color: transparent;
   }
-  .bv sup { color: #b08a4a; font-size: 0.6em; font-weight: 600; margin: 0 4px 0 2px; vertical-align: super; line-height: 0; }
-  .bv:hover { background: rgba(176,138,74,0.12); }
-  .bv.hl { background: rgba(214,170,74,0.34); box-shadow: 0 0 0 1px rgba(176,138,74,0.25); }
+  .bv sup { color: var(--read-sup); font-size: 0.56em; font-weight: 700; margin: 0 5px 0 2px; vertical-align: super; line-height: 0; }
+  .bv.sel { background: var(--read-sel); box-shadow: 0 0 0 1px var(--read-line); }
+  .bv.hl { background: var(--read-hl); }
   /* context highlight from Verse of the Day — cool tint, distinct from the gold anchor */
-  .bv.context { background: rgba(93,140,180,0.22); box-shadow: 0 0 0 1px rgba(93,140,180,0.45); border-radius: 4px; }
-  @keyframes bvFlash { 0%, 100% { background: rgba(93,140,180,0.22); } 45% { background: rgba(93,140,180,0.44); } }
+  .bv.context { background: rgba(93,140,180,0.24); box-shadow: 0 0 0 1px rgba(93,140,180,0.42); }
+  @keyframes bvFlash { 0%, 100% { background: rgba(93,140,180,0.24); } 45% { background: rgba(93,140,180,0.46); } }
   .bv.context.flash { animation: bvFlash 0.85s ease-in-out 2; }
   .bible-gateway {
-    display: inline-block; margin-top: 26px;
-    font-size: 13px; letter-spacing: 0.04em; color: #8a6a2e; text-decoration: none;
-    border-bottom: 1px solid rgba(138,106,46,0.4); padding-bottom: 2px;
+    display: inline-block; margin-top: 34px;
+    font-size: 13px; letter-spacing: 0.04em; color: var(--read-soft); text-decoration: none;
+    border-bottom: 1px solid var(--read-line); padding-bottom: 2px;
   }
-  .bible-gateway:hover { color: #5b4a22; }
-  .bible-loading { font-style: italic; color: #9a8556; font-size: 17px; padding: 20px 0; }
+  .bible-gateway:hover { color: var(--read-ink); }
+  .bible-loading { font-style: italic; color: var(--read-soft); font-size: 18px; padding: 24px 0; }
   .anchor-item { padding: 16px 0; border-top: 1px solid rgba(120,85,35,0.18); }
   .anchor-item:first-child { border-top: none; }
   .anchor-ref { font-size: 13px; letter-spacing: 0.1em; text-transform: uppercase; color: #a07c42; margin-bottom: 5px; display: flex; justify-content: space-between; }
@@ -1757,31 +1749,24 @@
   .nav-badge { position: absolute; top: 4px; right: calc(50% - 19px); width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 2px var(--bg); opacity: 0; transform: scale(0.4); transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.34,1.56,0.64,1); }
   .nav-badge.on { opacity: 1; transform: scale(1); }
 
-  /* Bible destination */
+  /* Bible destination — chrome blends into the reading surface (uses --read-* tokens) */
   #bibleView.appview { display: block; }
   #bibleView.appview[hidden] { display: none; }
   .bible-chrome {
     position: sticky; top: 0; z-index: 2;
     display: flex; align-items: center; justify-content: space-between; gap: 10px;
-    padding: 12px 16px; max-width: 640px; margin: 0 auto; background: var(--bg);
+    padding: 12px 16px calc(12px + env(safe-area-inset-top, 0px)); max-width: 660px; margin: 0 auto;
+    background: linear-gradient(var(--read-bg) 72%, transparent);
   }
   .bible-chrome-l { display: flex; align-items: center; gap: 8px; min-width: 0; }
-  .bible-ctl { display: inline-flex; align-items: center; gap: 7px; background: var(--field); border: 1px solid var(--field-edge); color: var(--ink); border-radius: 999px; padding: 8px 14px; font-family: inherit; font-size: 13.5px; cursor: pointer; transition: border-color 0.2s ease; max-width: 62vw; }
+  .bible-ctl { display: inline-flex; align-items: center; gap: 7px; background: var(--read-ctl); border: 1px solid var(--read-line); color: var(--read-ink); border-radius: 999px; padding: 8px 14px; font-family: inherit; font-size: 13.5px; cursor: pointer; transition: opacity 0.2s ease; max-width: 62vw; }
   .bible-ctl span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .bible-ctl:hover { border-color: var(--ink-faint); }
+  .bible-ctl:active { opacity: 0.6; }
   .bible-ctl.icon-only { padding: 0; width: 38px; height: 38px; justify-content: center; flex: 0 0 auto; }
   .bible-ctl svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.6; flex: 0 0 auto; }
   .bible-ctl .aa { font-weight: 600; font-size: 16px; letter-spacing: 0.02em; }
-  .bible-paper-wrap { max-width: 640px; margin: 0 auto; padding: 4px 16px 120px; }
+  .bible-paper-wrap { max-width: 660px; margin: 0 auto; padding: 4px 22px 140px; }
   #bibleView .bible-paper { max-width: 100%; max-height: none; overflow: visible; animation: none; margin: 0; }
-  .bible-paper[data-bg] { transition: background 0.25s ease, color 0.25s ease; }
-  .bible-paper[data-bg="light"] { background: #ffffff; background-image: none; color: #1a1a18; box-shadow: 0 12px 40px -20px rgba(0,0,0,0.5), inset 0 0 0 1px #e7e2d6; }
-  .bible-paper[data-bg="light"] .bible-body { color: #1a1a18; }
-  .bible-paper[data-bg="dark"] { background: #0c0c0d; background-image: none; color: #e8e4da; box-shadow: 0 12px 40px -20px rgba(0,0,0,0.85), inset 0 0 0 1px #232325; }
-  .bible-paper[data-bg="dark"] .bible-body { color: #e8e4da; }
-  .bible-paper[data-bg="dark"] .bv:hover { background: rgba(203,178,126,0.14); }
-  .bible-paper[data-bg="dark"] .bible-chap-h { color: #cbb27e; }
-  .bible-body.font-sans { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; text-align: left; hyphens: none; -webkit-hyphens: none; }
 
   /* Fellowship destination */
   .fellow-chrome { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; max-width: 620px; margin: 0 auto; background: var(--bg); }
@@ -2180,21 +2165,23 @@
 
   /* ---- verse action menu ---- */
   .verse-menu {
-    position: fixed; z-index: 90;
-    background: #efe2c4; border: 1px solid rgba(120,85,35,0.35); border-radius: 12px;
-    box-shadow: 0 14px 40px -12px rgba(0,0,0,0.6);
-    display: flex; flex-direction: column; overflow: hidden; min-width: 168px;
+    position: fixed; z-index: 96;
+    background: var(--panel); border: 1px solid var(--panel-edge); border-radius: 14px;
+    box-shadow: 0 18px 50px -14px rgba(0,0,0,0.7);
+    display: flex; flex-direction: column; overflow: hidden; min-width: 176px;
+    animation: vmPop 0.16s cubic-bezier(.2,.7,.2,1);
   }
+  @keyframes vmPop { from { opacity: 0; transform: translateY(6px) scale(0.97); } to { opacity: 1; transform: none; } }
   .verse-menu[hidden] { display: none; }
   .vm-btn {
-    display: flex; align-items: center; gap: 11px;
+    display: flex; align-items: center; gap: 12px;
     background: none; border: none; cursor: pointer;
-    padding: 13px 16px; font-family: "Fraunces", Georgia, serif; font-size: 15px; color: #2c2418;
+    padding: 14px 17px; font-family: inherit; font-size: 14.5px; color: var(--ink);
     text-align: left; transition: background 0.12s ease;
   }
-  .vm-btn + .vm-btn { border-top: 1px solid rgba(120,85,35,0.18); }
-  .vm-btn:hover { background: rgba(176,138,74,0.16); }
-  .vm-btn svg { width: 18px; height: 18px; stroke: #b08a4a; stroke-width: 1.6; fill: none; flex-shrink: 0; }
+  .vm-btn + .vm-btn { border-top: 1px solid var(--panel-edge); }
+  .vm-btn:hover { background: var(--accent-soft); }
+  .vm-btn svg { width: 18px; height: 18px; stroke: var(--accent); stroke-width: 1.6; fill: none; flex-shrink: 0; }
   .vn-text {
     font-size: 17px; line-height: 1.55; color: var(--ink-soft); font-style: italic;
     margin: 6px 0 16px; padding-left: 12px; border-left: 2px solid var(--accent);
@@ -2599,7 +2586,7 @@
   </div>
 
   <!-- In-app Bible (leather page) -->
-  <div class="appview" id="bibleView" hidden>
+  <div class="appview" id="bibleView" data-bg="paper" hidden>
     <div class="bible-chrome">
       <div class="bible-chrome-l">
         <button class="bible-ctl" id="biblePick">
@@ -2613,7 +2600,7 @@
       <button class="bible-ctl icon-only" id="bibleAa" aria-label="Reading settings"><span class="aa">Aa</span></button>
     </div>
     <div class="bible-paper-wrap">
-      <div class="bible-paper" id="biblePaper" data-bg="paper">
+      <div class="bible-paper" id="biblePaper">
         <div class="bible-body" id="bibleBody"></div>
         <a class="bible-gateway" id="bibleGateway" target="_blank" rel="noopener">Open in ESV on Bible Gateway →</a>
       </div>
@@ -4051,8 +4038,11 @@
     playPage();
   }
   // tapping a verse offers Highlight or Write a note (not an instant toggle)
-  var vmRef = null, vmText = null;
+  var vmRef = null, vmText = null, vmEl = null;
   function openVerseMenu(el, x, y) {
+    if (vmEl === el) { closeVerseMenu(); return; }          // tap the same verse again → dismiss
+    if (vmEl) vmEl.classList.remove("sel");
+    vmEl = el; el.classList.add("sel");
     vmRef = el.getAttribute("data-ref"); vmText = el.getAttribute("data-text");
     $("vmHlLabel").textContent = isAnchored(vmRef) ? "Remove highlight" : "Highlight";
     var menu = $("verseMenu"); menu.hidden = false;
@@ -4060,7 +4050,7 @@
     menu.style.left = Math.max(12, Math.min(x, window.innerWidth - mw - 12)) + "px";
     menu.style.top = Math.max(12, Math.min(y + 8, window.innerHeight - mh - 12)) + "px";
   }
-  function closeVerseMenu() { $("verseMenu").hidden = true; vmRef = null; vmText = null; }
+  function closeVerseMenu() { $("verseMenu").hidden = true; if (vmEl) vmEl.classList.remove("sel"); vmEl = null; vmRef = null; vmText = null; }
   $("bibleBody").addEventListener("click", function (e) {
     var v = e.target.closest(".bv"); if (!v) return;
     openVerseMenu(v, e.clientX, e.clientY);
@@ -4538,8 +4528,8 @@
     return Math.round(s / 604800) + "w";
   }
   function upsertProfile() {
-    if (typeof sb === "undefined" || !sb || !session) return;
-    sb.from("profiles").upsert({ id: myId(), display_name: myName(), updated_at: new Date().toISOString() }).then(function () {}, function () {});
+    if (typeof sb === "undefined" || !sb || !session) return Promise.resolve();
+    return sb.from("profiles").upsert({ id: myId(), display_name: myName(), avatar_url: (db.profile && db.profile.avatarUrl) || null, updated_at: new Date().toISOString() });
   }
 
   // ---- optional widget summary panel ----
@@ -4679,29 +4669,43 @@
     else if (act === "showMore") { wallState.shown += 10; renderWall(); }
   });
 
+  function wallErr(e, btn, label) {
+    console.error("prayer wall write failed:", e);
+    showToastMsg((e && e.message) || "Couldn’t reach the wall — check your connection.");
+    if (btn) { btn.disabled = false; if (label) btn.textContent = label; }
+  }
   function doPostWall() {
     var ta = $("pwComposeInput"), body = ((ta && ta.value) || "").trim(); if (!body) { if (ta) ta.focus(); return; }
-    upsertProfile();
-    sb.from("prayers").insert({ author_id: myId(), body: body }).then(function (res) {
-      if (res.error) { showToastMsg(res.error.message); return; }
+    if (typeof sb === "undefined" || !sb || !session) { showToastMsg("Sign in to share."); return; }
+    var btn = $("circleBody").querySelector('[data-act="post"]'); if (btn) { btn.disabled = true; btn.textContent = "Sharing…"; }
+    upsertProfile().then(function () {
+      return sb.from("prayers").insert({ author_id: myId(), body: body });
+    }).then(function (res) {
+      if (res && res.error) { wallErr(res.error, btn, "Share with the wall"); return; }
       wallState.composing = false; playChime(); buzz(12); loadWall();
-    });
+    }).catch(function (e) { wallErr(e, btn, "Share with the wall"); });
   }
   function doPrayWall(id) {
+    if (typeof sb === "undefined" || !sb || !session) { showToastMsg("Sign in to pray."); return; }
     var prayed = !!wallState.myPrays[id];
-    upsertProfile();
-    var q = prayed
-      ? sb.from("prayer_prays").delete().eq("prayer_id", id).eq("user_id", myId())
-      : sb.from("prayer_prays").insert({ prayer_id: id, user_id: myId() });
-    q.then(function (res) { if (res.error) { showToastMsg(res.error.message); return; } if (!prayed) { playTick(); buzz(10); } loadWall(); });
+    upsertProfile().then(function () {
+      return prayed
+        ? sb.from("prayer_prays").delete().eq("prayer_id", id).eq("user_id", myId())
+        : sb.from("prayer_prays").insert({ prayer_id: id, user_id: myId() });
+    }).then(function (res) {
+      if (res && res.error) { wallErr(res.error); return; }
+      if (!prayed) { playTick(); buzz(10); } loadWall();
+    }).catch(function (e) { wallErr(e); });
   }
   function doSendEnc(id) {
     var inp = $("circleBody").querySelector('.pw-enc-input[data-id="' + id + '"]');
     var body = ((inp && inp.value) || "").trim(); if (!body) { if (inp) inp.focus(); return; }
-    sb.from("prayer_encouragements").insert({ prayer_id: id, from_id: myId(), body: body }).then(function (res) {
-      if (res.error) { showToastMsg(res.error.message); return; }
+    upsertProfile().then(function () {
+      return sb.from("prayer_encouragements").insert({ prayer_id: id, from_id: myId(), body: body });
+    }).then(function (res) {
+      if (res && res.error) { wallErr(res.error); return; }
       playChime(); buzz(12); showToastMsg("Sent."); loadWall();
-    });
+    }).catch(function (e) { wallErr(e); });
   }
   function doAnswerWall(id) {
     var inp = $("circleBody").querySelector('.pw-answer-input[data-id="' + id + '"]');
@@ -4735,13 +4739,13 @@
   // ----- reading settings (typeface / size / background) -----
   var READER_SIZES = [16, 17.5, 18.5, 20, 22, 24];
   var READER_SIZE_NAMES = ["Smallest", "Small", "Default", "Large", "Larger", "Largest"];
-  function readerPrefs() { return (db.readerPrefs = db.readerPrefs || { font: "serif", size: 2, bg: "paper" }); }
+  function readerPrefs() { return (db.readerPrefs = db.readerPrefs || { font: "sans", size: 4, bg: "paper" }); }
   function applyReaderPrefs() {
-    var p = readerPrefs(), paper = $("biblePaper"), body = $("bibleBody");
-    if (paper) paper.setAttribute("data-bg", p.bg || "paper");
+    var p = readerPrefs(), view = $("bibleView"), body = $("bibleBody");
+    if (view) view.setAttribute("data-bg", p.bg || "paper");   // theme the whole reading surface, seamless
     if (body) {
       body.classList.toggle("font-sans", p.font === "sans");
-      var si = (typeof p.size === "number") ? Math.max(0, Math.min(READER_SIZES.length - 1, p.size)) : 2;
+      var si = (typeof p.size === "number") ? Math.max(0, Math.min(READER_SIZES.length - 1, p.size)) : 4;
       body.style.fontSize = READER_SIZES[si] + "px";
     }
   }
