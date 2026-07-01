@@ -201,24 +201,33 @@
     border-radius: 999px;
   }
 
-  /* ---- consistency chain (mini, in the header) ---- */
+  /* ---- consistency: this week (in the header) ---- */
   .streak-row { display: flex; align-items: center; gap: 14px; margin-top: 18px; flex-wrap: wrap; }
-  .mini-chain { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
-  .chain-cell {
-    width: 11px; height: 11px; border-radius: 3px;
-    background: rgba(255,255,255,0.055); border: 1px solid rgba(255,255,255,0.13);
-    transition: background 0.2s ease;
+  .week-row {
+    display: grid; grid-template-columns: repeat(7, 1fr); gap: 7px;
+    margin-top: 16px; width: 100%; max-width: 340px;
   }
-  :root[data-theme="light"] .chain-cell { background: rgba(0,0,0,0.04); border-color: rgba(0,0,0,0.14); }
-  .chain-cell.blank { background: none; border: none; }
-  .chain-cell.filled {
-    background: var(--accent); border-color: var(--accent);
-    box-shadow: 0 0 7px -2px var(--accent);
+  .wk-day { display: flex; flex-direction: column; align-items: center; gap: 7px; }
+  .wk-lbl {
+    font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--ink-faint);
   }
-  .chain-cell.today { outline: 1.5px solid var(--accent); outline-offset: 1.5px; }
-  .chain-cell.future { opacity: 0.3; }
-  .chain-count { font-size: 12px; color: var(--ink-faint); letter-spacing: 0.04em; }
-  .chain-count b { color: var(--accent); font-weight: 500; }
+  .wk-dot {
+    width: 100%; aspect-ratio: 1 / 1; max-width: 34px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12.5px; color: var(--ink-faint);
+    background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12);
+    transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+  }
+  :root[data-theme="light"] .wk-dot { background: rgba(0,0,0,0.035); border-color: rgba(0,0,0,0.12); }
+  .wk-day.filled .wk-dot {
+    background: var(--accent); border-color: var(--accent); color: #0a0a0a;
+    font-weight: 600; box-shadow: 0 0 12px -4px var(--accent);
+  }
+  .wk-day.today .wk-lbl { color: var(--accent); }
+  .wk-day.today .wk-dot { outline: 1.5px solid var(--accent); outline-offset: 2px; }
+  .wk-day.today.filled .wk-dot { outline: none; }
+  .wk-day.future .wk-lbl, .wk-day.future .wk-dot { opacity: 0.4; }
 
   /* ---- sections ---- */
   section { margin-bottom: 38px; }
@@ -1777,7 +1786,6 @@
   .seg-full { display: flex; gap: 6px; background: var(--field); border: 1px solid var(--field-edge); border-radius: 12px; padding: 4px; }
   .seg-full .seg-opt { flex: 1; border: none; background: none; border-radius: 9px; padding: 10px 8px; color: var(--ink-soft); font-size: 13.5px; }
   .seg-full .seg-opt.sel { background: var(--accent-soft); color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
-  .chap-btn { width: 44px; height: 44px; }
   .bible-skel { padding: 6px 0; }
   .bible-skel .sk-line { height: 15px; border-radius: 6px; margin: 0 0 15px; background: linear-gradient(90deg, var(--read-ctl) 25%, var(--read-line) 37%, var(--read-ctl) 63%); background-size: 400% 100%; animation: skShimmer 1.4s ease-in-out infinite; }
   @keyframes skShimmer { 0% { background-position: 100% 0; } 100% { background-position: -100% 0; } }
@@ -1785,7 +1793,7 @@
   @media (prefers-reduced-motion: no-preference) {
     @keyframes viewIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
     #bibleView:not([hidden]), #fellowshipView:not([hidden]), #journalView:not([hidden]), .wrap:not([hidden]) { animation: viewIn 0.34s cubic-bezier(.2,.7,.2,1); }
-    .icon-btn:active, .nav-btn:active, .bible-ctl:active, .chap-btn:active, .save-mini:active,
+    .icon-btn:active, .nav-btn:active, .bible-ctl:active, .chap-step:active, .save-mini:active,
     .modal-primary:active, .modal-secondary:active, .modal-text:active, .pw-pray-btn:active, .jp-add:active,
     .steps-goal-chip:active, .seg-opt:active, .grat-add:active, .welcome-create:active, .welcome-signin:active,
     .modal-x:active, .sheet-x:active, .profile-btn:active, .toggle-row:active, .pw-setup:active { transform: scale(0.955); }
@@ -1829,24 +1837,16 @@
   .bottom-nav.nav-off { transform: translateX(var(--nav-x)) translateY(180%); opacity: 0; pointer-events: none; }
   .bottom-nav[hidden] { display: none; }
   /* Bible chapter flipper */
-  .chap-nav {
-    position: fixed; left: 50%; transform: translateX(-50%);
-    bottom: calc(82px + env(safe-area-inset-bottom)); z-index: 44;
-    display: flex; align-items: center; gap: 2px; padding: 4px 6px; border-radius: 999px;
-    background: rgba(40,40,44,0.42);
-    -webkit-backdrop-filter: blur(30px) saturate(1.8); backdrop-filter: blur(30px) saturate(1.8);
-    border: 1px solid rgba(255,255,255,0.12);
-    box-shadow: 0 10px 30px -10px rgba(0,0,0,0.62), inset 0 1px 0 rgba(255,255,255,0.12);
-    transition: transform 0.34s cubic-bezier(.4,0,.2,1), opacity 0.34s ease;
+  /* chapter steppers docked in the reader's top bar, flanking the title */
+  .chap-step {
+    flex: 0 0 auto; width: 30px; height: 38px; padding: 0;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: none; border: none; color: var(--read-ink); cursor: pointer;
+    border-radius: 999px; transition: opacity 0.2s ease;
   }
-  :root[data-theme="light"] .chap-nav { background: rgba(255,255,255,0.55); border-color: rgba(0,0,0,0.07); box-shadow: 0 10px 30px -12px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.75); }
-  .chap-nav[hidden] { display: none; }
-  .chap-nav.off { transform: translateX(-50%) translateY(260%); opacity: 0; pointer-events: none; }
-  .chap-btn { width: 40px; height: 40px; border-radius: 50%; background: none; border: none; color: var(--ink); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: opacity 0.2s ease; }
-  .chap-btn svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-  .chap-btn:active { opacity: 0.5; }
-  .chap-btn:disabled { opacity: 0.28; cursor: default; }
-  .chap-label { font-size: 13px; color: var(--ink); font-weight: 500; min-width: 84px; text-align: center; letter-spacing: 0.01em; }
+  .chap-step svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .chap-step:active { opacity: 0.5; }
+  .chap-step:disabled { opacity: 0.24; cursor: default; }
   .nav-sep { width: 1px; align-self: center; height: 26px; margin: 0 4px; background: rgba(255,255,255,0.14); border-radius: 1px; }
   :root[data-theme="light"] .nav-sep { background: rgba(0,0,0,0.10); }
   .nav-btn {
@@ -2412,9 +2412,8 @@
       <div class="datestamp" id="datestamp"></div>
       <div class="streak-row">
         <span class="streak" id="streak"></span>
-        <span class="mini-chain" id="chainGrid" aria-hidden="true"></span>
-        <span class="chain-count" id="chainCount"></span>
       </div>
+      <div class="week-row" id="chainGrid" aria-hidden="true"></div>
     </header>
 
     <section data-w="reading" data-w-title="Today's Reading">
@@ -2765,10 +2764,12 @@
   <div class="appview" id="bibleView" data-bg="paper" hidden>
     <div class="bible-chrome">
       <div class="bible-chrome-l">
+        <button class="chap-step" id="chapPrev" aria-label="Previous chapter"><svg viewBox="0 0 24 24"><polyline points="15 5 8 12 15 19"/></svg></button>
         <button class="bible-ctl" id="biblePick">
           <svg viewBox="0 0 24 24"><path d="M4 5a2 2 0 0 1 2-2h12v16H6a2 2 0 0 0-2 2z"/><path d="M4 19a2 2 0 0 1 2-2h12"/></svg>
           <span id="bibleRefBtn">John 1</span>
         </button>
+        <button class="chap-step" id="chapNext" aria-label="Next chapter"><svg viewBox="0 0 24 24"><polyline points="9 5 16 12 9 19"/></svg></button>
         <button class="bible-ctl icon-only" id="bibleAnchors" aria-label="Anchor verses">
           <svg viewBox="0 0 24 24"><path d="M6 3h12v18l-6-4-6 4z"/></svg>
         </button>
@@ -3163,12 +3164,6 @@
     </button>
   </nav>
 
-  <!-- Bible chapter flipper (glassy, above the nav; Bible view only) -->
-  <div class="chap-nav" id="chapNav" hidden>
-    <button class="chap-btn" id="chapPrev" aria-label="Previous chapter"><svg viewBox="0 0 24 24"><polyline points="15 5 8 12 15 19"/></svg></button>
-    <span class="chap-label" id="chapLabel">John 1</span>
-    <button class="chap-btn" id="chapNext" aria-label="Next chapter"><svg viewBox="0 0 24 24"><polyline points="9 5 16 12 9 19"/></svg></button>
-  </div>
 
   <div class="verse-menu" id="verseMenu" hidden>
     <button class="vm-btn" id="vmHighlight"><svg viewBox="0 0 24 24"><rect x="3" y="13" width="18" height="6" rx="1.5" fill="currentColor" stroke="none"/><line x1="6" y1="8" x2="18" y2="8"/></svg> <span id="vmHlLabel">Highlight</span></button>
@@ -5322,7 +5317,6 @@
     if (name !== "bible" && typeof closeVerseMenu === "function") closeVerseMenu();
     syncNavPosition();
     $("bottomNav").classList.remove("nav-off");   // always reveal the nav when switching views
-    var ch = $("chapNav"); if (ch) ch.hidden = (name !== "bible");
     window.scrollTo(0, 0);
   }
   function syncNavPosition() {
@@ -5347,7 +5341,6 @@
   }
   function updateChapNav() {
     var pass = db.lastPassage || "John 1";
-    var lbl = $("chapLabel"); if (lbl) lbl.textContent = pass;
     var p = $("chapPrev"), n = $("chapNext");
     if (p) p.disabled = !adjacentPassage(pass, -1);
     if (n) n.disabled = !adjacentPassage(pass, 1);
@@ -5359,8 +5352,8 @@
   }
   $("chapPrev").addEventListener("click", function () { goChapter(-1); });
   $("chapNext").addEventListener("click", function () { goChapter(1); });
-  function hideReadingChrome() { if (currentView !== "bible") return; $("bottomNav").classList.add("nav-off"); $("chapNav").classList.add("off"); }
-  function showReadingChrome() { $("bottomNav").classList.remove("nav-off"); $("chapNav").classList.remove("off"); }
+  function hideReadingChrome() { if (currentView !== "bible") return; $("bottomNav").classList.add("nav-off"); }
+  function showReadingChrome() { $("bottomNav").classList.remove("nav-off"); }
   (function () {
     var bv = $("bibleView"), lastY = 0, idle = null;
     bv.addEventListener("scroll", function () {
@@ -6654,25 +6647,27 @@
     else confirmDialog("Delete this entry forever? This can’t be undone.", "Delete forever", function () { purgeEntry(k); });
   });
 
-  // ===== Consistency chain (month grid) =====
+  // ===== Consistency: this week (Sun–Sat row) =====
   function renderChain() {
-    var now = new Date(), y = now.getFullYear(), m = now.getMonth();
-    var firstDow = new Date(y, m, 1).getDay();
-    var dim = new Date(y, m + 1, 0).getDate();
-    var html = "", count = 0;
-    for (var b = 0; b < firstDow; b++) html += '<span class="chain-cell blank"></span>';
-    for (var d = 1; d <= dim; d++) {
-      var k = y + "-" + String(m + 1).padStart(2, "0") + "-" + String(d).padStart(2, "0");
+    var now = new Date();
+    var today0 = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    var sunday = new Date(today0);
+    sunday.setDate(today0.getDate() - today0.getDay()); // rewind to Sunday
+    var letters = ["S", "M", "T", "W", "T", "F", "S"];
+    var html = "";
+    for (var i = 0; i < 7; i++) {
+      var dt = new Date(sunday.getFullYear(), sunday.getMonth(), sunday.getDate() + i);
+      var k = dt.getFullYear() + "-" + String(dt.getMonth() + 1).padStart(2, "0") + "-" + String(dt.getDate()).padStart(2, "0");
       var shown = !!db.openLog[k] || dayHasContent(k);
-      if (shown) count++;
-      var cls = "chain-cell";
+      var cls = "wk-day";
       if (shown) cls += " filled";
       if (k === todayKey) cls += " today";
       if (k > todayKey) cls += " future";
-      html += '<span class="' + cls + '" title="' + months[m] + " " + d + '"></span>';
+      html += '<div class="' + cls + '" title="' + months[dt.getMonth()] + " " + dt.getDate() + '">'
+        + '<span class="wk-lbl">' + letters[i] + '</span>'
+        + '<span class="wk-dot">' + dt.getDate() + '</span></div>';
     }
     $("chainGrid").innerHTML = html;
-    $("chainCount").innerHTML = "<b>" + count + "</b> this month";
   }
 
   // ===== Full journal page (paper) =====
@@ -6801,7 +6796,7 @@
     db.textSize = b.getAttribute("data-ts"); save(); applyTextSize(db.textSize); buzz(8);
   });
 
-  var APP_VERSION = "v28";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v29";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
