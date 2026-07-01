@@ -45,20 +45,23 @@ Deno.serve(async (req: Request) => {
   const headers = { Authorization: `Bearer ${token}` };
 
   try {
-    const [rdRes, slRes] = await Promise.all([
+    const [rdRes, slRes, acRes] = await Promise.all([
       fetch(`${base}/daily_readiness${q}`, { headers }),
       fetch(`${base}/daily_sleep${q}`, { headers }),
+      fetch(`${base}/daily_activity${q}`, { headers }),   // steps live here
     ]);
 
-    if (rdRes.status === 401 || slRes.status === 401) {
+    if (rdRes.status === 401 || slRes.status === 401 || acRes.status === 401) {
       return json({ error: "Oura token was rejected — check it and try again." }, 401);
     }
     const readiness = await rdRes.json().catch(() => ({}));
     const sleep = await slRes.json().catch(() => ({}));
+    const activity = await acRes.json().catch(() => ({}));
 
     return json({
       readiness: readiness.data || [],
       sleep: sleep.data || [],
+      activity: activity.data || [],
     });
   } catch (e) {
     return json({ error: "Couldn't reach Oura: " + String(e) }, 502);
