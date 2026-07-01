@@ -4625,27 +4625,41 @@
 
   function loadWall(cb) {
     if (typeof sb === "undefined" || !sb || !session) { if (cb) cb(); return; }
-    sb.from("prayers").select("*, profiles(display_name, avatar_url)").order("created_at", { ascending: false }).then(function (res) {
-      wallState.prayers = (res && res.data) || [];
-      var ids = wallState.prayers.map(function (p) { return p.id; });
+    // No PostgREST joins — fetch prayers + profiles separately and stitch names in
+    // on the client. Embedded selects (profiles(...)) fail silently when the schema
+    // cache is stale after a migration; this is bulletproof.
+    Promise.all([
+      sb.from("prayers").select("*").order("created_at", { ascending: false }),
+      sb.from("profiles").select("id, display_name, avatar_url")
+    ]).then(function (pr) {
+      if (pr[0] && pr[0].error) { console.error("wall read failed:", pr[0].error); showToastMsg(pr[0].error.message || "Couldn’t load the wall."); }
+      if (pr[1] && pr[1].error) { console.error("profiles read failed:", pr[1].error); }
+      var profById = {};
+      ((pr[1] && pr[1].data) || []).forEach(function (p) { profById[p.id] = p; });
+      var prayers = (pr[0] && pr[0].data) || [];
+      prayers.forEach(function (p) { p.profiles = profById[p.author_id] || null; });
+      wallState.prayers = prayers;
+      var ids = prayers.map(function (p) { return p.id; });
       if (!ids.length) { wallState.prays = {}; wallState.myPrays = {}; wallState.enc = {}; renderWall(); refreshWallBadge(); renderWallPanel(); if (cb) cb(); return; }
       Promise.all([
-        sb.from("prayer_prays").select("prayer_id, user_id, profiles(display_name, avatar_url)").in("prayer_id", ids),
-        sb.from("prayer_encouragements").select("prayer_id, from_id, body, created_at, profiles(display_name, avatar_url)").in("prayer_id", ids).order("created_at", { ascending: true })
+        sb.from("prayer_prays").select("prayer_id, user_id").in("prayer_id", ids),
+        sb.from("prayer_encouragements").select("prayer_id, from_id, body, created_at").in("prayer_id", ids).order("created_at", { ascending: true })
       ]).then(function (r) {
         var prays = {}, myP = {};
         ((r[0] && r[0].data) || []).forEach(function (x) {
-          (prays[x.prayer_id] = prays[x.prayer_id] || []).push({ name: (x.profiles && x.profiles.display_name) || "A brother", url: x.profiles && x.profiles.avatar_url });
+          var pf = profById[x.user_id] || {};
+          (prays[x.prayer_id] = prays[x.prayer_id] || []).push({ name: pf.display_name || "A brother", url: pf.avatar_url });
           if (x.user_id === myId()) myP[x.prayer_id] = true;
         });
         var enc = {};
         ((r[1] && r[1].data) || []).forEach(function (e) {
-          (enc[e.prayer_id] = enc[e.prayer_id] || []).push({ from: (e.profiles && e.profiles.display_name) || "A brother", url: e.profiles && e.profiles.avatar_url, body: e.body, created_at: e.created_at });
+          var pf = profById[e.from_id] || {};
+          (enc[e.prayer_id] = enc[e.prayer_id] || []).push({ from: pf.display_name || "A brother", url: pf.avatar_url, body: e.body, created_at: e.created_at });
         });
         wallState.prays = prays; wallState.myPrays = myP; wallState.enc = enc;
         renderWall(); refreshWallBadge(); renderWallPanel(); if (cb) cb();
-      });
-    });
+      }, function (e) { console.error("wall detail read failed:", e); renderWall(); refreshWallBadge(); renderWallPanel(); if (cb) cb(); });
+    }, function (e) { console.error("wall read exception:", e); showToastMsg("Couldn’t reach the wall — check your connection."); if (cb) cb(); });
   }
 
   function openWall() {  // load the fellowship wall (the view is switched by setView)
