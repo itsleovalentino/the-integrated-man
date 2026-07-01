@@ -1842,6 +1842,35 @@
   .profile-change { background: var(--accent-soft); border: 1px solid var(--accent); color: var(--accent); border-radius: 999px; padding: 10px 20px; font-family: inherit; font-size: 13.5px; cursor: pointer; }
   .profile-msg { font-size: 12.5px; color: var(--ink-faint); text-align: center; margin-top: 4px; min-height: 16px; }
 
+  /* ---- Open your Bible (leather table of contents) ---- */
+  #biblePicker .bp-book {
+    width: 100%; max-width: 440px; max-height: 84vh; display: flex; flex-direction: column;
+    background:
+      radial-gradient(130% 70% at 50% 0%, rgba(150,112,60,0.20), transparent 62%),
+      linear-gradient(158deg, #2c2016, #1a120b);
+    border: 1px solid rgba(200,160,90,0.22); border-radius: 12px; overflow: hidden;
+    box-shadow: 0 44px 100px -22px rgba(0,0,0,0.9), inset 0 1px 0 rgba(210,180,110,0.14), inset 0 0 60px rgba(120,85,35,0.18);
+    color: #ecdcbb; animation: pageOpen 0.42s cubic-bezier(.2,.7,.2,1); transform-origin: left center;
+  }
+  .bp-head { display: flex; align-items: center; justify-content: space-between; padding: 22px 24px 8px; }
+  .bp-title { font-size: 25px; color: #dcc088; letter-spacing: 0.005em; }
+  .bp-x { background: none; border: none; color: #9a875f; font-size: 26px; line-height: 1; cursor: pointer; padding: 0 2px; }
+  .bp-x:hover { color: #dcc088; }
+  .bp-testaments { display: flex; gap: 9px; padding: 12px 24px 16px; border-bottom: 1px solid rgba(200,160,90,0.16); }
+  .bp-test { flex: 1; background: rgba(200,160,90,0.07); border: 1px solid rgba(200,160,90,0.24); color: #c8b083; border-radius: 999px; padding: 10px; font-family: "Fraunces", Georgia, serif; font-size: 13.5px; cursor: pointer; transition: all 0.2s ease; }
+  .bp-test.active { background: linear-gradient(#cdad70, #a8863f); color: #1a120b; border-color: #cdad70; font-weight: 600; box-shadow: 0 2px 10px -2px rgba(205,173,112,0.5); }
+  .bp-scroll { overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 6px 16px calc(20px + env(safe-area-inset-bottom)); }
+  .bp-books { display: flex; flex-direction: column; }
+  .bp-books[hidden] { display: none; }
+  .bp-book-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; background: none; border: none; border-bottom: 1px solid rgba(200,160,90,0.09); color: #ecdcbb; font-family: "Fraunces", Georgia, serif; font-size: 17px; padding: 14px 8px; cursor: pointer; text-align: left; transition: background 0.15s ease, padding-left 0.15s ease; }
+  .bp-book-row:hover { background: rgba(200,160,90,0.08); padding-left: 12px; }
+  .bp-book-ch { font-size: 11.5px; color: #9a875f; font-family: -apple-system, BlinkMacSystemFont, sans-serif; letter-spacing: 0.03em; flex: 0 0 auto; }
+  .bp-back { background: none; border: none; color: #dcc088; font-family: "Fraunces", Georgia, serif; font-size: 17px; cursor: pointer; padding: 8px 6px 16px; }
+  .bp-chapters { display: grid; grid-template-columns: repeat(auto-fill, minmax(48px, 1fr)); gap: 9px; }
+  .bp-chapters .chapter-cell { background: rgba(200,160,90,0.07); border: 1px solid rgba(200,160,90,0.2); color: #ecdcbb; border-radius: 9px; padding: 13px 0; font-family: "Fraunces", Georgia, serif; font-size: 16px; cursor: pointer; transition: background 0.15s ease, transform 0.1s ease; }
+  .bp-chapters .chapter-cell:hover { background: rgba(205,173,112,0.22); }
+  .bp-chapters .chapter-cell:active { transform: scale(0.94); }
+
   /* ---- morning threshold (leather journal cover) ---- */
   .threshold {
     position: fixed; inset: 0; z-index: 120;
@@ -2901,14 +2930,22 @@
 
   <!-- Bible picker (choose book + chapter) -->
   <div class="modal-overlay" id="biblePicker" hidden>
-    <div class="modal">
-      <h2 class="modal-title serif">Open your Bible</h2>
-      <label class="field-label">Book</label>
-      <select class="ob-book" id="pickBook"></select>
-      <label class="field-label">Chapter</label>
-      <div class="chapter-grid" id="pickChapters"></div>
-      <button class="modal-primary" id="pickOpen">Read</button>
-      <button class="modal-text" id="pickCancel">Cancel</button>
+    <div class="bp-book">
+      <div class="bp-head">
+        <div class="bp-title serif">Open your Bible</div>
+        <button class="bp-x" id="pickCancel" aria-label="Close">×</button>
+      </div>
+      <div class="bp-testaments" id="bpTestaments">
+        <button class="bp-test" data-t="ot">Old Testament</button>
+        <button class="bp-test" data-t="nt">New Testament</button>
+      </div>
+      <div class="bp-scroll" id="bpScroll">
+        <div class="bp-books" id="pickBooks"></div>
+        <div id="bpChaptersWrap" hidden>
+          <button class="bp-back" id="bpBack">‹ <span id="bpBackBook"></span></button>
+          <div class="bp-chapters" id="pickChapters"></div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -4137,28 +4174,46 @@
   $("biblePick").addEventListener("click", openBiblePicker);
   $("bibleAa").addEventListener("click", openReadSheet);
 
-  // ===== Open your Bible (book + chapter picker) =====
-  var pickBookName = "John", pickChapter = 1;
-  function fillPickChapters() {
-    var n = chaptersOf(pickBookName), html = "";
-    for (var c = 1; c <= n; c++) html += '<button class="chapter-cell' + (c === pickChapter ? " sel" : "") + '" data-c="' + c + '">' + c + "</button>";
+  // ===== Open your Bible (leather table of contents) =====
+  var bpTestament = "ot", bpBook = "Genesis";
+  function bpBooks() { return bpTestament === "nt" ? BOOKS.slice(39) : BOOKS.slice(0, 39); }
+  function bpRenderBooks() {
+    $("pickBooks").innerHTML = bpBooks().map(function (b) {
+      return '<button class="bp-book-row" data-book="' + escapeHtml(b[0]) + '"><span class="bp-book-name">' + escapeHtml(b[0]) + '</span><span class="bp-book-ch">' + b[1] + ' ch</span></button>';
+    }).join("");
+  }
+  function bpSyncTabs() { Array.prototype.forEach.call($("bpTestaments").children, function (b) { b.classList.toggle("active", b.getAttribute("data-t") === bpTestament); }); }
+  function bpShowBooks() { $("bpChaptersWrap").hidden = true; $("pickBooks").hidden = false; $("bpScroll").scrollTop = 0; }
+  function bpShowChapters(book) {
+    bpBook = book;
+    var n = chaptersOf(book), html = "";
+    for (var c = 1; c <= n; c++) html += '<button class="chapter-cell" data-c="' + c + '">' + c + "</button>";
     $("pickChapters").innerHTML = html;
+    $("bpBackBook").textContent = book;
+    $("pickBooks").hidden = true; $("bpChaptersWrap").hidden = false; $("bpScroll").scrollTop = 0;
   }
   function openBiblePicker() {
-    if (!$("pickBook").options.length) {
-      $("pickBook").innerHTML = BOOKS.map(function (b) { return '<option value="' + b[0] + '">' + b[0] + "</option>"; }).join("");
-    }
-    pickBookName = $("pickBook").value || "John"; pickChapter = 1;
-    fillPickChapters();
+    var curBook = (db.lastPassage || "John 1").replace(/\s+\d+$/, "");
+    var ntNames = BOOKS.slice(39).map(function (b) { return b[0]; });
+    bpTestament = ntNames.indexOf(curBook) >= 0 ? "nt" : "ot";
+    bpSyncTabs(); bpRenderBooks(); bpShowBooks();
     $("biblePicker").hidden = false;
+    playPage();
   }
   $("openBibleBtn").addEventListener("click", openBiblePicker);
-  $("pickBook").addEventListener("change", function () { pickBookName = this.value; pickChapter = 1; fillPickChapters(); });
+  $("bpTestaments").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-t]"); if (!b) return;
+    bpTestament = b.getAttribute("data-t"); bpSyncTabs(); bpRenderBooks(); bpShowBooks(); buzz(8);
+  });
+  $("pickBooks").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-book]"); if (!b) return;
+    bpShowChapters(b.getAttribute("data-book")); buzz(8);
+  });
   $("pickChapters").addEventListener("click", function (e) {
     var c = e.target.closest("[data-c]"); if (!c) return;
-    pickChapter = +c.getAttribute("data-c"); fillPickChapters();
+    $("biblePicker").hidden = true; openBible(bpBook + " " + c.getAttribute("data-c"));
   });
-  $("pickOpen").addEventListener("click", function () { $("biblePicker").hidden = true; openBible(pickBookName + " " + pickChapter); });
+  $("bpBack").addEventListener("click", bpShowBooks);
   $("pickCancel").addEventListener("click", function () { $("biblePicker").hidden = true; });
   $("biblePicker").addEventListener("click", function (e) { if (e.target === this) this.hidden = true; });
 
