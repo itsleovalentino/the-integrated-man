@@ -440,14 +440,6 @@
   .open-bible-link .obl-chev { transition: transform 0.2s ease; }
   .open-bible-link:hover .obl-chev { transform: translateX(3px); }
   /* here's-your-day glance */
-  .day-glance { display: flex; align-items: center; flex-wrap: wrap; gap: 9px; margin-top: 18px; }
-  .day-glance[hidden] { display: none; }
-  .glance-pill { display: inline-flex; align-items: center; gap: 7px; background: none; border: none; padding: 2px 0; cursor: pointer; font-family: inherit; font-size: 12.5px; color: var(--ink-faint); }
-  .glance-pill .gp-dot { width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid var(--ink-faint); background: none; box-sizing: border-box; transition: all 0.2s ease; }
-  .glance-pill.done { color: var(--ink); }
-  .glance-pill.done .gp-dot, .glance-pill.on .gp-dot { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 7px -1px var(--accent); }
-  .glance-pill.on { color: var(--accent); }
-  .glance-sep { color: var(--ink-faint); opacity: 0.5; font-size: 12px; }
   .chapter-grid {
     display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px;
     max-height: 220px; overflow-y: auto; padding: 2px;
@@ -2404,7 +2396,6 @@
         <span class="mini-chain" id="chainGrid" aria-hidden="true"></span>
         <span class="chain-count" id="chainCount"></span>
       </div>
-      <div class="day-glance" id="dayGlance" hidden></div>
     </header>
 
     <section data-w="reading" data-w-title="Today's Reading">
@@ -4853,30 +4844,7 @@
     if (isNum(s) && s < 65 && tier !== "low") note = "Short on sleep — protect tonight. " + note;
     return note;
   }
-  // "Here's your day" — a calm one-line glance of today's touchpoints (done = filled)
-  function glancePill(label, done, act) { return '<button class="glance-pill' + (done ? " done" : "") + '"' + (act ? ' data-act="' + act + '"' : "") + '><span class="gp-dot"></span>' + label + '</button>'; }
-  function renderDayGlance() {
-    var el = $("dayGlance"); if (!el) return;
-    var readDone = Object.keys(db.readLog[todayKey] || {}).length > 0;
-    var hasPlan = !!(db.profile && db.profile.plans && db.profile.plans.length);
-    var journaled = !!(((db.journal && db.journal[todayKey]) || "").trim()) || (db.thoughts || []).some(function (t) { return t.dateKey === todayKey && (t.text || t.voice); });
-    var bits = [];
-    if (hasPlan) bits.push(glancePill("Reading", readDone, "glanceReading"));
-    bits.push(glancePill("Journal", journaled, "glanceJournal"));
-    var openP = (typeof wallState !== "undefined" && wallState.prayers) ? wallState.prayers.filter(function (p) { return !p.answered; }).length : 0;
-    if (openP) bits.push('<button class="glance-pill on" data-act="glanceWall"><span class="gp-dot"></span>' + openP + ' on the wall</button>');
-    el.innerHTML = bits.join('<span class="glance-sep">·</span>');
-    el.hidden = !bits.length;
-  }
-  var _dg = document.getElementById("dayGlance");
-  if (_dg) _dg.addEventListener("click", function (e) {
-    var b = e.target.closest("[data-act]"); if (!b) return;
-    var a = b.getAttribute("data-act"); fb("select");
-    if (a === "glanceReading") { var r = document.querySelector('[data-w="reading"]'); if (r) r.scrollIntoView({ behavior: "smooth", block: "center" }); }
-    else if (a === "glanceJournal") { setView("journal"); }
-    else if (a === "glanceWall") { setView("fellowship"); }
-  });
-  var FOOT_ICON = '<svg viewBox="0 0 24 24"><path d="M7 13c-1.5 0-2.5-1.5-2.5-4S5.5 4 7 4s2 2 2 4.5S8.5 13 7 13z"/><path d="M5.5 15c1.5 0 2 1 2 2.5S7 20 5.5 20 4 18.8 4 17.3 4.2 15 5.5 15z"/><path d="M17 12c1.5 0 2.5-1.5 2.5-4S18.5 3 17 3s-2 2-2 4.5S15.5 12 17 12z"/><path d="M18.5 14c-1.5 0-2 1-2 2.5s.5 2.5 2 2.5 1.5-1.2 1.5-2.7-.2-2.3-1.5-2.3z"/></svg>';
+  var FOOT_ICON ='<svg viewBox="0 0 24 24"><path d="M7 13c-1.5 0-2.5-1.5-2.5-4S5.5 4 7 4s2 2 2 4.5S8.5 13 7 13z"/><path d="M5.5 15c1.5 0 2 1 2 2.5S7 20 5.5 20 4 18.8 4 17.3 4.2 15 5.5 15z"/><path d="M17 12c1.5 0 2.5-1.5 2.5-4S18.5 3 17 3s-2 2-2 4.5S15.5 12 17 12z"/><path d="M18.5 14c-1.5 0-2 1-2 2.5s.5 2.5 2 2.5 1.5-1.2 1.5-2.7-.2-2.3-1.5-2.3z"/></svg>';
   function fmtNum(n) { return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ","); }
   var stepsGoalOpen = false;
   function stepDayLabel(k) {
@@ -7076,7 +7044,6 @@
     $("greeting").textContent = gname ? ("Good " + partOfDay + " " + gname + ".") : ("Good " + partOfDay + ".");
     $("datestamp").textContent =
       days[now.getDay()] + " · " + months[now.getMonth()] + " " + now.getDate() + ", " + now.getFullYear();
-    if (typeof renderDayGlance === "function") renderDayGlance();
     setAmbient(hour);              // living background
     db.openLog[todayKey] = true;   // mark the chain
 
