@@ -257,12 +257,17 @@
   .oura-row { display: flex; gap: 8px; margin-top: 8px; }
   .oura-msg { font-size: 12.5px; color: var(--accent); margin-top: 8px; min-height: 16px; }
   .oura-msg.err { color: #d08a72; }
-  .health-grid { display: flex; gap: 12px; }
-  .health-stat { flex: 1; background: var(--field); border: 1px solid var(--field-edge); border-radius: 12px; padding: 16px 10px; text-align: center; }
-  .health-num { font-size: 30px; color: var(--ink); line-height: 1; }
-  .health-cap { font-size: 10.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); margin-top: 6px; }
-  .health-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 14px; }
-  .health-day { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-faint); }
+  .health-rings { display: flex; gap: 16px; justify-content: center; }
+  .health-ring { flex: 1; max-width: 130px; text-align: center; }
+  .hr-wrap { position: relative; width: 100px; height: 100px; margin: 0 auto; }
+  .hr-svg { width: 100px; height: 100px; transform: rotate(-90deg); }
+  .hr-track { fill: none; stroke: var(--field-edge); stroke-width: 7; }
+  .hr-fill { fill: none; stroke-width: 7; stroke-linecap: round; transition: stroke-dashoffset 0.9s cubic-bezier(.2,.7,.2,1); }
+  .hr-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; }
+  .hr-icon { width: 18px; height: 18px; fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+  .hr-num { font-size: 24px; color: var(--ink); line-height: 1; font-variant-numeric: tabular-nums; }
+  .hr-label { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-faint); margin-top: 12px; }
+  .health-note { margin-top: 20px; font-size: 15px; line-height: 1.55; color: var(--ink-soft); text-align: center; font-style: italic; }
   .health-connect { font-size: 14px; color: var(--ink-soft); line-height: 1.5; }
   .label {
     font-size: 11px;
@@ -3992,24 +3997,48 @@
     if (!arr || !arr.length) return null;
     return arr.slice().sort(function (a, b) { return (a.day || "") < (b.day || "") ? 1 : -1; })[0];
   }
+  var HR_LEAF = '<path d="M4 20c0-9 6-15 16-16 0 10-7 16-16 16z"/><path d="M4 20 14.5 9.5"/>';
+  var HR_MOON = '<path d="M20 14a8 8 0 1 1-9.9-9.9A7 7 0 0 0 20 14z"/>';
+  function healthColor(v) { return v >= 85 ? "#8aa85a" : v >= 70 ? "#c9a86a" : "#d59f3b"; }
+  function healthRing(score, iconSvg, label) {
+    var has = isNum(score), C = 263.894; // 2·π·42
+    var off = has ? C * (1 - Math.max(0, Math.min(100, score)) / 100) : C;
+    var color = has ? healthColor(score) : "var(--field-edge)";
+    return '<div class="health-ring"><div class="hr-wrap">' +
+      '<svg viewBox="0 0 100 100" class="hr-svg"><circle class="hr-track" cx="50" cy="50" r="42"/>' +
+      '<circle class="hr-fill" cx="50" cy="50" r="42" style="stroke:' + color + ';stroke-dasharray:' + C + ';stroke-dashoffset:' + off + '"/></svg>' +
+      '<div class="hr-center"><svg class="hr-icon" viewBox="0 0 24 24" style="stroke:' + color + '">' + iconSvg + '</svg>' +
+      '<span class="hr-num">' + (has ? score : "—") + '</span></div></div>' +
+      '<div class="hr-label">' + label + '</div></div>';
+  }
+  function healthNote(r, s) {
+    var primary = isNum(r) ? r : (isNum(s) ? s : null);
+    if (primary == null) return "";
+    var pools = {
+      high: ["Well-rested and ready — steward it. Do the hard, holy thing first.",
+             "Your body's in a good place today. Lead from strength, and stay humble in it.",
+             "Strong today. Pour it out on what matters most."],
+      mid:  ["Solid ground today. Pace yourself, stay present, and finish what you start.",
+             "Enough in the tank. Pick one thing and give it your best.",
+             "You don't need to be at a hundred to be faithful today. Steady on."],
+      low:  ["Your body's asking for grace today. Go gentle, and guard your rest tonight.",
+             "Running low isn't failure — it's information. Simplify, and rest well.",
+             "A lighter day is okay. Be kind to yourself; strength returns with rest."]
+    };
+    var tier = primary >= 85 ? "high" : primary >= 70 ? "mid" : "low";
+    var pool = pools[tier], note = pool[dayNumOf(todayKey) % pool.length];
+    if (isNum(s) && s < 65 && tier !== "low") note = "Short on sleep — protect tonight. " + note;
+    return note;
+  }
   function paintHealth(d) {
     var p = $("healthPanel"); if (!p) return;
     var rd = latestDay(d && d.readiness), sl = latestDay(d && d.sleep);
     if (!rd && !sl) { p.innerHTML = '<div class="health-connect">No Oura data for the last few days yet.</div>'; return; }
-    p.innerHTML =
-      '<div class="health-grid">' +
-        '<div class="health-stat"><div class="health-num serif">' + (rd && isNum(rd.score) ? rd.score : "—") + '</div><div class="health-cap">Readiness</div></div>' +
-        '<div class="health-stat"><div class="health-num serif">' + (sl && isNum(sl.score) ? sl.score : "—") + '</div><div class="health-cap">Sleep</div></div>' +
-      '</div>' +
-      '<div class="health-foot"><span class="health-day">' + escapeHtml((rd && rd.day) || (sl && sl.day) || "") + '</span>' +
-        '<button class="verse-act" id="healthVitality">Use readiness for Vitality →</button></div>';
-    var hv = $("healthVitality");
-    if (hv) hv.onclick = function () {
-      if (!rd || !isNum(rd.score)) return;
-      var r = rec("vitality"); r.deep = false; r.score = Math.max(0, Math.min(10, Math.round(rd.score / 10)));
-      pillarChanged("vitality"); playTick(); buzz(10);
-      showToastMsg("Vitality set to " + r.score + " from your Oura readiness.", 2600);
-    };
+    var rScore = rd && isNum(rd.score) ? rd.score : null;
+    var sScore = sl && isNum(sl.score) ? sl.score : null;
+    p.innerHTML = '<div class="health-rings">' +
+      healthRing(rScore, HR_LEAF, "Readiness") + healthRing(sScore, HR_MOON, "Sleep") + '</div>' +
+      '<div class="health-note">' + escapeHtml(healthNote(rScore, sScore)) + '</div>';
   }
   function renderHealth() {
     var p = $("healthPanel"); if (!p) return;
