@@ -1710,6 +1710,7 @@
   }
   .bv sup { color: var(--read-sup); font-size: 0.56em; font-weight: 700; margin: 0 5px 0 2px; vertical-align: super; line-height: 0; }
   .bv.sel { background: var(--read-sel); box-shadow: 0 0 0 1px var(--read-line); }
+  .bv.reading { background: var(--read-hl); box-shadow: 0 0 0 2px var(--read-sup); border-radius: 5px; transition: background 0.25s ease; }
   .bv.hl { background: var(--read-hl); }
   /* context highlight from Verse of the Day — cool tint, distinct from the gold anchor */
   .bv.context { background: rgba(93,140,180,0.24); box-shadow: 0 0 0 1px rgba(93,140,180,0.42); }
@@ -2669,7 +2670,7 @@
         </button>
       </div>
       <div class="bible-chrome-r">
-        <button class="bible-ctl icon-only" id="bibleAudio" aria-label="Listen">
+        <button class="bible-ctl icon-only" id="bibleAudio" aria-label="Read aloud">
           <svg viewBox="0 0 24 24" class="ic-play"><path d="M8 5v14l11-7z" fill="currentColor" stroke="none"/></svg>
           <svg viewBox="0 0 24 24" class="ic-pause"><rect x="6" y="5" width="4" height="14" rx="1" fill="currentColor" stroke="none"/><rect x="14" y="5" width="4" height="14" rx="1" fill="currentColor" stroke="none"/></svg>
         </button>
@@ -4174,26 +4175,54 @@
       if (db.lastPassage) loadChapter(db.lastPassage);
     });
   }
-  function isNTPassage(passage) {
-    var m = (passage || "").match(/^(.*?)\s+\d+$/); if (!m) return false;
-    return BOOKS.slice(39).some(function (b) { return b[0] === m[1].trim(); });
+  // ---- Read aloud (device narration) with per-verse highlight + auto-scroll ----
+  // Uses the Web Speech API — no proxy/key needed, works for OT + NT + any translation.
+  var ttsVerses = [], ttsIdx = 0, ttsPlaying = false, ttsVoice = null, ttsSupported = ("speechSynthesis" in window && "SpeechSynthesisUtterance" in window);
+  function pickReadVoice() {
+    if (!ttsSupported) return;
+    var voices = window.speechSynthesis.getVoices() || [];
+    var en = voices.filter(function (v) { return /^en(\b|[-_])/i.test(v.lang); });
+    var nice = en.filter(function (v) { return /Samantha|Siri|Ava|Allison|Nathan|Aaron|Natural|Google US English|Daniel|Serena|Karen|Moira/i.test(v.name); });
+    ttsVoice = nice[0] || en[0] || voices[0] || null;
   }
-  function updateAudioBtn(passage) {
-    var btn = $("bibleAudio"); if (!btn) return;
-    var el = $("bibleAudioEl"); if (el && !el.paused) el.pause();   // stop when changing chapters
-    btn.hidden = !isNTPassage(passage);   // the only audio recording is New-Testament only
+  if (ttsSupported) { pickReadVoice(); window.speechSynthesis.onvoiceschanged = pickReadVoice; }
+  function clearReadingHl() { var e = document.querySelector("#bibleBody .bv.reading"); if (e) e.classList.remove("reading"); }
+  function resetReading() {
+    ttsPlaying = false; ttsIdx = 0; ttsVerses = [];
+    if (ttsSupported) { try { window.speechSynthesis.cancel(); } catch (e) {} }
+    clearReadingHl();
+    var b = $("bibleAudio"); if (b) b.classList.remove("playing");
+  }
+  function updateAudioBtn() { var btn = $("bibleAudio"); if (btn) btn.hidden = !ttsSupported; resetReading(); }
+  function ttsQueueFrom(start) {
+    for (var i = start; i < ttsVerses.length; i++) {
+      (function (i) {
+        var v = ttsVerses[i];
+        var u = new SpeechSynthesisUtterance(v.text);
+        if (ttsVoice) u.voice = ttsVoice;
+        u.rate = 0.94; u.pitch = 1;
+        u.onstart = function () {
+          ttsIdx = i; clearReadingHl(); v.el.classList.add("reading");
+          try { v.el.scrollIntoView({ block: "center", behavior: "smooth" }); } catch (e) {}
+        };
+        u.onend = function () { if (i >= ttsVerses.length - 1) resetReading(); };
+        try { window.speechSynthesis.speak(u); } catch (e) {}
+      })(i);
+    }
+  }
+  function startReading() {
+    var els = Array.prototype.slice.call(document.querySelectorAll("#bibleBody .bv"));
+    if (!els.length) { showToastMsg("Open a chapter first."); return; }
+    ttsVerses = els.map(function (el) { return { el: el, text: (el.getAttribute("data-text") || el.textContent || "").trim() }; }).filter(function (v) { return v.text; });
+    ttsIdx = 0; ttsPlaying = true; $("bibleAudio").classList.add("playing");
+    try { window.speechSynthesis.cancel(); } catch (e) {}
+    ttsQueueFrom(0);
   }
   function toggleBibleAudio() {
-    var el = $("bibleAudioEl"), btn = $("bibleAudio");
-    if (el && !el.paused) { el.pause(); return; }
-    var chapterId = chapterIdOf(db.lastPassage || "John 1");
-    if (!chapterId) { showToastMsg("Pick a chapter first."); return; }
-    btn.classList.add("loading");
-    bibleProxy({ action: "audio", audioId: AUDIO_BIBLE, chapterId: chapterId }, function (res) {
-      btn.classList.remove("loading");
-      if (res && res.url) { el.src = res.url; el.play().catch(function () { showToastMsg("Couldn’t play the audio here."); }); }
-      else { showToastMsg("No audio for this chapter."); }
-    });
+    if (!ttsSupported) { showToastMsg("Read-aloud isn’t available on this device."); return; }
+    if (ttsPlaying) { ttsPlaying = false; try { window.speechSynthesis.cancel(); } catch (e) {} clearReadingHl(); $("bibleAudio").classList.remove("playing"); return; }
+    if (ttsIdx > 0 && ttsIdx < ttsVerses.length) { ttsPlaying = true; $("bibleAudio").classList.add("playing"); ttsQueueFrom(ttsIdx); return; }   // resume where we left off
+    startReading();
   }
   var contextRef = null;   // when opened from Verse of the Day, the verse to spotlight
   function openBible(passage, focusRef) {
@@ -4202,7 +4231,7 @@
     $("bibleRefBtn").textContent = passage;
     $("bibleGateway").href = gateway(passage);
     if (typeof applyReaderPrefs === "function") applyReaderPrefs();
-    updateAudioBtn(passage);
+    updateAudioBtn();
     loadChapter(passage);
     setView("bible");
     $("bibleView").scrollTop = 0;
@@ -4276,11 +4305,6 @@
   $("biblePick").addEventListener("click", openBiblePicker);
   $("bibleAa").addEventListener("click", openReadSheet);
   $("bibleAudio").addEventListener("click", toggleBibleAudio);
-  (function () {
-    var el = $("bibleAudioEl"), btn = $("bibleAudio");
-    function sync() { btn.classList.toggle("playing", !!(el && !el.paused && !el.ended)); }
-    ["play", "pause", "ended"].forEach(function (ev) { el.addEventListener(ev, sync); });
-  })();
 
   // ===== Open your Bible (leather table of contents) =====
   var bpTestament = "ot", bpBook = "Genesis";
