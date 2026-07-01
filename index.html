@@ -217,6 +217,23 @@
 
   /* ---- sections ---- */
   section { margin-bottom: 38px; }
+  /* gratitude widget */
+  .grat-lead { font-size: 16px; color: var(--ink-soft); margin: 0 0 16px; }
+  .grat-list { display: flex; flex-direction: column; gap: 12px; }
+  .grat-row { display: flex; align-items: center; gap: 12px; }
+  .grat-num {
+    flex-shrink: 0; width: 24px; height: 24px; border-radius: 50%;
+    background: var(--accent-soft); color: var(--accent);
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 12px; font-variant-numeric: tabular-nums;
+  }
+  .grat-input {
+    flex: 1; min-width: 0; background: none; border: none; border-bottom: 1px solid var(--field-edge);
+    color: var(--ink); font-family: inherit; font-size: 15px; padding: 8px 2px; outline: none;
+    transition: border-color 0.2s ease;
+  }
+  .grat-input::placeholder { color: var(--ink-faint); }
+  .grat-input:focus { border-bottom-color: var(--accent); }
   .label {
     font-size: 11px;
     letter-spacing: 0.22em;
@@ -1992,6 +2009,18 @@
       </div>
     </section>
 
+    <section data-w="gratitude" data-w-title="Gratitude">
+      <p class="label">Gratitude <span class="saved-tick" id="gratTick">Saved</span></p>
+      <div class="panel">
+        <p class="grat-lead serif">Three gifts from today.</p>
+        <div class="grat-list" id="gratList">
+          <div class="grat-row"><span class="grat-num">1</span><input type="text" class="grat-input" data-i="0" placeholder="I'm grateful for…" maxlength="140" autocomplete="off" /></div>
+          <div class="grat-row"><span class="grat-num">2</span><input type="text" class="grat-input" data-i="1" placeholder="I'm grateful for…" maxlength="140" autocomplete="off" /></div>
+          <div class="grat-row"><span class="grat-num">3</span><input type="text" class="grat-input" data-i="2" placeholder="I'm grateful for…" maxlength="140" autocomplete="off" /></div>
+        </div>
+      </div>
+    </section>
+
     <section data-w="prayer" data-w-title="Prayer List">
       <button class="pillar-entry" id="prayerHead" aria-expanded="false">
         <span class="pe-icon"><svg viewBox="0 0 24 36" aria-hidden="true"><line x1="12" y1="3" x2="12" y2="31"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span>
@@ -2400,11 +2429,14 @@
         </div>
       </div>
 
+      <label class="field-label">Your data</label>
       <div class="settings-data">
         <button class="modal-secondary" id="exportBtn">Back up my data</button>
-        <button class="modal-secondary" id="importBtn">Restore from backup</button>
+        <button class="modal-secondary" id="importBtn">Restore from a file</button>
         <input type="file" id="importFile" accept="application/json" hidden />
       </div>
+      <button class="modal-secondary" id="restoreSnapBtn" style="width:100%;margin-top:8px;" hidden></button>
+      <p class="ob-reading-hint" style="margin-top:8px;text-align:left;">Your journal lives safely in the cloud and on this device, with an automatic on-device snapshot as a backstop. Download a file now and then for extra peace of mind.</p>
       <div class="settings-msg" id="settingsMsg"></div>
 
       <button class="modal-primary" id="settingsSave">Save</button>
@@ -2510,14 +2542,24 @@
 
   // ---------- storage ----------
   var KEY = "leo_daily_v1";
+  var SAFE_KEY = "leo_daily_safe"; // rolling local "last known good" snapshot
   function load() {
     try { return JSON.parse(localStorage.getItem(KEY)) || {}; }
     catch (e) { return {}; }
+  }
+  var lastSnapAt = 0;
+  function snapshotSafe() {
+    if (!(db.profile && db.profile.onboarded)) return; // never snapshot an empty/half state
+    var now = Date.now();
+    if (now - lastSnapAt < 90000) return;              // at most ~every 90s
+    lastSnapAt = now;
+    try { localStorage.setItem(SAFE_KEY, JSON.stringify({ t: now, data: db })); } catch (e) {}
   }
   function save() {
     db.updatedAt = Date.now(); // freshness stamp so cloud sync never overwrites newer local data
     try { localStorage.setItem(KEY, JSON.stringify(db)); }
     catch (e) { /* storage blocked (sandbox / private mode) — keep running in-memory */ }
+    snapshotSafe();                                          // keep a local safety copy
     if (typeof cloudPushSoon === "function") cloudPushSoon(); // mirror to the cloud if signed in
   }
   var db = load();
@@ -2528,6 +2570,7 @@
   db.reflections = db.reflections || {};  // dateKey -> {win, release, tomorrow}
   db.ratings = db.ratings || {};          // dateKey -> {pillarKey: {score, why, deep, facets, open}}
   db.pillarSkip = db.pillarSkip || {};    // dateKey -> true when a man opts out of tracking that day
+  db.gratitude = db.gratitude || {};      // dateKey -> [g1, g2, g3]
   db.prayers = db.prayers || [];          // [{id, scope:'others'|'mine', who, text, created, answered}]
   db.habits = db.habits || [];            // [{id, name, icon}]
   db.habitLog = db.habitLog || {};        // dateKey -> {habitId: true}
@@ -3741,6 +3784,23 @@
   wireSaveMini("journalSave", "journalSaveMsg", JCARDS.journal);
   wireSaveMini("eveningSave", "eveningSaveMsg", JCARDS.evening);
 
+  // ----- Gratitude widget -----
+  function loadGratitude() {
+    var g = db.gratitude[todayKey] || [];
+    Array.prototype.forEach.call(document.querySelectorAll("#gratList .grat-input"), function (inp) {
+      inp.value = g[+inp.getAttribute("data-i")] || "";
+    });
+  }
+  $("gratList").addEventListener("input", function (e) {
+    var inp = e.target.closest(".grat-input"); if (!inp) return;
+    var i = +inp.getAttribute("data-i");
+    var g = db.gratitude[todayKey] || ["", "", ""];
+    g[i] = inp.value;
+    if (g.some(function (x) { return (x || "").trim(); })) db.gratitude[todayKey] = g;
+    else delete db.gratitude[todayKey];
+    save(); flash("gratTick");
+  });
+
   // ===== Voice: dictation (speech-to-text) + voice memos =====
   var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   var canRecord = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.MediaRecorder);
@@ -4100,6 +4160,22 @@
     b._action = null;
     $("toast").hidden = false;
     clearTimeout(toastTimer); toastTimer = setTimeout(function () { $("toast").hidden = true; }, ms || 6000);
+  }
+  // gentle every-2-weeks nudge to download an off-device backup (browsers can't auto-save files)
+  function maybeBackupReminder() {
+    if (appGated() || !$("toast").hidden) return; // not over the gate, and don't stack on another toast
+    var hasContent = Object.keys(db.journal || {}).length || Object.keys(db.gratitude || {}).length ||
+      (db.prayers || []).length || Object.keys(db.ratings || {}).length;
+    if (!hasContent) return;
+    var sinceBackup = (Date.now() - (db.lastBackupAt || 0)) / 86400000;
+    var sinceReminded = (Date.now() - (db.lastBackupReminderAt || 0)) / 86400000;
+    if ((db.lastBackupAt && sinceBackup < 14) || sinceReminded < 3) return; // backed up recently, or reminded recently
+    db.lastBackupReminderAt = Date.now(); save();
+    var b = $("toastBody");
+    b.innerHTML = '<div class="toast-kicker">Keep your journal safe</div><div class="toast-text">It’s a good time to download a backup. Tap to save a copy.</div>';
+    b._action = function () { if (downloadBackup()) showToastMsg("Backup saved to your device.", 2600); };
+    $("toast").hidden = false;
+    clearTimeout(toastTimer); toastTimer = setTimeout(function () { $("toast").hidden = true; }, 9000);
   }
   function showToast(kind, mem) {
     var b = $("toastBody");
@@ -4607,6 +4683,7 @@
     if (db.ratings[k]) return true;
     if (hasVoice(k)) return true;
     if (db.scriptureNoteLog[k] && Object.keys(db.scriptureNoteLog[k]).length) return true;
+    if (db.gratitude[k] && db.gratitude[k].some(function (x) { return (x || "").trim(); })) return true;
     return false;
   }
   function fmtMonth(k) { var p = k.split("-"); return months[p[1] - 1] + " " + p[0]; }
@@ -4689,6 +4766,7 @@
     Object.keys(db.voice.journal || {}).forEach(function (k) { keySet[k] = true; });
     Object.keys(db.voice.evening || {}).forEach(function (k) { keySet[k] = true; });
     Object.keys(db.scriptureNoteLog).forEach(function (k) { keySet[k] = true; });
+    Object.keys(db.gratitude).forEach(function (k) { keySet[k] = true; });
     return Object.keys(keySet).filter(dayHasContent).sort().reverse();
   }
   function renderJournal() {
@@ -4851,6 +4929,11 @@
     var m = db.morning[k]; if (m && m.trim()) html += paperSection("Morning Reflection", "", m);
     var j = db.journal[k]; if (j && j.trim()) html += paperSection("Journaling Prompt", morningPromptFor(k), j);
     var e = db.evening[k]; if (e && e.trim()) html += paperSection("End of Day", eveningPromptFor(k), e);
+    var gr = db.gratitude[k];
+    if (gr && gr.some(function (x) { return (x || "").trim(); })) {
+      var grText = gr.filter(function (x) { return (x || "").trim(); }).map(function (x) { return "• " + x.trim(); }).join("\n");
+      html += paperSection("Gratitude", "", grText);
+    }
     var sn = db.scriptureNoteLog[k];
     if (sn) {
       var snLines = Object.keys(sn).filter(function (ref) { return (sn[ref] || "").trim(); })
@@ -5084,6 +5167,7 @@
     renderLockToggle();
     renderNotifyToggle();
     if (typeof renderAccount === "function") renderAccount();
+    if (typeof renderSnapButton === "function") renderSnapButton();
     $("settingsMsg").textContent = "";
     $("lockCoach").hidden = true; $("lockToggle").classList.remove("coach-target"); // clear any coach mark
     $("settings").hidden = false;
@@ -5135,7 +5219,7 @@
   }
 
   // backup / restore — insurance against a cleared cache
-  $("exportBtn").addEventListener("click", function () {
+  function downloadBackup() {
     try {
       var blob = new Blob([JSON.stringify(db, null, 2)], { type: "application/json" });
       var url = URL.createObjectURL(blob);
@@ -5143,8 +5227,31 @@
       a.href = url; a.download = "integrated-man-backup-" + todayKey + ".json";
       document.body.appendChild(a); a.click(); document.body.removeChild(a);
       setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
-      $("settingsMsg").textContent = "Backup downloaded.";
-    } catch (e) { $("settingsMsg").textContent = "Couldn’t export in this context."; }
+      db.lastBackupAt = Date.now(); save();
+      return true;
+    } catch (e) { return false; }
+  }
+  $("exportBtn").addEventListener("click", function () {
+    $("settingsMsg").textContent = downloadBackup() ? "Backup downloaded." : "Couldn’t export in this context.";
+  });
+  // ----- restore the on-device safety snapshot -----
+  function readSnapshot() { try { return JSON.parse(localStorage.getItem(SAFE_KEY)); } catch (e) { return null; } }
+  function renderSnapButton() {
+    var snap = readSnapshot(), btn = $("restoreSnapBtn");
+    if (snap && snap.data) {
+      var d = new Date(snap.t || Date.now());
+      btn.textContent = "Restore on-device snapshot (" + months[d.getMonth()] + " " + d.getDate() + ", " +
+        String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0") + ")";
+      btn.hidden = false;
+    } else { btn.hidden = true; }
+  }
+  $("restoreSnapBtn").addEventListener("click", function () {
+    var snap = readSnapshot(); if (!snap || !snap.data) return;
+    confirmDialog("Restore your last on-device snapshot? This replaces what's here now.", "Restore", function () {
+      try { localStorage.setItem(KEY, JSON.stringify(snap.data)); } catch (e) {}
+      $("settingsMsg").textContent = "Restored. Reloading…";
+      setTimeout(function () { location.reload(); }, 500);
+    });
   });
   $("importBtn").addEventListener("click", function () { $("importFile").click(); });
   $("importFile").addEventListener("change", function () {
@@ -5214,6 +5321,7 @@
     // journaling prompt + end-of-day reflection (prompt, answer, collapsed-if-answered)
     jcardLoad(JCARDS.journal);
     jcardLoad(JCARDS.evening);
+    loadGratitude();
 
     // scripture: read-checks + notes (one card per plan)
     renderReading();
@@ -5397,7 +5505,7 @@
       session = s || null;
       if (event === "SIGNED_OUT") {
         // leave nothing behind on this device — back to a clean gate until sign-in
-        try { localStorage.removeItem(KEY); } catch (e) {}
+        try { localStorage.removeItem(KEY); localStorage.removeItem(SAFE_KEY); } catch (e) {}
         location.reload();
         return;
       }
@@ -5510,6 +5618,7 @@
   // thought reminders + a gentle nudge / memory on open
   scheduleNotify();
   setTimeout(function () { maybeNudge(); }, 2600); // maybeNudge() now self-guards while gated
+  setTimeout(function () { maybeBackupReminder(); }, 9000); // later, and only if a nudge isn't already showing
 
   // roll over a few seconds after midnight, then keep rescheduling
   function scheduleMidnight() {
