@@ -150,6 +150,10 @@
   .theme-toggle:hover { color: var(--ink); border-color: var(--ink-faint); }
 
   /* ---- header ---- */
+  /* content-only text scale — bumps reading/writing text, never the chrome/layout */
+  :root { --read-scale: 1; }
+  html[data-textsize="large"] { --read-scale: 1.13; }
+  html[data-textsize="larger"] { --read-scale: 1.28; }
   header { margin-bottom: 34px; }
   .wordmark {
     display: flex;
@@ -241,7 +245,7 @@
   }
   .grat-add:hover { opacity: 0.8; }
   /* verse of the day widget */
-  .verse-text { font-size: 21px; line-height: 1.5; color: var(--ink); margin: 0; font-weight: 400; }
+  .verse-text { font-size: calc(21px * var(--read-scale)); line-height: 1.5; color: var(--ink); margin: 0; font-weight: 400; }
   .verse-text::before { content: "“"; color: var(--accent); }
   .verse-text::after { content: "”"; color: var(--accent); }
   .verse-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 18px; }
@@ -364,7 +368,7 @@
   .pw-name { font-size: 15px; color: var(--ink); font-weight: 500; }
   .pw-meta { font-size: 12px; color: var(--ink-faint); margin-top: 2px; display: flex; align-items: center; gap: 6px; }
   .pw-answered-tag { color: var(--accent); }
-  .pw-body { font-family: "Fraunces", Georgia, serif; font-size: 18px; line-height: 1.52; color: var(--ink); margin-bottom: 16px; }
+  .pw-body { font-family: "Fraunces", Georgia, serif; font-size: calc(18px * var(--read-scale)); line-height: 1.52; color: var(--ink); margin-bottom: 16px; }
   .pw-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
   .pw-praying { display: flex; align-items: center; gap: 9px; min-width: 0; }
   .pw-stack { display: flex; }
@@ -382,7 +386,7 @@
   .pw-enc-item .pw-av-sm { margin-top: 1px; }
   .pw-enc-txt { min-width: 0; }
   .pw-enc-from { font-size: 12px; color: var(--accent); margin-bottom: 2px; }
-  .pw-enc-body { font-size: 14px; color: var(--ink); line-height: 1.45; }
+  .pw-enc-body { font-size: calc(14px * var(--read-scale)); color: var(--ink); line-height: 1.45; }
   .pw-empty { text-align: center; font-size: 14px; color: var(--ink-faint); font-style: italic; padding: 30px 20px; line-height: 1.6; }
   .pw-compose-active { background: var(--field); border: 1px solid var(--accent); border-radius: 16px; padding: 14px; margin-bottom: 8px; }
   .pw-compose-active textarea { width: 100%; background: transparent; border: none; color: var(--ink); font-family: "Fraunces", Georgia, serif; font-size: 16px; line-height: 1.5; resize: none; outline: none; }
@@ -524,7 +528,7 @@
 
   /* ---- question ---- */
   .question {
-    font-size: 24px;
+    font-size: calc(24px * var(--read-scale));
     line-height: 1.4;
     font-weight: 400;
     margin: 0;
@@ -1194,7 +1198,7 @@
   .th-star, .th-del { background: none; border: none; cursor: pointer; padding: 2px 4px; color: var(--ink-faint); font-size: 14px; line-height: 1; }
   .th-star.on { color: var(--accent); }
   .th-del:hover { color: #c8654f; }
-  .th-text { font-size: 15px; line-height: 1.5; color: var(--ink); }
+  .th-text { font-size: calc(15px * var(--read-scale)); line-height: 1.5; color: var(--ink); }
   .th-item audio { width: 100%; height: 34px; margin-top: 4px; }
   .th-empty { color: var(--ink-faint); font-style: italic; font-size: 14px; padding: 28px 10px; text-align: center; }
 
@@ -1882,7 +1886,7 @@
   .journal-page { max-width: 620px; margin: 0 auto; padding: 4px 18px 120px; }
   .jp-compose { background: var(--field); border: 1px solid var(--field-edge); border-radius: 16px; padding: 16px 18px; margin-bottom: 26px; transition: border-color 0.2s ease; }
   .jp-compose:focus-within { border-color: var(--accent); }
-  .jp-text { min-height: 210px; background: transparent; border: none; outline: none; color: var(--ink); font-family: "Fraunces", Georgia, serif; font-size: 18px; line-height: 1.62; white-space: pre-wrap; word-wrap: break-word; -webkit-user-modify: read-write-plaintext-only; }
+  .jp-text { min-height: 210px; background: transparent; border: none; outline: none; color: var(--ink); font-family: "Fraunces", Georgia, serif; font-size: calc(18px * var(--read-scale)); line-height: 1.62; white-space: pre-wrap; word-wrap: break-word; -webkit-user-modify: read-write-plaintext-only; }
   .jp-text::first-line { font-weight: 700; font-size: 20.5px; line-height: 1.4; }
   .jp-text:empty:before { content: attr(data-placeholder); color: var(--ink-faint); font-style: italic; font-weight: 400; font-size: 18px; }
   .jp-actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 10px; }
@@ -1901,7 +1905,7 @@
   .jp-date-day { font-size: 21px; color: var(--accent); font-weight: 300; line-height: 1.15; }
   .jp-main { min-width: 0; flex: 1; }
   .jp-e-title { font-size: 15px; font-weight: 600; color: var(--ink); line-height: 1.4; margin-bottom: 2px; }
-  .jp-e-body { font-size: 14px; color: var(--ink-soft); line-height: 1.5; white-space: pre-wrap; }
+  .jp-e-body { font-size: calc(14px * var(--read-scale)); color: var(--ink-soft); line-height: 1.5; white-space: pre-wrap; }
   .jp-entry.clamp .jp-e-body { display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
   .jp-e-body:empty { display: none; }
   .jp-entry audio { width: 100%; height: 34px; margin-top: 8px; }
@@ -2838,6 +2842,14 @@
         <button class="seg-opt" data-theme="dark" type="button">Dark</button>
         <button class="seg-opt" data-theme="auto" type="button">Auto</button>
       </div>
+
+      <label class="field-label">Text size</label>
+      <div class="seg seg-full" id="textSizeSeg">
+        <button class="seg-opt" data-ts="default" type="button">Default</button>
+        <button class="seg-opt" data-ts="large" type="button">Large</button>
+        <button class="seg-opt" data-ts="larger" type="button">Larger</button>
+      </div>
+      <div class="sheet-hint" style="margin-top:6px">Scales reading &amp; writing text — the daily reading, prompts, journal, and prayers.</div>
 
       <label class="field-label">Account</label>
       <div class="account-row" id="accountRow"></div>
@@ -5116,7 +5128,7 @@
     var encList = "";
     var encs = wallState.enc[p.id] || [];   // RLS returns only what I may see: my own sent words + (if it's my post) all of them
     if (encs.length) {
-      encList = '<div class="pw-enc"><div class="pw-enc-label">' + PW_TINY_HEART + (mine ? ' Words for you' : ' Your encouragement') + '</div>' +
+      encList = '<div class="pw-enc"><div class="pw-enc-label">' + PW_TINY_HEART + (mine ? ' Words for you' : ' Encouragement') + '</div>' +
         encs.map(function (e) {
           var who = (e.from_id && e.from_id === myId()) ? "You" : e.from;
           return '<div class="pw-enc-item">' + pwAvatar(who, e.url, "sm") + '<div class="pw-enc-txt"><div class="pw-enc-from">' + escapeHtml(who) + '</div><div class="pw-enc-body">' + escapeHtml(e.body) + '</div></div></div>';
@@ -6758,6 +6770,19 @@
     db.theme = b.getAttribute("data-theme"); save(); applyTheme(db.theme); buzz(8);
   });
   if (window.matchMedia) { try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { if (db.theme === "auto") applyTheme("auto"); }); } catch (e) {} }
+
+  // Content-only text size (scales reading/writing text via --read-scale; leaves chrome/layout alone)
+  function applyTextSize(sz) {
+    if (["large", "larger"].indexOf(sz) < 0) sz = "default";
+    if (sz === "default") root.removeAttribute("data-textsize"); else root.setAttribute("data-textsize", sz);
+    var seg = $("textSizeSeg"); if (seg) Array.prototype.forEach.call(seg.children, function (b) { b.classList.toggle("sel", b.getAttribute("data-ts") === sz); });
+  }
+  if (["default", "large", "larger"].indexOf(db.textSize) < 0) db.textSize = "default";
+  applyTextSize(db.textSize);
+  $("textSizeSeg").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-ts]"); if (!b) return;
+    db.textSize = b.getAttribute("data-ts"); save(); applyTextSize(db.textSize); buzz(8);
+  });
 
   // ---------- profile · onboarding · settings · backup ----------
   var PLAN_OPTIONS = [
