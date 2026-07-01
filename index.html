@@ -1734,6 +1734,86 @@
   }
   .anchor-empty { font-style: italic; color: #9a8556; font-size: 16px; padding: 16px 0; }
 
+  /* ===== App shell: bottom nav + destinations ===== */
+  .wrap[hidden] { display: none; }
+  .fab[hidden] { display: none !important; }
+  .appview { position: fixed; inset: 0; z-index: 40; overflow-y: auto; -webkit-overflow-scrolling: touch; background: var(--bg); }
+  .appview[hidden] { display: none; }
+  .bottom-nav {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 45;
+    display: flex; align-items: stretch; justify-content: center;
+    background: var(--bg); border-top: 1px solid var(--panel-edge);
+    padding: 5px 8px calc(5px + env(safe-area-inset-bottom));
+  }
+  .bottom-nav[hidden] { display: none; }
+  .nav-btn {
+    flex: 1; max-width: 150px; background: none; border: none; cursor: pointer;
+    display: flex; flex-direction: column; align-items: center; gap: 3px;
+    color: var(--ink-faint); font-family: inherit; font-size: 10.5px; letter-spacing: 0.03em;
+    padding: 7px 4px 5px; position: relative; transition: color 0.2s ease;
+  }
+  .nav-btn svg { width: 23px; height: 23px; fill: none; stroke: currentColor; stroke-width: 1.6; }
+  .nav-btn.active { color: var(--accent); }
+  .nav-badge { position: absolute; top: 4px; right: calc(50% - 19px); width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 2px var(--bg); opacity: 0; transform: scale(0.4); transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.34,1.56,0.64,1); }
+  .nav-badge.on { opacity: 1; transform: scale(1); }
+
+  /* Bible destination */
+  #bibleView.appview { display: block; }
+  #bibleView.appview[hidden] { display: none; }
+  .bible-chrome {
+    position: sticky; top: 0; z-index: 2;
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    padding: 12px 16px; max-width: 640px; margin: 0 auto; background: var(--bg);
+  }
+  .bible-chrome-l { display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .bible-ctl { display: inline-flex; align-items: center; gap: 7px; background: var(--field); border: 1px solid var(--field-edge); color: var(--ink); border-radius: 999px; padding: 8px 14px; font-family: inherit; font-size: 13.5px; cursor: pointer; transition: border-color 0.2s ease; max-width: 62vw; }
+  .bible-ctl span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .bible-ctl:hover { border-color: var(--ink-faint); }
+  .bible-ctl.icon-only { padding: 0; width: 38px; height: 38px; justify-content: center; flex: 0 0 auto; }
+  .bible-ctl svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.6; flex: 0 0 auto; }
+  .bible-ctl .aa { font-weight: 600; font-size: 16px; letter-spacing: 0.02em; }
+  .bible-paper-wrap { max-width: 640px; margin: 0 auto; padding: 4px 16px 120px; }
+  #bibleView .bible-paper { max-width: 100%; max-height: none; overflow: visible; animation: none; margin: 0; }
+  .bible-paper[data-bg] { transition: background 0.25s ease, color 0.25s ease; }
+  .bible-paper[data-bg="light"] { background: #ffffff; background-image: none; color: #1a1a18; box-shadow: 0 12px 40px -20px rgba(0,0,0,0.5), inset 0 0 0 1px #e7e2d6; }
+  .bible-paper[data-bg="light"] .bible-body { color: #1a1a18; }
+  .bible-paper[data-bg="dark"] { background: #0c0c0d; background-image: none; color: #e8e4da; box-shadow: 0 12px 40px -20px rgba(0,0,0,0.85), inset 0 0 0 1px #232325; }
+  .bible-paper[data-bg="dark"] .bible-body { color: #e8e4da; }
+  .bible-paper[data-bg="dark"] .bv:hover { background: rgba(203,178,126,0.14); }
+  .bible-paper[data-bg="dark"] .bible-chap-h { color: #cbb27e; }
+  .bible-body.font-sans { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; text-align: left; hyphens: none; -webkit-hyphens: none; }
+
+  /* Fellowship destination */
+  .fellow-chrome { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; max-width: 620px; margin: 0 auto; background: var(--bg); }
+  .fellow-title { font-size: 21px; color: var(--ink); }
+  #circleBody.fellow-body { max-width: 620px; margin: 0 auto; padding: 2px 18px 120px; }
+  .profile-btn { width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--field-edge); background: var(--field); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; color: var(--accent); overflow: hidden; background-size: cover; background-position: center; flex: 0 0 auto; }
+
+  /* Bottom sheets (reading settings + profile) */
+  .sheet-overlay { position: fixed; inset: 0; z-index: 100; background: rgba(0,0,0,0.5); display: flex; align-items: flex-end; justify-content: center; }
+  .sheet-overlay[hidden] { display: none; }
+  .sheet { width: 100%; max-width: 520px; background: var(--panel); border: 1px solid var(--panel-edge); border-radius: 20px 20px 0 0; padding: 20px 22px calc(26px + env(safe-area-inset-bottom)); animation: sheetUp 0.28s cubic-bezier(.2,.7,.2,1); }
+  @keyframes sheetUp { from { transform: translateY(30px); opacity: 0; } to { transform: none; opacity: 1; } }
+  .sheet-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+  .sheet-title { font-size: 18px; color: var(--ink); }
+  .sheet-x { background: none; border: none; color: var(--ink-faint); font-size: 24px; line-height: 1; cursor: pointer; }
+  .sheet-row { margin-bottom: 20px; }
+  .sheet-row:last-child { margin-bottom: 0; }
+  .sheet-row-label { font-size: 11.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 10px; }
+  .seg { display: flex; gap: 8px; }
+  .seg-opt { flex: 1; background: var(--field); border: 1px solid var(--field-edge); color: var(--ink-soft); border-radius: 12px; padding: 11px 8px; font-family: inherit; font-size: 13.5px; cursor: pointer; text-align: center; transition: color 0.2s ease, border-color 0.2s ease; }
+  .seg-opt.sel { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+  .seg-opt.bg-paper { background: #f1e4c9; color: #3a2f1d; } .seg-opt.bg-light { background: #ffffff; color: #1a1a18; } .seg-opt.bg-dark { background: #0c0c0d; color: #e8e4da; }
+  .seg-opt.bg-paper.sel, .seg-opt.bg-light.sel, .seg-opt.bg-dark.sel { box-shadow: 0 0 0 2px var(--accent); border-color: var(--accent); }
+  .size-ctl { display: flex; align-items: center; justify-content: space-between; background: var(--field); border: 1px solid var(--field-edge); border-radius: 12px; padding: 4px 10px; }
+  .size-ctl button { min-width: 44px; height: 40px; background: none; border: none; color: var(--ink); cursor: pointer; }
+  .size-ctl .aa-sm { font-size: 15px; } .size-ctl .aa-lg { font-size: 24px; }
+  .size-ctl .val { font-size: 13px; color: var(--ink-soft); }
+  .profile-av-wrap { display: flex; flex-direction: column; align-items: center; gap: 14px; margin-bottom: 22px; }
+  .profile-av { width: 90px; height: 90px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 30px; font-weight: 600; background-size: cover; background-position: center; }
+  .profile-change { background: var(--accent-soft); border: 1px solid var(--accent); color: var(--accent); border-radius: 999px; padding: 10px 20px; font-family: inherit; font-size: 13.5px; cursor: pointer; }
+  .profile-msg { font-size: 12.5px; color: var(--ink-faint); text-align: center; margin-top: 4px; min-height: 16px; }
+
   /* ---- morning threshold (leather journal cover) ---- */
   .threshold {
     position: fixed; inset: 0; z-index: 120;
@@ -2128,14 +2208,7 @@
       <button class="icon-btn" id="journalBtn" aria-label="Journal">
         <svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="20" y2="12"/><line x1="8" y1="18" x2="20" y2="18"/><line x1="3.5" y1="6" x2="3.6" y2="6"/><line x1="3.5" y1="12" x2="3.6" y2="12"/><line x1="3.5" y1="18" x2="3.6" y2="18"/></svg>
       </button>
-      <button class="icon-btn" id="anchorsBtn" aria-label="Anchor verses">
-        <svg viewBox="0 0 24 24"><path d="M6 3h12v18l-6-4-6 4z"/></svg>
-      </button>
       <div class="topbar-spacer"></div>
-      <button class="icon-btn" id="circleBtn" aria-label="Your Circle">
-        <svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.3"/><path d="M3.5 19.5a5.5 5.5 0 0 1 11 0"/><path d="M15.5 14.5a4.6 4.6 0 0 1 5 5"/></svg>
-        <span class="icon-badge" id="circleBadge"></span>
-      </button>
       <button class="icon-btn" id="lockNowBtn" aria-label="Lock now">
         <svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
       </button>
@@ -2517,18 +2590,24 @@
   </div>
 
   <!-- In-app Bible (leather page) -->
-  <div class="page-overlay" id="bibleView" hidden>
-    <div class="paper bible-paper" id="biblePaper">
-      <div class="bible-top">
-        <button class="bible-icon" id="bibleBookmark" aria-label="Anchor verses">
+  <div class="appview" id="bibleView" hidden>
+    <div class="bible-chrome">
+      <div class="bible-chrome-l">
+        <button class="bible-ctl" id="biblePick">
+          <svg viewBox="0 0 24 24"><path d="M4 5a2 2 0 0 1 2-2h12v16H6a2 2 0 0 0-2 2z"/><path d="M4 19a2 2 0 0 1 2-2h12"/></svg>
+          <span id="bibleRefBtn">John 1</span>
+        </button>
+        <button class="bible-ctl icon-only" id="bibleAnchors" aria-label="Anchor verses">
           <svg viewBox="0 0 24 24"><path d="M6 3h12v18l-6-4-6 4z"/></svg>
         </button>
-        <button class="page-close" id="bibleClose" aria-label="Close">×</button>
       </div>
-      <div class="bible-ref serif" id="bibleRef"></div>
-      <div class="bible-hint" id="bibleHint">Tap a verse to anchor it.</div>
-      <div class="bible-body" id="bibleBody"></div>
-      <a class="bible-gateway" id="bibleGateway" target="_blank" rel="noopener">Open in ESV on Bible Gateway →</a>
+      <button class="bible-ctl icon-only" id="bibleAa" aria-label="Reading settings"><span class="aa">Aa</span></button>
+    </div>
+    <div class="bible-paper-wrap">
+      <div class="bible-paper" id="biblePaper" data-bg="paper">
+        <div class="bible-body" id="bibleBody"></div>
+        <a class="bible-gateway" id="bibleGateway" target="_blank" rel="noopener">Open in ESV on Bible Gateway →</a>
+      </div>
     </div>
   </div>
 
@@ -2712,31 +2791,55 @@
   </div>
 
   <!-- Your Circle (Tribes) -->
-  <div class="modal-overlay" id="circleModal" hidden>
-    <div class="modal settings-modal">
-      <div class="modal-head">
-        <h2 class="modal-title serif" id="circleTitle">Prayer</h2>
-        <button class="modal-x" id="circleClose" aria-label="Close">
-          <svg viewBox="0 0 24 24"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>
-        </button>
+  <!-- Fellowship (prayer wall) destination -->
+  <div class="appview" id="fellowshipView" hidden>
+    <div class="fellow-chrome">
+      <div class="fellow-title serif">Fellowship</div>
+      <button class="profile-btn" id="profileBtn" aria-label="Your profile"></button>
+    </div>
+    <div class="fellow-body" id="circleBody"></div>
+  </div>
+
+  <!-- Reading settings sheet -->
+  <div class="sheet-overlay" id="readSheet" hidden>
+    <div class="sheet">
+      <div class="sheet-head"><div class="sheet-title serif">Reading</div><button class="sheet-x" id="readSheetX">×</button></div>
+      <div class="sheet-row">
+        <div class="sheet-row-label">Typeface</div>
+        <div class="seg" id="readFont">
+          <button class="seg-opt" data-font="serif">Serif</button>
+          <button class="seg-opt" data-font="sans">Sans</button>
+        </div>
       </div>
-      <div class="modal-body" id="circleBody"></div>
+      <div class="sheet-row">
+        <div class="sheet-row-label">Text size</div>
+        <div class="size-ctl"><button class="aa-sm" data-size="-1">A</button><span class="val" id="readSizeVal">Default</span><button class="aa-lg" data-size="1">A</button></div>
+      </div>
+      <div class="sheet-row">
+        <div class="sheet-row-label">Background</div>
+        <div class="seg" id="readBg">
+          <button class="seg-opt bg-paper" data-bg="paper">Paper</button>
+          <button class="seg-opt bg-light" data-bg="light">Light</button>
+          <button class="seg-opt bg-dark" data-bg="dark">Dark</button>
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- Send encouragement -->
-  <div class="modal-overlay" id="nudgeModal" hidden>
-    <div class="modal">
-      <h2 class="modal-title serif">Send encouragement</h2>
-      <label class="field-label">To</label>
-      <select class="ob-book" id="nudgeTo"></select>
-      <label class="field-label">A word of</label>
-      <div class="nudge-kinds" id="nudgeKinds"></div>
-      <label class="field-label">Add a note <span class="lbl-opt">— optional</span></label>
-      <textarea id="nudgeBody" rows="2" placeholder="A verse, a line, or just “thinking of you”…"></textarea>
-      <div class="settings-msg" id="nudgeMsg"></div>
-      <button class="modal-primary" id="nudgeSend">Send</button>
-      <button class="modal-text" id="nudgeCancel">Cancel</button>
+  <!-- Profile sheet -->
+  <div class="sheet-overlay" id="profileSheet" hidden>
+    <div class="sheet">
+      <div class="sheet-head"><div class="sheet-title serif">Your profile</div><button class="sheet-x" id="profileSheetX">×</button></div>
+      <div class="profile-av-wrap">
+        <span class="profile-av" id="profileAv"></span>
+        <button class="profile-change" id="profileChange">Change photo</button>
+        <input type="file" id="profileFile" accept="image/*" hidden />
+        <div class="profile-msg" id="profileMsg"></div>
+      </div>
+      <div class="sheet-row">
+        <div class="sheet-row-label">Name</div>
+        <input type="text" id="profileName" autocomplete="off" maxlength="40" />
+      </div>
     </div>
   </div>
 
@@ -2795,9 +2898,27 @@
   </div>
 
   <!-- Verse action menu -->
+  <!-- Bottom navigation -->
+  <nav class="bottom-nav" id="bottomNav" hidden>
+    <button class="nav-btn" id="nav_home">
+      <svg viewBox="0 0 24 24"><path d="M4 11.5 12 5l8 6.5"/><path d="M5.5 10.5V19a1 1 0 0 0 1 1H10v-5h4v5h3.5a1 1 0 0 0 1-1v-8.5"/></svg>
+      <span>Home</span>
+    </button>
+    <button class="nav-btn" id="nav_bible">
+      <svg viewBox="0 0 24 24"><path d="M5 4a2 2 0 0 1 2-2h11v18H7a2 2 0 0 0-2 2z"/><path d="M5 20a2 2 0 0 1 2-2h11"/><line x1="12" y1="6" x2="12" y2="13"/><line x1="9" y1="9" x2="15" y2="9"/></svg>
+      <span>Bible</span>
+    </button>
+    <button class="nav-btn" id="nav_fellowship">
+      <svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.3"/><path d="M3.5 19.5a5.5 5.5 0 0 1 11 0"/><path d="M15.5 14.5a4.6 4.6 0 0 1 5 5"/></svg>
+      <span>Fellowship</span>
+      <span class="nav-badge" id="navFellowshipBadge"></span>
+    </button>
+  </nav>
+
   <div class="verse-menu" id="verseMenu" hidden>
     <button class="vm-btn" id="vmHighlight"><svg viewBox="0 0 24 24"><rect x="3" y="13" width="18" height="6" rx="1.5" fill="currentColor" stroke="none"/><line x1="6" y1="8" x2="18" y2="8"/></svg> <span id="vmHlLabel">Highlight</span></button>
     <button class="vm-btn" id="vmNote"><svg viewBox="0 0 24 24"><path d="M4 20l4-1 9-9-3-3-9 9-1 4z"/><line x1="14" y1="6" x2="17" y2="9"/></svg> Write a note</button>
+    <button class="vm-btn" id="vmCopy"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M6 15H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v1"/></svg> Copy verse</button>
   </div>
 
   <!-- Morning threshold (opens like a leather journal) -->
@@ -3890,12 +4011,14 @@
   var contextRef = null;   // when opened from Verse of the Day, the verse to spotlight
   function openBible(passage, focusRef) {
     contextRef = focusRef || null;
-    $("bibleRef").textContent = passage;
+    db.lastPassage = passage; save();
+    $("bibleRefBtn").textContent = passage;
     $("bibleGateway").href = gateway(passage);
-    $("biblePaper").scrollTop = 0;
-    $("bibleView").hidden = false;
-    playPage();
+    if (typeof applyReaderPrefs === "function") applyReaderPrefs();
     loadChapter(passage);
+    setView("bible");
+    $("bibleView").scrollTop = 0;
+    playPage();
   }
   // tapping a verse offers Highlight or Write a note (not an instant toggle)
   var vmRef = null, vmText = null;
@@ -3922,6 +4045,13 @@
     if (!vmRef) return;
     addAnchor(vmRef, vmText);          // a note implies anchoring
     openVerseNote(vmRef, vmText);
+    closeVerseMenu();
+  });
+  $("vmCopy").addEventListener("click", function () {
+    if (!vmRef) return;
+    var out = "“" + (vmText || "") + "” — " + vmRef + " (WEB)";
+    try { navigator.clipboard.writeText(out); showToastMsg("Verse copied."); playTick(); buzz(10); }
+    catch (e) { showToastMsg("Couldn't copy here."); }
     closeVerseMenu();
   });
   document.addEventListener("click", function (e) {
@@ -3951,9 +4081,9 @@
   $("vnCancel").addEventListener("click", function () { $("verseNoteModal").hidden = true; });
   $("verseNoteModal").addEventListener("click", function (e) { if (e.target === this) this.hidden = true; });
 
-  $("bibleClose").addEventListener("click", function () { $("bibleView").hidden = true; closeVerseMenu(); });
-  $("bibleView").addEventListener("click", function (e) { if (e.target === this) { $("bibleView").hidden = true; closeVerseMenu(); } });
-  $("bibleBookmark").addEventListener("click", openAnchors);
+  $("bibleAnchors").addEventListener("click", openAnchors);
+  $("biblePick").addEventListener("click", openBiblePicker);
+  $("bibleAa").addEventListener("click", openReadSheet);
 
   // ===== Open your Bible (book + chapter picker) =====
   var pickBookName = "John", pickChapter = 1;
@@ -3999,7 +4129,6 @@
     renderAnchors();
     $("anchorsView").hidden = false;
   }
-  $("anchorsBtn").addEventListener("click", openAnchors);
   $("anchorsClose").addEventListener("click", function () { $("anchorsView").hidden = true; });
   $("anchorsView").addEventListener("click", function (e) { if (e.target === this) $("anchorsView").hidden = true; });
   $("anchorsBody").addEventListener("click", function (e) {
@@ -4393,7 +4522,7 @@
       '<div class="circle-sub">' + (open ? open + ' request' + (open === 1 ? "" : "s") + ' to pray over' : 'Be the first to share') +
       (unread ? ' · <b style="color:var(--accent)">' + unread + ' new</b>' : '') + '</div></div>' +
       '<button class="ac-btn" id="wallOpenBtn">Open</button></div>';
-    var b = $("wallOpenBtn"); if (b) b.onclick = openWall;
+    var b = $("wallOpenBtn"); if (b) b.onclick = function () { setView("fellowship"); };
   }
 
   // ---- badge: someone reached for you / new activity ----
@@ -4406,7 +4535,7 @@
     });
     return n;
   }
-  function refreshWallBadge() { var b = $("circleBadge"); if (b) b.classList.toggle("on", wallUnread() > 0); }
+  function refreshWallBadge() { var b = $("navFellowshipBadge"); if (b) b.classList.toggle("on", wallUnread() > 0); }
   function markWallSeen() { db.wallSeen = new Date().toISOString(); save(); refreshWallBadge(); renderWallPanel(); }
 
   // ---- render ----
@@ -4499,19 +4628,14 @@
     });
   }
 
-  function openWall() {
-    if (typeof sb === "undefined" || !sb || !session) { showToastMsg("Sign in to use prayer."); return; }
+  function openWall() {  // load the fellowship wall (the view is switched by setView)
+    if (typeof sb === "undefined" || !sb || !session) { $("circleBody").innerHTML = '<div class="circle-empty">Sign in to use prayer.</div>'; return; }
     wallState.composing = false; wallState.answerOpen = {}; wallState.shown = 10;
-    $("circleTitle").textContent = "Prayer";
     $("circleBody").innerHTML = '<div class="circle-empty">Gathering the wall…</div>';
-    $("circleModal").hidden = false;
     upsertProfile();
     loadWall(function () { markWallSeen(); });
   }
 
-  $("circleBtn").addEventListener("click", openWall);
-  $("circleClose").addEventListener("click", function () { $("circleModal").hidden = true; renderWallPanel(); });
-  $("circleModal").addEventListener("click", function (e) { if (e.target === this) { this.hidden = true; renderWallPanel(); } });
   $("circleBody").addEventListener("click", function (e) {
     var el = e.target.closest("[data-act]"); if (!el) return;
     var act = el.getAttribute("data-act"), id = el.getAttribute("data-id");
@@ -4557,6 +4681,97 @@
       delete wallState.answerOpen[id]; playChime(); buzz(14); showToastMsg("Answered — He is faithful."); loadWall();
     });
   }
+
+  // ===== App shell: bottom nav + destinations (Home / Bible / Fellowship) =====
+  var currentView = "home";
+  function setView(name) {
+    currentView = name;
+    var wrap = document.querySelector(".wrap"); if (wrap) wrap.hidden = (name !== "home");
+    $("bibleView").hidden = (name !== "bible");
+    $("fellowshipView").hidden = (name !== "fellowship");
+    ["home", "bible", "fellowship"].forEach(function (v) { var b = $("nav_" + v); if (b) b.classList.toggle("active", v === name); });
+    var fab = $("fab"); if (fab) fab.hidden = (name !== "home");
+    if (name === "fellowship") { renderProfileBtn(); openWall(); }
+    if (name !== "bible" && typeof closeVerseMenu === "function") closeVerseMenu();
+    window.scrollTo(0, 0);
+  }
+  $("nav_home").addEventListener("click", function () { setView("home"); buzz(8); });
+  $("nav_bible").addEventListener("click", function () { if (currentView !== "bible") openBible(db.lastPassage || "John 1"); buzz(8); });
+  $("nav_fellowship").addEventListener("click", function () { setView("fellowship"); buzz(8); });
+
+  // ----- reading settings (typeface / size / background) -----
+  var READER_SIZES = [16, 17.5, 18.5, 20, 22, 24];
+  var READER_SIZE_NAMES = ["Smallest", "Small", "Default", "Large", "Larger", "Largest"];
+  function readerPrefs() { return (db.readerPrefs = db.readerPrefs || { font: "serif", size: 2, bg: "paper" }); }
+  function applyReaderPrefs() {
+    var p = readerPrefs(), paper = $("biblePaper"), body = $("bibleBody");
+    if (paper) paper.setAttribute("data-bg", p.bg || "paper");
+    if (body) {
+      body.classList.toggle("font-sans", p.font === "sans");
+      var si = (typeof p.size === "number") ? Math.max(0, Math.min(READER_SIZES.length - 1, p.size)) : 2;
+      body.style.fontSize = READER_SIZES[si] + "px";
+    }
+  }
+  function syncReadSheet() {
+    var p = readerPrefs();
+    Array.prototype.forEach.call($("readFont").children, function (b) { b.classList.toggle("sel", b.getAttribute("data-font") === (p.font || "serif")); });
+    Array.prototype.forEach.call($("readBg").children, function (b) { b.classList.toggle("sel", b.getAttribute("data-bg") === (p.bg || "paper")); });
+    $("readSizeVal").textContent = READER_SIZE_NAMES[(typeof p.size === "number" ? p.size : 2)] || "Default";
+  }
+  function openReadSheet() { syncReadSheet(); $("readSheet").hidden = false; }
+  $("readSheetX").addEventListener("click", function () { $("readSheet").hidden = true; });
+  $("readSheet").addEventListener("click", function (e) {
+    if (e.target === this) { this.hidden = true; return; }
+    var p = readerPrefs();
+    var f = e.target.closest("[data-font]"), g = e.target.closest("[data-bg]"), s = e.target.closest("[data-size]");
+    if (f) p.font = f.getAttribute("data-font");
+    else if (g) p.bg = g.getAttribute("data-bg");
+    else if (s) { var cur = (typeof p.size === "number") ? p.size : 2; p.size = Math.max(0, Math.min(READER_SIZES.length - 1, cur + (+s.getAttribute("data-size")))); }
+    else return;
+    save(); applyReaderPrefs(); syncReadSheet(); buzz(8);
+  });
+
+  // ----- profile (name + photo) -----
+  function renderProfileBtn() {
+    var b = $("profileBtn"); if (!b) return;
+    var url = db.profile && db.profile.avatarUrl;
+    if (url) { b.style.backgroundImage = "url(" + encodeURI(url) + ")"; b.textContent = ""; }
+    else { b.style.backgroundImage = "none"; b.textContent = pwInitials(myName()); b.style.color = pwColor(myName()); }
+  }
+  function openProfile() {
+    var url = db.profile && db.profile.avatarUrl, av = $("profileAv");
+    if (url) { av.style.backgroundImage = "url(" + encodeURI(url) + ")"; av.style.background = ""; av.textContent = ""; }
+    else { var c = pwColor(myName()); av.style.backgroundImage = "none"; av.style.background = pwRgba(c, 0.17); av.style.color = c; av.textContent = pwInitials(myName()); }
+    $("profileName").value = myName();
+    $("profileMsg").textContent = "";
+    $("profileSheet").hidden = false;
+  }
+  $("profileBtn").addEventListener("click", openProfile);
+  $("profileSheetX").addEventListener("click", function () { $("profileSheet").hidden = true; });
+  $("profileSheet").addEventListener("click", function (e) { if (e.target === this) this.hidden = true; });
+  $("profileName").addEventListener("change", function () {
+    var n = this.value.trim(); if (!n) return;
+    db.profile = db.profile || {}; db.profile.name = n; save();
+    upsertProfile(); renderProfileBtn();
+    var sn = $("setName"); if (sn) sn.value = n;
+  });
+  $("profileChange").addEventListener("click", function () { $("profileFile").click(); });
+  $("profileFile").addEventListener("change", function () {
+    var file = this.files && this.files[0]; if (!file) return;
+    if (typeof sb === "undefined" || !sb || !session) { $("profileMsg").textContent = "Sign in to change your photo."; return; }
+    $("profileMsg").textContent = "Uploading…";
+    var path = myId() + "/" + Date.now() + ".jpg";
+    sb.storage.from("avatars").upload(path, file, { upsert: true, contentType: file.type || "image/jpeg" }).then(function (res) {
+      if (res.error) { $("profileMsg").textContent = res.error.message; return; }
+      var pub = sb.storage.from("avatars").getPublicUrl(path);
+      var url = pub && pub.data && pub.data.publicUrl;
+      db.profile = db.profile || {}; db.profile.avatarUrl = url; save();
+      sb.from("profiles").upsert({ id: myId(), display_name: myName(), avatar_url: url, updated_at: new Date().toISOString() }).then(function () {
+        $("profileMsg").textContent = "Updated."; playChime(); buzz(12);
+        renderProfileBtn(); openProfile(); if (currentView === "fellowship") loadWall();
+      });
+    }, function () { $("profileMsg").textContent = "Upload failed — is the avatars bucket set up?"; });
+  });
 
   // ===== Voice: dictation (speech-to-text) + voice memos =====
   var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -5873,6 +6088,7 @@
     // the gate: nothing else is usable until a session exists
     $("onboard").hidden = true; $("authModal").hidden = true;
     $("journalDrawer").hidden = true; $("journalOverlay").hidden = true; document.body.classList.remove("journal-docked");
+    $("bottomNav").hidden = true; $("bibleView").hidden = true; $("fellowshipView").hidden = true;
     $("welcome").hidden = false;
   }
   $("welcomeCreate").addEventListener("click", function () { $("welcome").hidden = true; openAuth("signup"); });
@@ -5881,8 +6097,12 @@
   function routeAfterAuth() {
     if (!session) { openWelcome(); return; }            // no session → stay gated
     $("authModal").hidden = true; $("welcome").hidden = true;
-    if (!(db.profile && db.profile.onboarded)) openOnboarding();
-    else { $("onboard").hidden = true; if (typeof applyJournalMode === "function") applyJournalMode(); } // in the app → dock journal if wide
+    if (!(db.profile && db.profile.onboarded)) { openOnboarding(); }
+    else {
+      $("onboard").hidden = true; if (typeof applyJournalMode === "function") applyJournalMode(); // in the app → dock journal if wide
+      $("bottomNav").hidden = false; setView("home");                // reveal the bottom nav; land on Home
+      renderProfileBtn(); applyReaderPrefs();
+    }
     if (typeof upsertProfile === "function") upsertProfile();       // ensure a community profile row exists
     if (typeof loadWall === "function") loadWall();                 // warm the prayer wall + badge in the background
   }
@@ -5906,6 +6126,7 @@
     db.lastThreshold = todayKey;
     save();
     $("onboard").hidden = true;
+    $("bottomNav").hidden = false; setView("home"); renderProfileBtn();
     dailyRefresh();
   });
 
