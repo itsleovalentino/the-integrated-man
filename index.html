@@ -1837,6 +1837,7 @@
   .sheet-row { margin-bottom: 20px; }
   .sheet-row:last-child { margin-bottom: 0; }
   .sheet-row-label { font-size: 11.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 10px; }
+  .sheet-hint { font-size: 12px; color: var(--ink-faint); margin-top: 8px; font-style: italic; }
   .seg { display: flex; gap: 8px; }
   .seg-opt { flex: 1; background: var(--field); border: 1px solid var(--field-edge); color: var(--ink-soft); border-radius: 12px; padding: 11px 8px; font-family: inherit; font-size: 13.5px; cursor: pointer; text-align: center; transition: color 0.2s ease, border-color 0.2s ease; }
   .seg-opt.sel { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
@@ -2897,6 +2898,7 @@
       <div class="sheet-row">
         <div class="sheet-row-label">Translation</div>
         <select class="ob-book" id="readVersion"></select>
+        <div class="sheet-hint">🎧 has dramatized audio (New Testament).</div>
       </div>
       <div class="sheet-row">
         <div class="sheet-row-label">Typeface</div>
@@ -4100,8 +4102,10 @@
     }
   }
   // ---- translations (WEB is free via bible-api.com; the rest via the API.Bible proxy) ----
+  // audioId is only set where the KEY actually has narration that MATCHES the text.
+  // On this key only WEB has audio (the Drama NT), so audio only appears on WEB + NT.
   var BIBLE_VERSIONS = [
-    { id: "web-free", label: "World English (WEB)", source: "free" },
+    { id: "web-free", label: "World English (WEB)", source: "free", audioId: "105a06b6146d11e7-01" },
     { id: "a556c5305ee15c3f-01", label: "Christian Standard (CSB)", source: "api" },
     { id: "63097d2a0a2f7db3-01", label: "New King James (NKJV)", source: "api" },
     { id: "d6e14a625393b4da-01", label: "New Living (NLT)", source: "api" },
@@ -4109,8 +4113,8 @@
     { id: "06125adad2d5898a-01", label: "American Standard (ASV)", source: "api" }
   ];
   var API_ABBR = ["GEN","EXO","LEV","NUM","DEU","JOS","JDG","RUT","1SA","2SA","1KI","2KI","1CH","2CH","EZR","NEH","EST","JOB","PSA","PRO","ECC","SNG","ISA","JER","LAM","EZK","DAN","HOS","JOL","AMO","OBA","JON","MIC","NAM","HAB","ZEP","HAG","ZEC","MAL","MAT","MRK","LUK","JHN","ACT","ROM","1CO","2CO","GAL","EPH","PHP","COL","1TH","2TH","1TI","2TI","TIT","PHM","HEB","JAS","1PE","2PE","1JN","2JN","3JN","JUD","REV"];
-  var AUDIO_BIBLE = "105a06b6146d11e7-01";   // WEB Drama New Testament (audio)
   function curVersion() { var v = db.bibleVersion || "web-free"; return BIBLE_VERSIONS.filter(function (x) { return x.id === v; })[0] || BIBLE_VERSIONS[0]; }
+  function curVersionAudioId() { return curVersion().audioId || null; }
   function abbrevOf(bookName) { for (var i = 0; i < BOOKS.length; i++) if (BOOKS[i][0] === bookName) return API_ABBR[i]; return null; }
   function chapterIdOf(passage) { var m = (passage || "").match(/^(.*?)\s+(\d+)$/); if (!m) return null; var ab = abbrevOf(m[1].trim()); return ab ? ab + "." + m[2] : null; }
   // API.Bible allows browser CORS for GET, so we call it directly (no proxy needed).
@@ -4166,13 +4170,14 @@
   // translation picker (in the Reading sheet) + audio
   function fillVersionSelect() {
     var sel = $("readVersion"); if (!sel) return;
-    sel.innerHTML = BIBLE_VERSIONS.map(function (v) { return '<option value="' + v.id + '">' + v.label + '</option>'; }).join("");
+    sel.innerHTML = BIBLE_VERSIONS.map(function (v) { return '<option value="' + v.id + '">' + v.label + (v.audioId ? "  🎧" : "") + '</option>'; }).join("");
     sel.value = db.bibleVersion || "web-free";
   }
   function bindVersionSelect() {
     var sel = $("readVersion"); if (!sel || sel._wired) return; sel._wired = true;
     sel.addEventListener("change", function () {
       db.bibleVersion = this.value; save();
+      updateAudioBtn(db.lastPassage);          // audio only shows if the new translation has matching narration
       if (db.lastPassage) loadChapter(db.lastPassage);
     });
   }
@@ -4199,33 +4204,40 @@
     clearReadingHl(); vEl.classList.add("reading");
     try { vEl.scrollIntoView({ block: "center", behavior: "smooth" }); } catch (e) {}
   }
+  function audioAvailable(passage) { return !!curVersionAudioId() && isNTPassage(passage); }   // audio must MATCH the translation
   function updateAudioBtn(passage) {
     var btn = $("bibleAudio"); if (!btn) return;
-    stopAudio(); audioReady = { chapterId: null, url: null };
-    var nt = isNTPassage(passage);
-    btn.hidden = !nt;   // the dramatized recording covers the New Testament
-    if (nt) preloadAudio(passage);
+    stopAudio(); audioReady = { chapterId: null, url: null, audioId: null };
+    btn.hidden = !audioAvailable(passage);
+    if (audioAvailable(passage)) preloadAudio(passage);
   }
   function preloadAudio(passage) {
-    var cid = chapterIdOf(passage); if (!cid) return;
-    apiBible("/audio-bibles/" + AUDIO_BIBLE + "/chapters/" + cid, function (res) {
+    var aid = curVersionAudioId(), cid = chapterIdOf(passage); if (!aid || !cid) return;
+    apiBible("/audio-bibles/" + aid + "/chapters/" + cid, function (res) {
       if (res && res.data && res.data.resourceUrl && chapterIdOf(db.lastPassage) === cid) {
-        audioReady = { chapterId: cid, url: res.data.resourceUrl };
-        var el = $("bibleAudioEl"); el.src = res.data.resourceUrl; try { el.load(); } catch (e) {}   // preload so the tap-to-play is gesture-synchronous (iOS)
+        audioReady = { chapterId: cid, url: res.data.resourceUrl, audioId: aid };
+        var el = $("bibleAudioEl"); el.src = res.data.resourceUrl; try { el.load(); } catch (e) {}   // preload so tap-to-play is gesture-synchronous (iOS)
       }
     });
   }
-  function startAudioPlayback() { var el = $("bibleAudioEl"); buildAudioVerseMap(); el.play().catch(function () { showToastMsg("Tap play once more to start the audio."); }); }
+  function playAudioEl() {
+    var el = $("bibleAudioEl"); buildAudioVerseMap();
+    var p = el.play();
+    if (p && p.catch) p.catch(function () { showToastMsg("Tap play once more to start the audio."); });
+  }
   function toggleBibleAudio() {
     var el = $("bibleAudioEl"), btn = $("bibleAudio");
     if (el && !el.paused) { el.pause(); return; }
-    if (!isNTPassage(db.lastPassage)) { showToastMsg("Dramatized audio is available for the New Testament."); return; }
+    var aid = curVersionAudioId();
+    if (!aid || !isNTPassage(db.lastPassage)) { showToastMsg("Dramatized audio is available for the New Testament in the World English translation."); return; }
     var cid = chapterIdOf(db.lastPassage || "");
-    if (el.src && audioReady.chapterId === cid) { startAudioPlayback(); return; }   // preloaded → play in-gesture
+    if (el.src && audioReady.chapterId === cid && audioReady.audioId === aid) { playAudioEl(); return; }   // preloaded → play synchronously in the gesture (iOS)
+    // Not preloaded yet: unlock the element within the gesture (iOS), then fetch + play.
+    try { var pr = el.play(); if (pr && pr.catch) pr.catch(function () {}); } catch (e) {}
     btn.classList.add("loading");
-    apiBible("/audio-bibles/" + AUDIO_BIBLE + "/chapters/" + cid, function (res) {
+    apiBible("/audio-bibles/" + aid + "/chapters/" + cid, function (res) {
       btn.classList.remove("loading");
-      if (res && res.data && res.data.resourceUrl) { audioReady = { chapterId: cid, url: res.data.resourceUrl }; el.src = res.data.resourceUrl; startAudioPlayback(); }
+      if (res && res.data && res.data.resourceUrl) { audioReady = { chapterId: cid, url: res.data.resourceUrl, audioId: aid }; el.src = res.data.resourceUrl; playAudioEl(); }
       else { showToastMsg("Couldn’t load the audio — try again."); }
     });
   }
