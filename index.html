@@ -4113,12 +4113,14 @@
   function curVersion() { var v = db.bibleVersion || "web-free"; return BIBLE_VERSIONS.filter(function (x) { return x.id === v; })[0] || BIBLE_VERSIONS[0]; }
   function abbrevOf(bookName) { for (var i = 0; i < BOOKS.length; i++) if (BOOKS[i][0] === bookName) return API_ABBR[i]; return null; }
   function chapterIdOf(passage) { var m = (passage || "").match(/^(.*?)\s+(\d+)$/); if (!m) return null; var ab = abbrevOf(m[1].trim()); return ab ? ab + "." + m[2] : null; }
-  function bibleProxy(payload, cb) {
-    fetch(SUPA_URL + "/functions/v1/bible", {
-      method: "POST",
-      headers: { "content-type": "application/json", "apikey": SUPA_KEY, "Authorization": "Bearer " + ((typeof session !== "undefined" && session) ? session.access_token : SUPA_KEY) },
-      body: JSON.stringify(payload)
-    }).then(function (r) { return r.json(); }).then(cb).catch(function (e) { cb({ error: String(e) }); });
+  // API.Bible allows browser CORS for GET, so we call it directly (no proxy needed).
+  // This is a read-only content key; worst case is rate-limiting, so it's fine client-side.
+  var API_BIBLE_KEY = "1BASYyGfmjJ_ivGfpmqjL";
+  function apiBible(path, cb) {
+    fetch("https://api.scripture.api.bible/v1" + path, { headers: { "api-key": API_BIBLE_KEY } })
+      .then(function (r) { return r.json(); })
+      .then(function (d) { cb(d); })
+      .catch(function (e) { cb({ error: String(e) }); });
   }
   function parseApiChapter(content, bookName, chapter) {
     var verses = [], first = content.search(/\[\d+\]/);
@@ -4152,14 +4154,13 @@
     var cacheKey = v.id + "|" + passage;
     if (db.bibleCache[cacheKey]) { renderVerses(db.bibleCache[cacheKey]); return; }
     $("bibleBody").innerHTML = '<div class="bible-loading">Opening the page…</div>';
-    bibleProxy({ action: "chapter", bibleId: v.id, chapterId: chapterId }, function (res) {
-      if (res && res.content) {
-        var verses = parseApiChapter(res.content, m[1].trim(), +m[2]);
+    apiBible("/bibles/" + v.id + "/chapters/" + chapterId + "?content-type=text", function (res) {
+      if (res && res.data && res.data.content) {
+        var verses = parseApiChapter(res.data.content, m[1].trim(), +m[2]);
         if (verses.length) { db.bibleCache[cacheKey] = verses; save(); renderVerses(verses); return; }
       }
-      // graceful fallback: show WEB so the reader always works even before the proxy is deployed
-      if (res && res.error) console.warn("bible proxy:", res.error);
-      loadChapterFree(passage);
+      if (res && res.error) console.warn("API.Bible:", res.error);
+      loadChapterFree(passage);   // fall back to free WEB if anything goes wrong
     });
   }
   // translation picker (in the Reading sheet) + audio
@@ -4175,54 +4176,58 @@
       if (db.lastPassage) loadChapter(db.lastPassage);
     });
   }
-  // ---- Read aloud (device narration) with per-verse highlight + auto-scroll ----
-  // Uses the Web Speech API — no proxy/key needed, works for OT + NT + any translation.
-  var ttsVerses = [], ttsIdx = 0, ttsPlaying = false, ttsVoice = null, ttsSupported = ("speechSynthesis" in window && "SpeechSynthesisUtterance" in window);
-  function pickReadVoice() {
-    if (!ttsSupported) return;
-    var voices = window.speechSynthesis.getVoices() || [];
-    var en = voices.filter(function (v) { return /^en(\b|[-_])/i.test(v.lang); });
-    var nice = en.filter(function (v) { return /Samantha|Siri|Ava|Allison|Nathan|Aaron|Natural|Google US English|Daniel|Serena|Karen|Moira/i.test(v.name); });
-    ttsVoice = nice[0] || en[0] || voices[0] || null;
+  // ---- Human dramatized audio (WEB Drama NT via API.Bible) + verse highlight/auto-scroll ----
+  function isNTPassage(passage) {
+    var m = (passage || "").match(/^(.*?)\s+\d+$/); if (!m) return false;
+    return BOOKS.slice(39).some(function (b) { return b[0] === m[1].trim(); });
   }
-  if (ttsSupported) { pickReadVoice(); window.speechSynthesis.onvoiceschanged = pickReadVoice; }
   function clearReadingHl() { var e = document.querySelector("#bibleBody .bv.reading"); if (e) e.classList.remove("reading"); }
-  function resetReading() {
-    ttsPlaying = false; ttsIdx = 0; ttsVerses = [];
-    if (ttsSupported) { try { window.speechSynthesis.cancel(); } catch (e) {} }
-    clearReadingHl();
-    var b = $("bibleAudio"); if (b) b.classList.remove("playing");
+  var audioReady = { chapterId: null, url: null }, audioEls = [], audioCum = [], audioTotal = 0;
+  function stopAudio() { var el = $("bibleAudioEl"); if (el) { try { el.pause(); el.removeAttribute("src"); el.load(); } catch (e) {} } clearReadingHl(); var b = $("bibleAudio"); if (b) b.classList.remove("playing"); }
+  function buildAudioVerseMap() {
+    audioEls = Array.prototype.slice.call(document.querySelectorAll("#bibleBody .bv"));
+    audioCum = []; audioTotal = 0;
+    audioEls.forEach(function (el) { audioCum.push(audioTotal); audioTotal += (el.getAttribute("data-text") || el.textContent || "").length + 8; });
   }
-  function updateAudioBtn() { var btn = $("bibleAudio"); if (btn) btn.hidden = !ttsSupported; resetReading(); }
-  function ttsQueueFrom(start) {
-    for (var i = start; i < ttsVerses.length; i++) {
-      (function (i) {
-        var v = ttsVerses[i];
-        var u = new SpeechSynthesisUtterance(v.text);
-        if (ttsVoice) u.voice = ttsVoice;
-        u.rate = 0.94; u.pitch = 1;
-        u.onstart = function () {
-          ttsIdx = i; clearReadingHl(); v.el.classList.add("reading");
-          try { v.el.scrollIntoView({ block: "center", behavior: "smooth" }); } catch (e) {}
-        };
-        u.onend = function () { if (i >= ttsVerses.length - 1) resetReading(); };
-        try { window.speechSynthesis.speak(u); } catch (e) {}
-      })(i);
-    }
+  function audioHighlight() {
+    var el = $("bibleAudioEl");
+    if (!el.duration || !audioEls.length || !audioTotal) return;
+    var target = (el.currentTime / el.duration) * audioTotal, idx = 0;
+    for (var i = 0; i < audioCum.length; i++) { if (audioCum[i] <= target) idx = i; else break; }
+    var vEl = audioEls[idx], cur = document.querySelector("#bibleBody .bv.reading");
+    if (!vEl || cur === vEl) return;
+    clearReadingHl(); vEl.classList.add("reading");
+    try { vEl.scrollIntoView({ block: "center", behavior: "smooth" }); } catch (e) {}
   }
-  function startReading() {
-    var els = Array.prototype.slice.call(document.querySelectorAll("#bibleBody .bv"));
-    if (!els.length) { showToastMsg("Open a chapter first."); return; }
-    ttsVerses = els.map(function (el) { return { el: el, text: (el.getAttribute("data-text") || el.textContent || "").trim() }; }).filter(function (v) { return v.text; });
-    ttsIdx = 0; ttsPlaying = true; $("bibleAudio").classList.add("playing");
-    try { window.speechSynthesis.cancel(); } catch (e) {}
-    ttsQueueFrom(0);
+  function updateAudioBtn(passage) {
+    var btn = $("bibleAudio"); if (!btn) return;
+    stopAudio(); audioReady = { chapterId: null, url: null };
+    var nt = isNTPassage(passage);
+    btn.hidden = !nt;   // the dramatized recording covers the New Testament
+    if (nt) preloadAudio(passage);
   }
+  function preloadAudio(passage) {
+    var cid = chapterIdOf(passage); if (!cid) return;
+    apiBible("/audio-bibles/" + AUDIO_BIBLE + "/chapters/" + cid, function (res) {
+      if (res && res.data && res.data.resourceUrl && chapterIdOf(db.lastPassage) === cid) {
+        audioReady = { chapterId: cid, url: res.data.resourceUrl };
+        var el = $("bibleAudioEl"); el.src = res.data.resourceUrl; try { el.load(); } catch (e) {}   // preload so the tap-to-play is gesture-synchronous (iOS)
+      }
+    });
+  }
+  function startAudioPlayback() { var el = $("bibleAudioEl"); buildAudioVerseMap(); el.play().catch(function () { showToastMsg("Tap play once more to start the audio."); }); }
   function toggleBibleAudio() {
-    if (!ttsSupported) { showToastMsg("Read-aloud isn’t available on this device."); return; }
-    if (ttsPlaying) { ttsPlaying = false; try { window.speechSynthesis.cancel(); } catch (e) {} clearReadingHl(); $("bibleAudio").classList.remove("playing"); return; }
-    if (ttsIdx > 0 && ttsIdx < ttsVerses.length) { ttsPlaying = true; $("bibleAudio").classList.add("playing"); ttsQueueFrom(ttsIdx); return; }   // resume where we left off
-    startReading();
+    var el = $("bibleAudioEl"), btn = $("bibleAudio");
+    if (el && !el.paused) { el.pause(); return; }
+    if (!isNTPassage(db.lastPassage)) { showToastMsg("Dramatized audio is available for the New Testament."); return; }
+    var cid = chapterIdOf(db.lastPassage || "");
+    if (el.src && audioReady.chapterId === cid) { startAudioPlayback(); return; }   // preloaded → play in-gesture
+    btn.classList.add("loading");
+    apiBible("/audio-bibles/" + AUDIO_BIBLE + "/chapters/" + cid, function (res) {
+      btn.classList.remove("loading");
+      if (res && res.data && res.data.resourceUrl) { audioReady = { chapterId: cid, url: res.data.resourceUrl }; el.src = res.data.resourceUrl; startAudioPlayback(); }
+      else { showToastMsg("Couldn’t load the audio — try again."); }
+    });
   }
   var contextRef = null;   // when opened from Verse of the Day, the verse to spotlight
   function openBible(passage, focusRef) {
@@ -4231,7 +4236,7 @@
     $("bibleRefBtn").textContent = passage;
     $("bibleGateway").href = gateway(passage);
     if (typeof applyReaderPrefs === "function") applyReaderPrefs();
-    updateAudioBtn();
+    updateAudioBtn(passage);
     loadChapter(passage);
     setView("bible");
     $("bibleView").scrollTop = 0;
@@ -4305,6 +4310,14 @@
   $("biblePick").addEventListener("click", openBiblePicker);
   $("bibleAa").addEventListener("click", openReadSheet);
   $("bibleAudio").addEventListener("click", toggleBibleAudio);
+  (function () {
+    var el = $("bibleAudioEl"), btn = $("bibleAudio");
+    el.addEventListener("play", function () { btn.classList.add("playing"); buildAudioVerseMap(); });
+    el.addEventListener("pause", function () { btn.classList.remove("playing"); });
+    el.addEventListener("ended", function () { btn.classList.remove("playing"); clearReadingHl(); });
+    el.addEventListener("timeupdate", audioHighlight);
+    el.addEventListener("error", function () { if (el.getAttribute("src")) showToastMsg("Audio expired — tap play again."); });
+  })();
 
   // ===== Open your Bible (leather table of contents) =====
   var bpTestament = "ot", bpBook = "Genesis";
