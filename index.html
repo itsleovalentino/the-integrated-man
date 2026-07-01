@@ -1925,36 +1925,53 @@
   }
   .lock.closing .lock-cover { animation: bookShut 0.6s cubic-bezier(.66,0,.34,1); }
   @keyframes bookShut { from { transform: rotateY(-95deg); opacity: 0.2; } to { transform: none; opacity: 1; } }
+  .lock-cover.shake { animation: lockShake 0.42s ease; }
+  @keyframes lockShake { 10%,90%{transform:translateX(-2px)} 20%,80%{transform:translateX(4px)} 30%,50%,70%{transform:translateX(-8px)} 40%,60%{transform:translateX(8px)} }
   .lock-inner {
-    text-align: center; width: 300px; max-width: 84vw;
-    padding: 36px 30px; border: 1px solid rgba(203,178,126,0.22); border-radius: 8px;
-    box-shadow: inset 0 0 40px rgba(0,0,0,0.4);
+    text-align: center; width: 300px; max-width: 86vw;
+    padding: 34px 28px; border: 1.5px dashed rgba(216,182,120,0.26); border-radius: 16px;
+    box-shadow: inset 0 0 50px rgba(0,0,0,0.45);
   }
-  .lock-word { justify-content: center; margin-bottom: 26px; }
-  .lock-word .cross line { stroke: #cbb27e; }
-  .lock-word span { color: rgba(203,178,126,0.85); }
+  .lock-word-mono {
+    font-family: "Spline Sans Mono", ui-monospace, monospace; font-size: 9.5px; letter-spacing: 0.3em;
+    color: rgba(203,178,126,0.55); text-shadow: 0 1px 0 rgba(0,0,0,0.5); margin-bottom: 18px;
+  }
+  .lock-emblem { width: 46px; height: 62px; margin-bottom: 16px; filter: drop-shadow(0 2px 1px rgba(0,0,0,0.55)) drop-shadow(0 -1px 0 rgba(255,232,182,0.14)); }
   .lock-title {
-    font-size: 26px; font-weight: 300; margin-bottom: 6px;
+    font-size: 24px; font-weight: 300; margin-bottom: 5px;
     background: linear-gradient(180deg, #f3dca0, #cba85f 55%, #9a7836);
     -webkit-background-clip: text; background-clip: text; color: transparent;
   }
-  .lock-prompt { font-size: 13px; color: rgba(203,178,126,0.6); letter-spacing: 0.06em; margin-bottom: 24px; }
+  .lock-prompt { font-size: 13px; color: rgba(203,178,126,0.6); letter-spacing: 0.06em; margin-bottom: 22px; }
   .lock-prompt.err { color: #e08a6f; }
-  .lock-dots { display: flex; gap: 16px; justify-content: center; margin-bottom: 30px; }
-  .lock-dot { width: 13px; height: 13px; border-radius: 50%; border: 1.5px solid rgba(203,178,126,0.35); transition: background 0.15s ease, border-color 0.15s ease; }
-  .lock-dot.on { background: #cbb27e; border-color: #cbb27e; }
-  .lock-pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 13px; }
+  .lock-dots { display: flex; gap: 16px; justify-content: center; margin-bottom: 28px; }
+  .lock-dot {
+    width: 12px; height: 12px; border-radius: 50%;
+    background: radial-gradient(circle at 40% 35%, #241a10, #120c06);
+    box-shadow: inset 0 1px 2px rgba(0,0,0,0.75); transition: background 0.15s ease, box-shadow 0.15s ease;
+  }
+  .lock-dot.on {
+    background: radial-gradient(circle at 38% 30%, #f2d288, #b7944f 60%, #8a6f3f);
+    box-shadow: 0 0 8px rgba(203,178,126,0.5), inset 0 1px 1px rgba(255,242,205,0.7);
+  }
+  .lock-pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
   .lock-key {
     aspect-ratio: 1 / 1; border-radius: 50%;
-    background: rgba(255,255,255,0.04); border: 1px solid rgba(203,178,126,0.25); color: #e8d6ac;
-    font-family: inherit; font-size: 22px; font-weight: 300; cursor: pointer;
+    background: radial-gradient(circle at 38% 30%, #5e4a33, #3a2a1b 68%, #2b1f13);
+    border: 1px solid rgba(214,178,116,0.20); color: #e2c384;
+    font-family: "Cormorant Garamond", Georgia, serif; font-size: 27px; cursor: pointer;
     display: flex; align-items: center; justify-content: center;
-    transition: background 0.15s ease;
+    text-shadow: 0 1px 1px rgba(0,0,0,0.6);
+    box-shadow: 0 5px 9px rgba(0,0,0,0.5), inset 0 1px 1px rgba(255,228,178,0.16), inset 0 -3px 6px rgba(0,0,0,0.42);
+    transition: transform 0.09s ease, box-shadow 0.09s ease, filter 0.09s ease;
+    -webkit-user-select: none; user-select: none;
   }
-  .lock-key:hover { background: rgba(203,178,126,0.14); }
-  .lock-key.blank { background: none; border: none; cursor: default; }
-  .lock-key.fn { font-size: 16px; color: rgba(203,178,126,0.7); }
-  .lock-cancel, .lock .modal-text { color: rgba(203,178,126,0.6); }
+  .lock-key:hover { filter: brightness(1.07); }
+  .lock-key.pressed { transform: translateY(2px) scale(0.97); filter: brightness(0.9);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.5), inset 0 3px 6px rgba(0,0,0,0.5); }
+  .lock-key.blank { background: none; border: none; box-shadow: none; cursor: default; }
+  .lock-key.fn { font-size: 21px; color: rgba(226,195,132,0.85); }
+  .lock-cancel, .lock .modal-text { color: rgba(203,178,126,0.6); margin-top: 18px; }
 
   /* ---- verse action menu ---- */
   .verse-menu {
@@ -2598,10 +2615,11 @@
   <div class="lock" id="lock" hidden>
     <div class="lock-cover" id="lockCover">
       <div class="lock-inner">
-        <div class="wordmark lock-word">
-          <svg class="cross" viewBox="0 0 24 36" aria-hidden="true"><line x1="12" y1="2" x2="12" y2="34"/><line x1="3" y1="12" x2="21" y2="12"/></svg>
-          <span>The Integrated Man</span>
-        </div>
+        <div class="lock-word-mono">THE INTEGRATED MAN</div>
+        <svg class="lock-emblem" viewBox="0 0 54 72" aria-hidden="true">
+          <defs><linearGradient id="lockBrass" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f3d89b"/><stop offset=".5" stop-color="#c2984f"/><stop offset="1" stop-color="#856733"/></linearGradient></defs>
+          <g fill="url(#lockBrass)" stroke="#5f471f" stroke-width=".5"><rect x="23" y="4" width="8" height="64" rx="2.5"/><rect x="9" y="21" width="36" height="8" rx="2.5"/></g>
+        </svg>
         <div class="lock-title serif" id="lockTitle">Welcome back</div>
         <div class="lock-prompt" id="lockPrompt">Enter your passcode</div>
         <div class="lock-dots" id="lockDots"></div>
@@ -3152,7 +3170,13 @@
     $("lockPrompt").textContent = "Choose a 4-digit code"; $("lockPrompt").classList.remove("err");
     $("lockCancel").hidden = false; renderLockDots(); $("lock").hidden = false;
   }
-  function lockErr(msg) { var p = $("lockPrompt"); p.textContent = msg; p.classList.add("err"); lockBuf = ""; renderLockDots(); buzz(30); }
+  function lockTick() { tone(880, 0.03, "sine", 0.02); tone(440, 0.045, "triangle", 0.016); } // soft clasp tick
+  function lockErr(msg) {
+    var p = $("lockPrompt"); p.textContent = msg; p.classList.add("err"); lockBuf = ""; renderLockDots();
+    var c = $("lockCover"); c.classList.remove("shake"); void c.offsetWidth; c.classList.add("shake"); // leather shudder
+    tone(150, 0.18, "sine", 0.06); tone(90, 0.22, "sine", 0.05); // low thud
+    buzz(30);
+  }
   function lockComplete() {
     if (lockMode === "enter") {
       if (lockBuf === db.passcode) { $("lock").hidden = true; lockBuf = ""; resetIdle(); playPage(); buzz(14); }
@@ -3169,12 +3193,16 @@
     }
   }
   function lockInput(d) {
-    if (d === "del") { lockBuf = lockBuf.slice(0, -1); renderLockDots(); return; }
+    if (d === "del") { lockBuf = lockBuf.slice(0, -1); renderLockDots(); lockTick(); buzz(6); return; }
     if (lockBuf.length >= 4) return;
-    lockBuf += d; renderLockDots(); buzz(6);
-    if (lockBuf.length === 4) setTimeout(lockComplete, 130);
+    lockBuf += d; renderLockDots(); lockTick(); buzz(6);
+    if (lockBuf.length === 4) setTimeout(lockComplete, 140);
   }
-  $("lockPad").addEventListener("click", function (e) { var b = e.target.closest("[data-d]"); if (b) lockInput(b.getAttribute("data-d")); });
+  $("lockPad").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-d]"); if (!b) return;
+    b.classList.add("pressed"); setTimeout(function () { b.classList.remove("pressed"); }, 120); // tactile press
+    lockInput(b.getAttribute("data-d"));
+  });
   $("lockCancel").addEventListener("click", function () { lockBuf = ""; $("lock").hidden = true; });
   // type the passcode with a physical keyboard too
   document.addEventListener("keydown", function (e) {
@@ -3331,7 +3359,7 @@
   function refreshGauge() {
     renderTrends(); // history shows even when today isn't rated yet
     updatePillarsSummary();
-    var touched = !!db.ratings[todayKey];
+    var touched = !!db.ratings[todayKey] && !pillarsSkippedToday(); // resting today → N/A, no number
     if (!touched) {
       $("gaugeNum").textContent = "—";
       $("gaugeFill").style.strokeDashoffset = CIRC;
@@ -3349,7 +3377,7 @@
   // ---------- weekly cadence: summary + nudge ----------
   function lastCheck() {
     var keys = Object.keys(db.ratings)
-      .filter(function (k) { return dayIntegration(db.ratings[k]) != null; })
+      .filter(function (k) { return dayIntegration(db.ratings[k]) != null && !db.pillarSkip[k]; })
       .sort();
     return keys.length ? keys[keys.length - 1] : null;
   }
@@ -3467,7 +3495,7 @@
     var panel = $("trendsPanel"), empty = $("trendEmpty");
     if (!panel) return;
     var keys = Object.keys(db.ratings)
-      .filter(function (k) { return dayIntegration(db.ratings[k]) != null; })
+      .filter(function (k) { return dayIntegration(db.ratings[k]) != null && !db.pillarSkip[k]; }) // resting days are N/A, not in the trend or average
       .sort();
     var pts = keys.map(function (k) { return { k: k, v: dayIntegration(db.ratings[k]) }; }).slice(-30);
 
@@ -4966,10 +4994,12 @@
     if (hasVoice(k)) return true;
     if (db.scriptureNoteLog[k] && Object.keys(db.scriptureNoteLog[k]).length) return true;
     if (db.gratitude[k] && db.gratitude[k].some(function (x) { return (x || "").trim(); })) return true;
+    if (db.pillarSkip[k]) return true; // "not tracked" days still show in the journal
     return false;
   }
   function fmtMonth(k) { var p = k.split("-"); return months[p[1] - 1] + " " + p[0]; }
   function entryIntegration(k) {
+    if (db.pillarSkip[k]) return null; // resting day → N/A, never counted
     var rt = db.ratings[k];
     if (!rt) return null;
     var s = 0, n = 0;
@@ -5049,6 +5079,7 @@
     Object.keys(db.voice.evening || {}).forEach(function (k) { keySet[k] = true; });
     Object.keys(db.scriptureNoteLog).forEach(function (k) { keySet[k] = true; });
     Object.keys(db.gratitude).forEach(function (k) { keySet[k] = true; });
+    Object.keys(db.pillarSkip).forEach(function (k) { keySet[k] = true; });
     return Object.keys(keySet).filter(dayHasContent).sort().reverse();
   }
   function renderJournal() {
@@ -5236,18 +5267,22 @@
       if (r.tomorrow && r.tomorrow.trim()) lines += "For tomorrow — " + r.tomorrow.trim();
       if (lines.trim()) html += paperSection("Reflection", "", lines.trim());
     }
-    var rt = db.ratings[k];
-    if (rt) {
-      var integ = entryIntegration(k);
-      var ph = '<div class="paper-section"><div class="paper-h">The Seven Pillars</div>';
-      if (integ) ph += '<div class="paper-int">Integration <b>' + integ + '</b> / 10</div>';
-      pillars.forEach(function (pl) {
-        var v = rt[pl.key]; if (!v) return;
-        ph += '<div class="paper-rating"><b>' + pl.name + '</b> · ' + v.score + '/10' +
-          (v.why && v.why.trim() ? ' — ' + escapeHtml(v.why) : "") + '</div>';
-      });
-      ph += '</div>';
-      html += ph;
+    if (db.pillarSkip[k]) {
+      html += '<div class="paper-section"><div class="paper-h">The Seven Pillars</div><div class="paper-text">Not tracked — a resting day.</div></div>';
+    } else {
+      var rt = db.ratings[k];
+      if (rt) {
+        var integ = entryIntegration(k);
+        var ph = '<div class="paper-section"><div class="paper-h">The Seven Pillars</div>';
+        if (integ) ph += '<div class="paper-int">Integration <b>' + integ + '</b> / 10</div>';
+        pillars.forEach(function (pl) {
+          var v = rt[pl.key]; if (!v) return;
+          ph += '<div class="paper-rating"><b>' + pl.name + '</b> · ' + v.score + '/10' +
+            (v.why && v.why.trim() ? ' — ' + escapeHtml(v.why) : "") + '</div>';
+        });
+        ph += '</div>';
+        html += ph;
+      }
     }
     if (!html) html = '<div class="paper-empty">A quiet day.</div>';
     $("paperBody").innerHTML = html;
