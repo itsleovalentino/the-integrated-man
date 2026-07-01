@@ -412,6 +412,21 @@
   .pw-answer-x { background: none; border: none; color: var(--ink-faint); font-size: 15px; cursor: pointer; padding: 2px 4px; }
   .pw-answer-x:hover { color: var(--ink); }
   .pw-answer-actions { display: flex; align-items: center; justify-content: flex-end; gap: 12px; margin-top: 10px; }
+  /* social feed: tags, delete, comments, prayer toggle */
+  .pw-tag { flex: 0 0 auto; font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent); background: var(--accent-soft); border: 1px solid var(--accent); border-radius: 999px; padding: 3px 9px; align-self: flex-start; }
+  .pw-post-del { flex: 0 0 auto; background: none; border: none; color: var(--ink-faint); cursor: pointer; padding: 4px; align-self: flex-start; }
+  .pw-post-del svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.6; }
+  .pw-post-del:hover { color: #d08a72; }
+  .pw-c-more { background: none; border: none; color: var(--ink-soft); font-family: inherit; font-size: 12.5px; cursor: pointer; padding: 2px 0 10px; }
+  .pw-c-more:hover { color: var(--accent); }
+  .pw-c-del { background: none; border: none; color: var(--ink-faint); font-size: 14px; line-height: 1; cursor: pointer; padding: 0 2px; margin-left: 6px; }
+  .pw-c-del:hover { color: #d08a72; }
+  .pw-req-row { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; padding: 4px 2px; }
+  .pw-req-label { font-size: 14px; color: var(--ink); }
+  .pw-req-toggle { width: 46px; height: 27px; border-radius: 999px; border: none; background: var(--field-edge); cursor: pointer; position: relative; transition: background 0.22s ease; flex: 0 0 auto; }
+  .pw-req-toggle.on { background: var(--accent); }
+  .prt-knob { position: absolute; top: 3px; left: 3px; width: 21px; height: 21px; border-radius: 50%; background: #fff; transition: transform 0.22s cubic-bezier(.34,1.4,.64,1); box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
+  .pw-req-toggle.on .prt-knob { transform: translateX(19px); }
   .label {
     font-size: 11px;
     letter-spacing: 0.22em;
@@ -5053,7 +5068,8 @@
   var HEART = '<path d="M12 21s-7-4.6-9.3-8.4C1 9.5 2.6 6 6 6c2 0 3.2 1.2 4 2.4C10.8 7.2 12 6 14 6c3.4 0 5 3.5 3.3 6.6C19 16.4 12 21 12 21z"/>';
   var PW_SEND = '<svg viewBox="0 0 24 24"><path d="M4 12l16-7-7 16-2-7-7-2z"/></svg>';
   var PW_TINY_HEART = '<svg viewBox="0 0 24 24" style="width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:1.7;vertical-align:-1px">' + HEART + '</svg>';
-  var wallState = { prayers: [], prays: {}, myPrays: {}, enc: {}, shown: 10, composing: false, answerOpen: {} };
+  var PW_TRASH = '<svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M6 6l1 14a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-14"/></svg>';
+  var wallState = { prayers: [], prays: {}, myPrays: {}, enc: {}, shown: 10, composing: false, composePrayer: true, expanded: {} };
 
   function pwColor(name) { var s = 0, n = name || ""; for (var i = 0; i < n.length; i++) s = (s + n.charCodeAt(i)) % PW_PAL.length; return PW_PAL[s]; }
   function pwInitials(name) { var p = (name || "?").trim().split(/\s+/); return ((p[0] ? p[0][0] : "?") + (p[1] ? p[1][0] : "")).toUpperCase(); }
@@ -5110,73 +5126,60 @@
     var url = p.profiles && p.profiles.avatar_url;
     if (mine && hasRealName()) name = myName();                          // own post always shows my current name
     if (mine && !url && db.profile && db.profile.avatarUrl) url = db.profile.avatarUrl;
-    var prayers = wallState.prays[p.id] || [];
-    var iPrayed = !!wallState.myPrays[p.id];
-    var stack = prayers.slice(0, 4).map(function (m) { return pwAvatar(m.name, m.url, "sm"); }).join("");
-    var count = prayers.length;
-    var foot = "";
-    if (!p.answered) {
-      foot = '<div class="pw-foot"><div class="pw-praying">' +
-        (count ? '<div class="pw-stack">' + stack + '</div><span class="pw-praying-txt">' + count + ' praying</span>' : '<span class="pw-praying-txt">Be the first to pray</span>') +
-        '</div><button class="pw-pray-btn' + (iPrayed ? ' on' : '') + '" data-act="pray" data-id="' + p.id + '"><svg viewBox="0 0 24 24">' + HEART + '</svg>' + (iPrayed ? 'Praying' : 'Pray') + '</button></div>';
-    }
-    var encInput = "";
-    if (iPrayed && !mine && !p.answered) {
-      encInput = '<div class="pw-enc-compose">' +
-        '<input type="text" class="pw-enc-input" data-id="' + p.id + '" placeholder="Add a word of encouragement…" maxlength="240" />' +
-        '<button class="pw-enc-send" data-act="sendEnc" data-id="' + p.id + '" aria-label="Send">' + PW_SEND + '</button></div>';
-    }
-    var encList = "";
-    var encs = wallState.enc[p.id] || [];   // RLS returns only what I may see: my own sent words + (if it's my post) all of them
-    if (encs.length) {
-      encList = '<div class="pw-enc"><div class="pw-enc-label">' + PW_TINY_HEART + (mine ? ' Words for you' : ' Encouragement') + '</div>' +
-        encs.map(function (e) {
-          var who = (e.from_id && e.from_id === myId()) ? "You" : e.from;
-          return '<div class="pw-enc-item">' + pwAvatar(who, e.url, "sm") + '<div class="pw-enc-txt"><div class="pw-enc-from">' + escapeHtml(who) + '</div><div class="pw-enc-body">' + escapeHtml(e.body) + '</div></div></div>';
-        }).join("") + '</div>';
-    }
-    var answerRow = "";
-    if (mine && !p.answered) {
-      if (wallState.answerOpen[p.id]) {
-        answerRow = '<div class="pw-answer-box"><div class="pw-answer-head"><span class="pw-answer-label">How did God answer? <span class="lbl-opt">— optional</span></span>' +
-          '<button class="pw-answer-x" data-act="answerCancel" data-id="' + p.id + '" aria-label="Never mind">✕</button></div>' +
-          '<textarea class="pw-answer-input" data-id="' + p.id + '" rows="2" placeholder="Share the good news, or leave blank…"></textarea>' +
-          '<div class="pw-answer-actions"><button class="modal-text" data-act="answerCancel" data-id="' + p.id + '">Never mind</button>' +
-          '<button class="save-mini" data-act="answerDone" data-id="' + p.id + '">Mark answered</button></div></div>';
-      } else {
-        answerRow = '<div class="pw-answer-row"><button class="pw-answer-link" data-act="answerOpen" data-id="' + p.id + '">✦ Mark as answered</button></div>';
-      }
-    }
-    var meta = (p.answered ? '<span class="pw-answered-tag">✦ Answered</span> · ' : '') + (mine ? 'you · ' : '') + pwAgo(p.created_at);
-    var bodyHtml = escapeHtml(p.body) + (p.answered && p.answered_note ? '<div class="pw-answered-note">' + escapeHtml(p.answered_note) + '</div>' : '');
-    return '<div class="pw-card' + (p.answered ? ' answered' : '') + '">' +
-      '<div class="pw-head">' + pwAvatar(name, url, "lg") + '<div class="pw-who"><div class="pw-name">' + escapeHtml(name) + '</div><div class="pw-meta">' + meta + '</div></div></div>' +
-      '<div class="pw-body">' + bodyHtml + '</div>' + foot + encInput + answerRow + encList + '</div>';
+    var isPrayer = p.is_prayer !== false;                                 // default true (existing posts / pre-migration)
+    var reactors = wallState.prays[p.id] || [];
+    var iReacted = !!wallState.myPrays[p.id];
+    var stack = reactors.slice(0, 4).map(function (m) { return pwAvatar(m.name, m.url, "sm"); }).join("");
+    var count = reactors.length;
+    var reactLabel = isPrayer ? (iReacted ? "Praying" : "Pray") : (iReacted ? "Amen’d" : "Amen");
+    var countTxt = count ? (count + (isPrayer ? " praying" : " amen")) : (isPrayer ? "Be the first to pray" : "Be the first to say amen");
+    var foot = '<div class="pw-foot"><div class="pw-praying">' +
+      (count ? '<div class="pw-stack">' + stack + '</div>' : "") + '<span class="pw-praying-txt">' + countTxt + '</span></div>' +
+      '<button class="pw-pray-btn' + (iReacted ? " on" : "") + '" data-act="pray" data-id="' + p.id + '"><svg viewBox="0 0 24 24">' + HEART + '</svg>' + reactLabel + '</button></div>';
+    // comments (public), collapsed past 2
+    var encs = wallState.enc[p.id] || [], expanded = !!wallState.expanded[p.id];
+    var shownEncs = (encs.length > 2 && !expanded) ? encs.slice(encs.length - 2) : encs;
+    var moreLink = (encs.length > 2 && !expanded) ? '<button class="pw-c-more" data-act="expandComments" data-id="' + p.id + '">View all ' + encs.length + ' comments</button>' : "";
+    var encItems = shownEncs.map(function (e) {
+      var who = (e.from_id && e.from_id === myId()) ? "You" : e.from;
+      var del = (e.from_id === myId()) ? '<button class="pw-c-del" data-act="delEnc" data-id="' + p.id + '" data-eid="' + e.id + '" aria-label="Delete comment">×</button>' : "";
+      return '<div class="pw-enc-item">' + pwAvatar(who, e.url, "sm") + '<div class="pw-enc-txt"><div class="pw-enc-from">' + escapeHtml(who) + del + '</div><div class="pw-enc-body">' + escapeHtml(e.body) + '</div></div></div>';
+    }).join("");
+    var encList = encs.length ? '<div class="pw-enc">' + moreLink + encItems + '</div>' : "";
+    var commentInput = '<div class="pw-enc-compose">' +
+      '<input type="text" class="pw-enc-input" data-id="' + p.id + '" placeholder="Comment…" maxlength="280" />' +
+      '<button class="pw-enc-send" data-act="sendEnc" data-id="' + p.id + '" aria-label="Send">' + PW_SEND + '</button></div>';
+    var tag = isPrayer ? '<span class="pw-tag">Prayer</span>' : "";
+    var del = mine ? '<button class="pw-post-del" data-act="delPost" data-id="' + p.id + '" aria-label="Delete post">' + PW_TRASH + '</button>' : "";
+    return '<div class="pw-card">' +
+      '<div class="pw-head">' + pwAvatar(name, url, "lg") + '<div class="pw-who"><div class="pw-name">' + escapeHtml(name) + '</div><div class="pw-meta">' + (mine ? "you · " : "") + pwAgo(p.created_at) + '</div></div>' + tag + del + '</div>' +
+      '<div class="pw-body">' + escapeHtml(p.body) + '</div>' + foot + encList + commentInput + '</div>';
   }
 
   function renderWall() {
     var body = $("circleBody"); if (!body) return;
-    var open = wallState.prayers.filter(function (p) { return !p.answered; });
-    var answered = wallState.prayers.filter(function (p) { return p.answered; });
+    var feed = wallState.prayers;   // one living feed, newest first
     var meAv = pwAvatar(myName(), (db.profile && db.profile.avatarUrl) || null, "lg");
     var compose;
     if (!hasRealName()) {
       compose = '<button class="pw-setup" data-act="profileSetup"><div class="pw-setup-t serif">Add your name to join in</div>' +
-        '<div class="pw-setup-s">So your brothers know who’s praying. Tap to set your name and photo.</div></button>';
+        '<div class="pw-setup-s">So your brothers know who you are. Tap to set your name and photo.</div></button>';
     } else if (wallState.composing) {
-      compose = '<div class="pw-compose-active"><textarea id="pwComposeInput" rows="3" placeholder="What’s on your heart today?"></textarea>' +
-        '<div class="pw-compose-actions"><button class="modal-text" data-act="composeCancel">Cancel</button><button class="save-mini" data-act="post">Share with the wall</button></div></div>';
+      var isP = wallState.composePrayer !== false;
+      compose = '<div class="pw-compose-active"><textarea id="pwComposeInput" rows="3" placeholder="Share a prayer, a win, an encouragement…"></textarea>' +
+        '<div class="pw-req-row"><span class="pw-req-label">Prayer request</span>' +
+        '<button class="pw-req-toggle' + (isP ? " on" : "") + '" data-act="togglePrayer" type="button" role="switch" aria-checked="' + isP + '"><span class="prt-knob"></span></button></div>' +
+        '<div class="pw-compose-actions"><button class="modal-text" data-act="composeCancel">Cancel</button><button class="save-mini" data-act="post">Post</button></div></div>';
     } else {
-      compose = '<div class="pw-compose" data-act="composeOpen">' + meAv + '<span class="pw-compose-txt">What’s on your heart today?</span></div>';
+      compose = '<div class="pw-compose" data-act="composeOpen">' + meAv + '<span class="pw-compose-txt">Share something with the circle…</span></div>';
     }
-    var html = '<div class="pw-intro"><div class="pw-intro-title serif">On our hearts</div><div class="pw-intro-sub">Ask for prayer. Carry each other. Rejoice together.</div></div>' + compose;
-    if (open.length) {
-      html += '<div class="pw-section-label">Praying now</div>' + open.slice(0, wallState.shown).map(pwCard).join("");
-      if (open.length > wallState.shown) html += '<button class="pw-more" data-act="showMore">Show more (' + (open.length - wallState.shown) + ')</button>';
+    var html = '<div class="pw-intro"><div class="pw-intro-title serif">The circle</div><div class="pw-intro-sub">Prayers, wins, encouragement — carry each other.</div></div>' + compose;
+    if (feed.length) {
+      html += feed.slice(0, wallState.shown).map(pwCard).join("");
+      if (feed.length > wallState.shown) html += '<button class="pw-more" data-act="showMore">Show more (' + (feed.length - wallState.shown) + ')</button>';
     } else {
-      html += '<div class="pw-empty">No requests yet.<br>Be the first to share what’s on your heart.</div>';
+      html += '<div class="pw-empty">Nothing here yet.<br>Share the first prayer or win.</div>';
     }
-    if (answered.length) html += '<div class="pw-section-label">Answered · He is faithful</div>' + answered.slice(0, 10).map(pwCard).join("");
     body.innerHTML = html;
     if (wallState.composing) { var ta = $("pwComposeInput"); if (ta) ta.focus(); }
   }
@@ -5201,7 +5204,7 @@
       if (!ids.length) { wallState.prays = {}; wallState.myPrays = {}; wallState.enc = {}; renderWall(); refreshWallBadge(); renderWallPanel(); if (cb) cb(); return; }
       Promise.all([
         sb.from("prayer_prays").select("prayer_id, user_id").in("prayer_id", ids),
-        sb.from("prayer_encouragements").select("prayer_id, from_id, body, created_at").in("prayer_id", ids).order("created_at", { ascending: true })
+        sb.from("prayer_encouragements").select("id, prayer_id, from_id, body, created_at").in("prayer_id", ids).order("created_at", { ascending: true })
       ]).then(function (r) {
         var prays = {}, myP = {};
         ((r[0] && r[0].data) || []).forEach(function (x) {
@@ -5212,7 +5215,7 @@
         var enc = {};
         ((r[1] && r[1].data) || []).forEach(function (e) {
           var pf = profById[e.from_id] || {};
-          (enc[e.prayer_id] = enc[e.prayer_id] || []).push({ from: pf.display_name || "A brother", from_id: e.from_id, url: pf.avatar_url, body: e.body, created_at: e.created_at });
+          (enc[e.prayer_id] = enc[e.prayer_id] || []).push({ id: e.id, from: pf.display_name || "A brother", from_id: e.from_id, url: pf.avatar_url, body: e.body, created_at: e.created_at });
         });
         wallState.prays = prays; wallState.myPrays = myP; wallState.enc = enc;
         renderWall(); refreshWallBadge(); renderWallPanel(); if (cb) cb();
@@ -5222,7 +5225,7 @@
 
   function openWall() {  // load the fellowship wall (the view is switched by setView)
     if (typeof sb === "undefined" || !sb || !session) { $("circleBody").innerHTML = '<div class="circle-empty">Sign in to use prayer.</div>'; return; }
-    wallState.composing = false; wallState.answerOpen = {}; wallState.shown = 10;
+    wallState.composing = false; wallState.expanded = {}; wallState.shown = 10;
     $("circleBody").innerHTML = '<div class="circle-empty">Gathering the wall…</div>';
     upsertProfile();
     loadWall(function () { markWallSeen(); });
@@ -5232,14 +5235,15 @@
     var el = e.target.closest("[data-act]"); if (!el) return;
     var act = el.getAttribute("data-act"), id = el.getAttribute("data-id");
     if (act === "profileSetup") { openProfile(); }
-    else if (act === "composeOpen") { wallState.composing = true; renderWall(); }
+    else if (act === "composeOpen") { wallState.composing = true; wallState.composePrayer = true; renderWall(); }
     else if (act === "composeCancel") { wallState.composing = false; renderWall(); }
+    else if (act === "togglePrayer") { wallState.composePrayer = !(wallState.composePrayer !== false); el.classList.toggle("on", wallState.composePrayer); el.setAttribute("aria-checked", wallState.composePrayer); }
     else if (act === "post") doPostWall();
     else if (act === "pray") doPrayWall(id);
     else if (act === "sendEnc") doSendEnc(id);
-    else if (act === "answerOpen") { wallState.answerOpen[id] = true; renderWall(); }
-    else if (act === "answerCancel") { delete wallState.answerOpen[id]; renderWall(); }
-    else if (act === "answerDone") doAnswerWall(id);
+    else if (act === "expandComments") { wallState.expanded[id] = true; renderWall(); }
+    else if (act === "delEnc") doDelEnc(el.getAttribute("data-eid"));
+    else if (act === "delPost") doDelPost(id);
     else if (act === "showMore") { wallState.shown += 10; renderWall(); }
   });
 
@@ -5253,12 +5257,28 @@
     if (typeof sb === "undefined" || !sb || !session) { showToastMsg("Sign in to share."); return; }
     if (!hasRealName()) { showToastMsg("Add your name first so brothers know who’s praying."); openProfile(); return; }
     var btn = $("circleBody").querySelector('[data-act="post"]'); if (btn) { btn.disabled = true; btn.textContent = "Sharing…"; }
+    var isP = wallState.composePrayer !== false;
     upsertProfile().then(function () {
-      return sb.from("prayers").insert({ author_id: myId(), body: body });
+      return sb.from("prayers").insert({ author_id: myId(), body: body, is_prayer: isP });
     }).then(function (res) {
-      if (res && res.error) { wallErr(res.error, btn, "Share with the wall"); return; }
+      if (res && res.error) { wallErr(res.error, btn, "Post"); return; }
       wallState.composing = false; fb("success"); loadWall();
-    }).catch(function (e) { wallErr(e, btn, "Share with the wall"); });
+    }).catch(function (e) { wallErr(e, btn, "Post"); });
+  }
+  function doDelPost(id) {
+    confirmDialog("Delete this post? This can’t be undone.", "Delete", function () {
+      sb.from("prayers").delete().eq("id", id).then(function (res) {
+        if (res && res.error) { wallErr(res.error); return; }
+        buzz(10); loadWall();
+      });
+    });
+  }
+  function doDelEnc(eid) {
+    if (!eid) return;
+    sb.from("prayer_encouragements").delete().eq("id", eid).then(function (res) {
+      if (res && res.error) { wallErr(res.error); return; }
+      buzz(8); loadWall();
+    });
   }
   function doPrayWall(id) {
     if (typeof sb === "undefined" || !sb || !session) { showToastMsg("Sign in to pray."); return; }
@@ -5281,14 +5301,6 @@
       if (res && res.error) { wallErr(res.error); return; }
       fb("success"); showToastMsg("Sent."); loadWall();
     }).catch(function (e) { wallErr(e); });
-  }
-  function doAnswerWall(id) {
-    var inp = $("circleBody").querySelector('.pw-answer-input[data-id="' + id + '"]');
-    var note = ((inp && inp.value) || "").trim();
-    sb.from("prayers").update({ answered: true, answered_at: new Date().toISOString(), answered_note: note || null }).eq("id", id).then(function (res) {
-      if (res.error) { showToastMsg(res.error.message); return; }
-      delete wallState.answerOpen[id]; fb("celebrate"); showToastMsg("Answered — He is faithful."); loadWall();
-    });
   }
 
   // ===== App shell: bottom nav + destinations (Home / Bible / Fellowship) =====
@@ -6785,7 +6797,7 @@
     db.textSize = b.getAttribute("data-ts"); save(); applyTextSize(db.textSize); buzz(8);
   });
 
-  var APP_VERSION = "v26";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v27";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
