@@ -1954,14 +1954,34 @@
   .jt-seg { margin-bottom: 20px; }
   /* "Write a note" launcher in the Notes list */
   .notes-new {
-    display: flex; align-items: center; gap: 10px; width: 100%;
-    background: var(--field); border: 1px solid var(--field-edge); color: var(--ink-soft);
-    border-radius: 16px; padding: 16px 18px; margin-bottom: 22px;
-    font-family: inherit; font-size: 16px; cursor: pointer;
-    transition: border-color 0.2s ease, color 0.2s ease;
+    display: flex; align-items: center; gap: 14px; width: 100%; text-align: left;
+    border-radius: 20px; padding: 15px 16px; margin-bottom: 24px; cursor: pointer;
+    color: var(--ink); font-family: inherit;
+    background: linear-gradient(180deg, rgba(255,255,255,0.09), rgba(255,255,255,0.045));
+    border: 1px solid rgba(255,255,255,0.14);
+    -webkit-backdrop-filter: blur(30px) saturate(1.8); backdrop-filter: blur(30px) saturate(1.8);
+    box-shadow: 0 12px 34px -14px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.18), inset 0 -1px 0 rgba(0,0,0,0.22);
+    transition: transform 0.22s cubic-bezier(.34,1.56,.64,1), box-shadow 0.25s ease, border-color 0.2s ease;
   }
-  .notes-new:hover { border-color: var(--accent); color: var(--accent); }
-  .notes-new svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+  :root[data-theme="light"] .notes-new {
+    background: linear-gradient(180deg, rgba(255,255,255,0.9), rgba(255,255,255,0.62));
+    border-color: rgba(0,0,0,0.08);
+    box-shadow: 0 12px 34px -16px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.85);
+  }
+  .notes-new:hover { transform: translateY(-1px); border-color: rgba(203,178,126,0.5); box-shadow: 0 16px 38px -14px rgba(0,0,0,0.66), 0 0 0 1px rgba(203,178,126,0.16), inset 0 1px 0 rgba(255,255,255,0.22); }
+  .notes-new:active { transform: scale(0.98); }
+  .nn-icon {
+    flex: 0 0 auto; width: 46px; height: 46px; border-radius: 15px;
+    display: inline-flex; align-items: center; justify-content: center; color: var(--accent);
+    background: linear-gradient(180deg, rgba(203,178,126,0.3), rgba(203,178,126,0.14));
+    border: 1px solid rgba(203,178,126,0.42); box-shadow: inset 0 1px 0 rgba(255,255,255,0.22);
+  }
+  .nn-icon svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+  .nn-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+  .nn-title { font-size: 18px; color: var(--ink); letter-spacing: -0.01em; }
+  .nn-sub { font-size: 13px; color: var(--ink-faint); }
+  .nn-plus { flex: 0 0 auto; width: 30px; height: 30px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; color: var(--ink-faint); }
+  .nn-plus svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
   /* Focused writer overlay */
   /* Focused writer — a clean, typography-forward page (no boxes) */
   .writer { position: fixed; inset: 0; z-index: 70; background: var(--bg); display: flex; flex-direction: column; animation: viewIn 0.32s cubic-bezier(.2,.7,.2,1); }
@@ -3134,8 +3154,9 @@
       </div>
       <div id="jtNotes" hidden>
         <button class="notes-new" id="notesNew">
-          <svg viewBox="0 0 24 24"><path d="M4 20.5l4.5-1L19 9l-3.5-3.5L5 16z"/><line x1="14" y1="7" x2="17.5" y2="10.5"/></svg>
-          Write a note
+          <span class="nn-icon"><svg viewBox="0 0 24 24"><path d="M4 20.5l4.5-1L19 9l-3.5-3.5L5 16z"/><line x1="14" y1="7" x2="17.5" y2="10.5"/></svg></span>
+          <span class="nn-text"><span class="nn-title serif">Write a note</span><span class="nn-sub">What’s on your mind?</span></span>
+          <span class="nn-plus"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span>
         </button>
         <div class="jp-stream" id="journalStream"></div>
       </div>
@@ -5601,7 +5622,7 @@
   function renderJournalPage() {
     var el = $("journalStream"); if (!el) return;
     var list = jpEntries();
-    if (!list.length) { el.innerHTML = '<div class="jp-empty">Your journal is a blank page.<br>Write freely above — the first line becomes your title.</div>'; return; }
+    if (!list.length) { el.innerHTML = '<div class="jp-empty">Your journal is a blank page.<br>Tap <b>Write a note</b> to capture your first thought.</div>'; return; }
     el.innerHTML = list.map(function (e) {
       var dp = jpDateParts(e.dateKey);
       var lines = (e.text || "").split("\n");
@@ -7025,7 +7046,7 @@
     db.textSize = b.getAttribute("data-ts"); save(); applyTextSize(db.textSize); buzz(8);
   });
 
-  var APP_VERSION = "v34";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v35";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
