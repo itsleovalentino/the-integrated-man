@@ -1249,6 +1249,9 @@
   }
   .icon-btn svg { width: 16px; height: 16px; stroke: currentColor; stroke-width: 1.7; fill: none; }
   .icon-btn:hover { color: var(--ink); border-color: var(--ink-faint); }
+  .icon-btn { position: relative; }
+  .icon-badge { position: absolute; top: 5px; right: 5px; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 2px var(--bg); opacity: 0; transform: scale(0.4); transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.34,1.56,0.64,1); pointer-events: none; }
+  .icon-badge.on { opacity: 1; transform: scale(1); }
   .topbar { gap: 10px; }
 
   /* ---- journal answer ---- */
@@ -2068,6 +2071,10 @@
         <svg viewBox="0 0 24 24"><path d="M6 3h12v18l-6-4-6 4z"/></svg>
       </button>
       <div class="topbar-spacer"></div>
+      <button class="icon-btn" id="circleBtn" aria-label="Your Circle">
+        <svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.3"/><path d="M3.5 19.5a5.5 5.5 0 0 1 11 0"/><path d="M15.5 14.5a4.6 4.6 0 0 1 5 5"/></svg>
+        <span class="icon-badge" id="circleBadge"></span>
+      </button>
       <button class="icon-btn" id="lockNowBtn" aria-label="Lock now">
         <svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
       </button>
@@ -4366,14 +4373,14 @@
       var ic = {}; ((r[2] && r[2].data) || []).forEach(function (i) { if (!ic[i.prayer_id]) ic[i.prayer_id] = { count: 0, mine: false }; ic[i.prayer_id].count++; if (i.user_id === myId()) ic[i.prayer_id].mine = true; });
       circleState.interc = ic;
       circleState.nudges = (r[3] && r[3].data) || [];
-      renderCirclePanel(); if (cb) cb();
+      renderCirclePanel(); refreshCircleBadge(); if (cb) cb();
     });
   }
   function loadCircles(cb) {
     if (typeof sb === "undefined" || !sb || !session) { circleState.tribes = []; circleState.active = null; if (cb) cb(); return; }
     sb.from("tribes").select("*").then(function (res) {
       circleState.tribes = (res && res.data) || [];
-      if (!circleState.tribes.length) { circleState.active = null; circleState.prayers = []; circleState.members = []; circleState.nudges = []; circleState.interc = {}; renderCirclePanel(); if (cb) cb(); return; }
+      if (!circleState.tribes.length) { circleState.active = null; circleState.prayers = []; circleState.members = []; circleState.nudges = []; circleState.interc = {}; renderCirclePanel(); refreshCircleBadge(); if (cb) cb(); return; }
       circleState.active = circleState.tribes.filter(function (t) { return t.id === db.activeTribe; })[0] || circleState.tribes[0];
       db.activeTribe = circleState.active.id;
       loadTribeData(cb);
@@ -4383,16 +4390,33 @@
     if (typeof sb === "undefined" || !sb || !session) { showToastMsg("Sign in to use circles."); return; }
     $("circleBody").innerHTML = '<div class="circle-empty">Loading your circle…</div>';
     $("circleModal").hidden = false;
-    loadCircles(function () { renderCircleModal(); markNudgesSeen(); });
+    loadCircles(function () { renderCircleModal(); markCircleSeen(); });
   }
-  function markNudgesSeen() {
+  function circleUnread() {
+    if (!circleState.active) return 0;
+    var since = (db.circleSeen && db.circleSeen[circleState.active.id]) || "";
+    var newNudges = circleState.nudges.filter(function (n) { return n.from_id !== myId() && (n.to_id === myId() || n.to_id == null) && (!n.seen || (n.created_at || "") > since); }).length;
+    var newPrayers = circleState.prayers.filter(function (p) { return !p.answered && p.author_id !== myId() && (p.created_at || "") > since; }).length;
+    return newNudges + newPrayers;
+  }
+  function refreshCircleBadge() {
+    var b = $("circleBadge"); if (!b) return;
+    b.classList.toggle("on", circleUnread() > 0);
+  }
+  function markCircleSeen() {
     if (!circleState.active) return;
+    db.circleSeen = db.circleSeen || {};
+    db.circleSeen[circleState.active.id] = new Date().toISOString();
+    save();
     var toSee = circleState.nudges.filter(function (n) { return !n.seen && n.to_id === myId(); });
-    if (!toSee.length) return;
-    sb.from("nudges").update({ seen: true }).eq("tribe_id", circleState.active.id).eq("to_id", myId()).then(function () {
-      circleState.nudges.forEach(function (n) { if (n.to_id === myId()) n.seen = true; }); renderCirclePanel();
-    });
+    if (toSee.length) {
+      sb.from("nudges").update({ seen: true }).eq("tribe_id", circleState.active.id).eq("to_id", myId()).then(function () {
+        circleState.nudges.forEach(function (n) { if (n.to_id === myId()) n.seen = true; });
+      });
+    }
+    refreshCircleBadge(); renderCirclePanel();
   }
+  $("circleBtn").addEventListener("click", openCircle);
   $("circleClose").addEventListener("click", function () { $("circleModal").hidden = true; renderCirclePanel(); });
   $("circleModal").addEventListener("click", function (e) { if (e.target === this) { this.hidden = true; renderCirclePanel(); } });
   $("circleBody").addEventListener("click", function (e) {
