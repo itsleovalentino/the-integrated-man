@@ -3987,11 +3987,12 @@
   var ouraCache = null;
   function ouraFetch(cb) {
     var tok = db.oura && db.oura.token;
-    if (!tok || typeof sb === "undefined" || !sb) { cb({ error: "not connected" }); return; }
+    // require a signed-in session — the proxy verifies the user's JWT, so only real app users can call it
+    if (!tok || typeof sb === "undefined" || !sb || !session || !session.access_token) { cb({ error: "not connected" }); return; }
     var end = todayKey, start = keyOf(new Date(Date.now() - 6 * 86400000));
     fetch(SUPA_URL + "/functions/v1/oura", {
       method: "POST",
-      headers: { "content-type": "application/json", "apikey": SUPA_KEY, "Authorization": "Bearer " + ((session && session.access_token) || SUPA_KEY) },
+      headers: { "content-type": "application/json", "apikey": SUPA_KEY, "Authorization": "Bearer " + session.access_token },
       body: JSON.stringify({ token: tok, start: start, end: end })
     }).then(function (r) { return r.json(); }).then(cb).catch(function (e) { cb({ error: String(e) }); });
   }
