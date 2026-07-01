@@ -234,6 +234,11 @@
   }
   .grat-input::placeholder { color: var(--ink-faint); }
   .grat-input:focus { border-bottom-color: var(--accent); }
+  .grat-add {
+    margin-top: 16px; background: none; border: none; color: var(--accent); cursor: pointer;
+    font-family: inherit; font-size: 13px; letter-spacing: 0.02em; padding: 4px 2px;
+  }
+  .grat-add:hover { opacity: 0.8; }
   .label {
     font-size: 11px;
     letter-spacing: 0.22em;
@@ -1199,7 +1204,7 @@
   @media (prefers-reduced-motion: reduce) { .spark-layer { display: none; } }
 
   /* ---- customize (widgets) mode ---- */
-  .wrap:not(.customizing) section.w-disabled { display: none; }
+  .wrap section.w-disabled { display: none; } /* off widgets live in the gallery, never on the home */
   .customize-bar {
     position: sticky; top: 0; z-index: 40; margin: 0 0 18px;
     display: flex; align-items: center; gap: 12px; justify-content: space-between;
@@ -1210,6 +1215,13 @@
   .cb-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
   .cb-text b { font-size: 14px; color: var(--ink); }
   .cb-text span { font-size: 11.5px; color: var(--ink-faint); }
+  .cb-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .cb-add {
+    background: var(--accent-soft); color: var(--accent); border: 1px solid var(--accent); border-radius: 999px;
+    padding: 8px 14px; font-family: inherit; font-size: 12px; letter-spacing: 0.02em; cursor: pointer; white-space: nowrap;
+    transition: background 0.2s ease, color 0.2s ease;
+  }
+  .cb-add:hover { background: var(--accent); color: var(--bg); }
   .cb-done {
     flex-shrink: 0; background: var(--accent); color: var(--bg); border: none; border-radius: 999px;
     padding: 9px 20px; font-family: inherit; font-size: 12px; font-weight: 600; letter-spacing: 0.1em;
@@ -1237,16 +1249,36 @@
   .w-drag:active { cursor: grabbing; }
   .w-drag svg { width: 16px; height: 16px; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
   .w-title { flex: 1; min-width: 0; font-size: 14px; color: var(--ink); font-weight: 500; }
-  .w-switch {
-    flex-shrink: 0; width: 44px; height: 26px; border-radius: 999px; cursor: pointer;
-    background: var(--field); border: 1px solid var(--field-edge); position: relative; transition: background 0.2s ease;
+  .w-remove {
+    flex-shrink: 0; display: inline-flex; align-items: center; gap: 6px;
+    background: none; border: 1px solid var(--field-edge); color: var(--ink-faint);
+    border-radius: 999px; padding: 6px 12px; cursor: pointer; font-family: inherit; font-size: 12px;
+    transition: color 0.2s ease, border-color 0.2s ease;
   }
-  .w-switch::after {
-    content: ""; position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; border-radius: 50%;
-    background: var(--ink-faint); transition: transform 0.2s ease, background 0.2s ease;
+  .w-remove:hover { color: #d08a72; border-color: #d08a72; }
+  /* widget gallery */
+  .gallery-lead { font-size: 13.5px; color: var(--ink-soft); line-height: 1.5; margin: 4px 0 18px; }
+  .gallery-grid { display: flex; flex-direction: column; gap: 10px; }
+  .gw-card {
+    display: flex; align-items: flex-start; gap: 13px;
+    background: var(--field); border: 1px solid var(--field-edge); border-radius: 12px; padding: 14px;
   }
-  .w-switch.on { background: var(--accent); border-color: var(--accent); }
-  .w-switch.on::after { transform: translateX(18px); background: var(--bg); }
+  .gw-icon {
+    flex-shrink: 0; width: 40px; height: 40px; border-radius: 10px; margin-top: 1px;
+    background: var(--accent-soft); display: inline-flex; align-items: center; justify-content: center;
+  }
+  .gw-icon svg { width: 20px; height: 20px; fill: none; stroke: var(--accent); stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+  .gw-body { flex: 1; min-width: 0; }
+  .gw-name { font-size: 14.5px; color: var(--ink); font-weight: 500; }
+  .gw-desc { font-size: 12.5px; color: var(--ink-faint); line-height: 1.45; margin-top: 3px; }
+  .gw-add {
+    flex-shrink: 0; align-self: center; background: var(--accent); color: var(--bg); border: none; border-radius: 999px;
+    padding: 8px 16px; font-family: inherit; font-size: 12px; font-weight: 600; letter-spacing: 0.04em; cursor: pointer;
+    transition: opacity 0.2s ease;
+  }
+  .gw-add:hover { opacity: 0.9; }
+  .gw-add.added { background: var(--field); color: var(--ink-faint); border: 1px solid var(--field-edge); pointer-events: none; }
+  .gallery-empty { font-size: 14px; color: var(--ink-faint); text-align: center; padding: 24px 0; font-style: italic; }
 
   /* ---- pillar entry button (the seven circles) ---- */
   .pillar-entry {
@@ -1947,8 +1979,11 @@
     </div>
 
     <div class="customize-bar" id="customizeBar" hidden>
-      <div class="cb-text"><b>Customize your home</b><span>Drag to reorder · tap to show or hide</span></div>
-      <button class="cb-done" id="customizeDone">Done</button>
+      <div class="cb-text"><b>Customize your home</b><span>Drag to reorder · remove or add widgets</span></div>
+      <div class="cb-actions">
+        <button class="cb-add" id="openGalleryBtn" type="button">+ Add widget</button>
+        <button class="cb-done" id="customizeDone">Done</button>
+      </div>
     </div>
 
     <header>
@@ -2013,12 +2048,9 @@
     <section data-w="gratitude" data-w-title="Gratitude">
       <p class="label">Gratitude <span class="saved-tick" id="gratTick">Saved</span></p>
       <div class="panel">
-        <p class="grat-lead serif">Three gifts from today.</p>
-        <div class="grat-list" id="gratList">
-          <div class="grat-row"><span class="grat-num">1</span><input type="text" class="grat-input" data-i="0" placeholder="I'm grateful for…" maxlength="140" autocomplete="off" /></div>
-          <div class="grat-row"><span class="grat-num">2</span><input type="text" class="grat-input" data-i="1" placeholder="I'm grateful for…" maxlength="140" autocomplete="off" /></div>
-          <div class="grat-row"><span class="grat-num">3</span><input type="text" class="grat-input" data-i="2" placeholder="I'm grateful for…" maxlength="140" autocomplete="off" /></div>
-        </div>
+        <p class="grat-lead serif">Gifts from today.</p>
+        <div class="grat-list" id="gratList"></div>
+        <button class="grat-add" id="gratAdd" type="button">+ Add another</button>
       </div>
     </section>
 
@@ -2442,6 +2474,22 @@
 
       <button class="modal-primary" id="settingsSave">Save</button>
       <button class="modal-text" id="settingsClose">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Widget gallery -->
+  <div class="modal-overlay" id="widgetGallery" hidden>
+    <div class="modal settings-modal">
+      <div class="modal-head">
+        <h2 class="modal-title serif">Add a widget</h2>
+        <button class="modal-x" id="galleryClose" aria-label="Close">
+          <svg viewBox="0 0 24 24"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p class="gallery-lead">Build the home that fits your rhythm. Add what serves you — hide the rest.</p>
+        <div class="gallery-grid" id="galleryGrid"></div>
       </div>
     </div>
   </div>
@@ -3785,20 +3833,33 @@
   wireSaveMini("journalSave", "journalSaveMsg", JCARDS.journal);
   wireSaveMini("eveningSave", "eveningSaveMsg", JCARDS.evening);
 
-  // ----- Gratitude widget -----
-  function loadGratitude() {
+  // ----- Gratitude widget (three rows to start, add as many as you like) -----
+  var gratCount = 0;
+  function renderGratitude() {
     var g = db.gratitude[todayKey] || [];
-    Array.prototype.forEach.call(document.querySelectorAll("#gratList .grat-input"), function (inp) {
-      inp.value = g[+inp.getAttribute("data-i")] || "";
-    });
+    gratCount = Math.max(3, g.length, gratCount); // never shrink below 3 or below what's filled or what the user added
+    var html = "";
+    for (var i = 0; i < gratCount; i++) {
+      html += '<div class="grat-row"><span class="grat-num">' + (i + 1) + '</span>' +
+        '<input type="text" class="grat-input" data-i="' + i + '" placeholder="I\'m grateful for…" maxlength="140" autocomplete="off" value="' + escapeHtml(g[i] || "") + '" /></div>';
+    }
+    $("gratList").innerHTML = html;
   }
+  function loadGratitude() { gratCount = 0; renderGratitude(); } // reset to the 3-row minimum each day
+  $("gratAdd").addEventListener("click", function () {
+    gratCount++; renderGratitude();
+    var rows = $("gratList").querySelectorAll(".grat-input");
+    var last = rows[rows.length - 1]; if (last) last.focus();
+    buzz(6);
+  });
   $("gratList").addEventListener("input", function (e) {
     var inp = e.target.closest(".grat-input"); if (!inp) return;
     var i = +inp.getAttribute("data-i");
-    var g = db.gratitude[todayKey] || ["", "", ""];
+    var g = db.gratitude[todayKey] ? db.gratitude[todayKey].slice() : [];
+    while (g.length <= i) g.push("");
     g[i] = inp.value;
-    if (g.some(function (x) { return (x || "").trim(); })) db.gratitude[todayKey] = g;
-    else delete db.gratitude[todayKey];
+    while (g.length && !(g[g.length - 1] || "").trim()) g.pop(); // trim trailing empties
+    if (g.length) db.gratitude[todayKey] = g; else delete db.gratitude[todayKey];
     save(); flash("gratTick");
   });
 
@@ -5533,13 +5594,25 @@
   }
 
   // ================= customize mode (home widgets) =================
+  // widget library — description + icon for the gallery; `core` widgets are on by default, others are opt-in
+  var WIDGET_META = {
+    reading:    { title: "Today's Reading", core: true,  desc: "Your daily scripture — mark it read and keep passage notes.", icon: '<path d="M4 5a2 2 0 0 1 2-2h5v18H6a2 2 0 0 1-2-2z"/><path d="M20 5a2 2 0 0 0-2-2h-5v18h5a2 2 0 0 0 2-2z"/>' },
+    journaling: { title: "Journaling Prompt", core: true,  desc: "A fresh prompt each day to write into — switch it if it doesn't fit.", icon: '<path d="M4 20l4-1 10-10-3-3-10 10-1 4z"/><line x1="14" y1="6" x2="18" y2="10"/>' },
+    gratitude:  { title: "Gratitude", core: false, desc: "Name a few gifts from today. Start with three, add as many as you like.", icon: '<path d="M12 21s-7-4.6-9.3-8.4C1 9.5 2.6 6 6 6c2 0 3.2 1.2 4 2.4C10.8 7.2 12 6 14 6c3.4 0 5 3.5 3.3 6.6C19 16.4 12 21 12 21z"/>' },
+    prayer:     { title: "Prayer List", core: true,  desc: "Requests for others and for you — pray, and mark them answered.", icon: '<line x1="12" y1="3" x2="12" y2="21"/><line x1="6" y1="9" x2="18" y2="9"/>' },
+    evening:    { title: "End of Day Reflection", core: true, desc: "A closing question to reflect on before you rest.", icon: '<path d="M20 14a8 8 0 1 1-9.9-9.9A7 7 0 0 0 20 14z"/>' },
+    pillars:    { title: "The Seven Pillars", core: true, desc: "A gentle weekly audit of the seven areas of a whole life.", icon: '<circle cx="12" cy="5" r="2.4"/><circle cx="18.5" cy="9" r="2.4"/><circle cx="18.5" cy="15" r="2.4"/><circle cx="12" cy="19" r="2.4"/><circle cx="5.5" cy="15" r="2.4"/><circle cx="5.5" cy="9" r="2.4"/>' },
+    habits:     { title: "Keystone Habits", core: true, desc: "The daily anchors that hold everything else together.", icon: '<polyline points="4 12 9 17 20 6"/>' },
+    trends:     { title: "Trends", core: true, desc: "Your Integration score over time.", icon: '<polyline points="3 17 9 11 13 15 21 6"/>' }
+  };
   function widgetEls() { return Array.prototype.slice.call(document.querySelectorAll(".wrap > section[data-w]")); }
   function widgetLayout() {
     var els = widgetEls(), known = {};
     els.forEach(function (s) { known[s.getAttribute("data-w")] = true; });
     var lay = Array.isArray(db.layout) ? db.layout.filter(function (e) { return known[e.key]; }) : [];
     var have = {}; lay.forEach(function (e) { have[e.key] = true; });
-    els.forEach(function (s) { var k = s.getAttribute("data-w"); if (!have[k]) lay.push({ key: k, on: true }); }); // new widgets appear, on by default
+    // new widgets: core ones appear automatically; optional ones wait in the gallery (off) to be added
+    els.forEach(function (s) { var k = s.getAttribute("data-w"); if (!have[k]) lay.push({ key: k, on: !!(WIDGET_META[k] && WIDGET_META[k].core) }); });
     return lay;
   }
   function applyLayout() {
@@ -5556,26 +5629,30 @@
     save();
   }
   var customizing = false, dragEl = null;
+  function widgetControlsFor(s) {
+    var key = s.getAttribute("data-w");
+    var title = (WIDGET_META[key] && WIDGET_META[key].title) || s.getAttribute("data-w-title") || key;
+    var c = document.createElement("div");
+    c.className = "w-controls";
+    c.innerHTML =
+      '<span class="w-drag" aria-label="Drag to reorder"><svg viewBox="0 0 24 24"><line x1="5" y1="9" x2="19" y2="9"/><line x1="5" y1="15" x2="19" y2="15"/></svg></span>' +
+      '<span class="w-title">' + escapeHtml(title) + '</span>' +
+      '<button class="w-remove" type="button" aria-label="Remove from home">' +
+        '<svg viewBox="0 0 24 24" style="width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2"><line x1="5" y1="12" x2="19" y2="12"/></svg>Remove</button>';
+    s.insertBefore(c, s.firstChild);
+    c.querySelector(".w-remove").addEventListener("click", function () {
+      s.classList.add("w-disabled"); // off → hidden → available again in the gallery
+      captureLayout(); buzz(10);
+    });
+    c.querySelector(".w-drag").addEventListener("pointerdown", function (e) { startDrag(e, s); });
+    return c;
+  }
   function enterCustomize() {
     if (customizing) return;
     customizing = true;
     document.querySelector(".wrap").classList.add("customizing");
     $("customizeBar").hidden = false;
-    widgetEls().forEach(function (s) {
-      var c = document.createElement("div");
-      c.className = "w-controls";
-      c.innerHTML =
-        '<span class="w-drag" aria-label="Drag to reorder"><svg viewBox="0 0 24 24"><line x1="5" y1="9" x2="19" y2="9"/><line x1="5" y1="15" x2="19" y2="15"/></svg></span>' +
-        '<span class="w-title">' + escapeHtml(s.getAttribute("data-w-title") || s.getAttribute("data-w")) + '</span>' +
-        '<span class="w-switch' + (s.classList.contains("w-disabled") ? "" : " on") + '" role="switch" aria-label="Show this section"></span>';
-      s.insertBefore(c, s.firstChild);
-      c.querySelector(".w-switch").addEventListener("click", function () {
-        var off = s.classList.toggle("w-disabled");
-        this.classList.toggle("on", !off);
-        buzz(8); captureLayout();
-      });
-      c.querySelector(".w-drag").addEventListener("pointerdown", function (e) { startDrag(e, s); });
-    });
+    widgetEls().forEach(function (s) { if (!s.classList.contains("w-disabled")) widgetControlsFor(s); }); // only widgets on the home
     buzz(10);
   }
   function exitCustomize() {
@@ -5597,7 +5674,7 @@
   }
   function onDragMove(e) {
     if (!dragEl) return;
-    var siblings = widgetEls().filter(function (s) { return s !== dragEl; });
+    var siblings = widgetEls().filter(function (s) { return s !== dragEl && !s.classList.contains("w-disabled"); });
     var anchor = $("homeActions"), wrap = document.querySelector(".wrap"), placed = false;
     for (var i = 0; i < siblings.length; i++) {
       var r = siblings[i].getBoundingClientRect();
@@ -5611,6 +5688,38 @@
   }
   $("customizeBtn").addEventListener("click", function () { customizing ? exitCustomize() : enterCustomize(); });
   $("customizeDone").addEventListener("click", exitCustomize);
+
+  // ---- widget gallery: discover + add widgets ----
+  function renderGallery() {
+    var offs = widgetLayout().filter(function (e) { return !e.on && WIDGET_META[e.key]; });
+    var grid = $("galleryGrid");
+    if (!offs.length) { grid.innerHTML = '<div class="gallery-empty">You’ve added every widget. More on the way.</div>'; return; }
+    grid.innerHTML = offs.map(function (e) {
+      var m = WIDGET_META[e.key];
+      return '<div class="gw-card">' +
+        '<span class="gw-icon"><svg viewBox="0 0 24 24">' + m.icon + '</svg></span>' +
+        '<div class="gw-body"><div class="gw-name">' + escapeHtml(m.title) + '</div><div class="gw-desc">' + escapeHtml(m.desc) + '</div></div>' +
+        '<button class="gw-add" data-key="' + e.key + '">Add</button>' +
+      '</div>';
+    }).join("");
+  }
+  function addWidget(key) {
+    if (!customizing) enterCustomize();                       // so the new widget lands with drag/remove controls
+    var lay = widgetLayout().filter(function (e) { return e.key !== key; });
+    lay.push({ key: key, on: true });                          // add it to the end of the home
+    db.layout = lay; save();
+    applyLayout();
+    var s = widgetEls().filter(function (x) { return x.getAttribute("data-w") === key; })[0];
+    if (s && !s.querySelector(".w-controls")) widgetControlsFor(s);
+    buzz(12);
+  }
+  $("openGalleryBtn").addEventListener("click", function () { renderGallery(); $("widgetGallery").hidden = false; });
+  $("galleryClose").addEventListener("click", function () { $("widgetGallery").hidden = true; });
+  $("galleryGrid").addEventListener("click", function (e) {
+    var btn = e.target.closest(".gw-add"); if (!btn) return;
+    addWidget(btn.getAttribute("data-key"));
+    btn.textContent = "Added ✓"; btn.classList.add("added");
+  });
 
   // ================= init + auto-renew =================
   applyLayout();
