@@ -443,7 +443,6 @@
   .open-bible-link { text-transform: none; letter-spacing: 0.01em; font-size: 12.5px; border-bottom: none; display: inline-flex; align-items: center; gap: 5px; }
   .open-bible-link .obl-chev { transition: transform 0.2s ease; }
   .open-bible-link:hover .obl-chev { transform: translateX(3px); }
-  /* here's-your-day glance */
   .chapter-grid {
     display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px;
     max-height: 220px; overflow-y: auto; padding: 2px;
@@ -2192,6 +2191,7 @@
   }
   .modal-primary:hover { opacity: 0.9; }
   .settings-data { display: flex; gap: 8px; margin-top: 26px; }
+  .settings-version { text-align: center; font-size: 11px; letter-spacing: 0.08em; color: var(--ink-faint); margin-top: 20px; opacity: 0.7; }
   .modal-secondary {
     flex: 1;
     background: none; border: 1px solid var(--field-edge); color: var(--ink-soft);
@@ -2960,6 +2960,7 @@
 
       <button class="modal-primary" id="settingsSave">Save</button>
       <button class="modal-text" id="settingsClose">Close</button>
+      <div class="settings-version" id="settingsVersion"></div>
       </div>
     </div>
   </div>
@@ -6783,6 +6784,9 @@
     var b = e.target.closest("[data-ts]"); if (!b) return;
     db.textSize = b.getAttribute("data-ts"); save(); applyTextSize(db.textSize); buzz(8);
   });
+
+  var APP_VERSION = "v26";   // shown in Settings so you can confirm which build you're on
+  (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
   var PLAN_OPTIONS = [
