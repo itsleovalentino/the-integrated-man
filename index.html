@@ -5064,6 +5064,8 @@
   function myId() { return session && session.user && session.user.id; }
   function myName() { return (db.profile && db.profile.name && db.profile.name.trim()) || "A brother"; }
   function hasRealName() { var n = db.profile && db.profile.name && db.profile.name.trim(); return !!n && n.toLowerCase() !== "a brother" && n.toLowerCase() !== "friend"; }
+  function isRealName(n) { n = (n || "").trim(); return !!n && n.toLowerCase() !== "a brother" && n.toLowerCase() !== "friend"; }
+  function bestName(cands) { for (var i = 0; i < cands.length; i++) { if (isRealName(cands[i])) return cands[i].trim(); } return "A brother"; }
   var PW_PAL = ["#8aa85a", "#5d8cb4", "#897fcf", "#d59f3b", "#7faab0", "#a8997d", "#cdcdca"];
   var HEART = '<path d="M12 21s-7-4.6-9.3-8.4C1 9.5 2.6 6 6 6c2 0 3.2 1.2 4 2.4C10.8 7.2 12 6 14 6c3.4 0 5 3.5 3.3 6.6C19 16.4 12 21 12 21z"/>';
   var PW_SEND = '<svg viewBox="0 0 24 24"><path d="M4 12l16-7-7 16-2-7-7-2z"/></svg>';
@@ -5090,7 +5092,9 @@
   }
   function upsertProfile() {
     if (typeof sb === "undefined" || !sb || !session) return Promise.resolve();
-    return sb.from("profiles").upsert({ id: myId(), display_name: myName(), avatar_url: (db.profile && db.profile.avatarUrl) || null, updated_at: new Date().toISOString() });
+    if (!hasRealName()) return Promise.resolve();   // never overwrite a good profile name with the placeholder
+    return sb.from("profiles").upsert({ id: myId(), display_name: myName(), avatar_url: (db.profile && db.profile.avatarUrl) || null, updated_at: new Date().toISOString() })
+      .then(function (res) { if (res && res.error) console.error("profile upsert failed:", res.error); return res; });
   }
 
   // ---- optional widget summary panel ----
@@ -5122,9 +5126,9 @@
   // ---- render ----
   function pwCard(p) {
     var mine = p.author_id === myId();
-    var name = (p.profiles && p.profiles.display_name) || "A brother";
+    // prefer the name captured on the post, then the profile, then placeholder; my own posts use my current name
+    var name = mine && hasRealName() ? myName() : bestName([p.author_name, p.profiles && p.profiles.display_name]);
     var url = p.profiles && p.profiles.avatar_url;
-    if (mine && hasRealName()) name = myName();                          // own post always shows my current name
     if (mine && !url && db.profile && db.profile.avatarUrl) url = db.profile.avatarUrl;
     var isPrayer = p.is_prayer !== false;                                 // default true (existing posts / pre-migration)
     var reactors = wallState.prays[p.id] || [];
@@ -5141,7 +5145,7 @@
     var shownEncs = (encs.length > 2 && !expanded) ? encs.slice(encs.length - 2) : encs;
     var moreLink = (encs.length > 2 && !expanded) ? '<button class="pw-c-more" data-act="expandComments" data-id="' + p.id + '">View all ' + encs.length + ' comments</button>' : "";
     var encItems = shownEncs.map(function (e) {
-      var who = (e.from_id && e.from_id === myId()) ? "You" : e.from;
+      var who = (e.from_id && e.from_id === myId()) ? "You" : bestName([e.from_name, e.from]);
       var del = (e.from_id === myId()) ? '<button class="pw-c-del" data-act="delEnc" data-id="' + p.id + '" data-eid="' + e.id + '" aria-label="Delete comment">×</button>' : "";
       return '<div class="pw-enc-item">' + pwAvatar(who, e.url, "sm") + '<div class="pw-enc-txt"><div class="pw-enc-from">' + escapeHtml(who) + del + '</div><div class="pw-enc-body">' + escapeHtml(e.body) + '</div></div></div>';
     }).join("");
@@ -5204,7 +5208,7 @@
       if (!ids.length) { wallState.prays = {}; wallState.myPrays = {}; wallState.enc = {}; renderWall(); refreshWallBadge(); renderWallPanel(); if (cb) cb(); return; }
       Promise.all([
         sb.from("prayer_prays").select("prayer_id, user_id").in("prayer_id", ids),
-        sb.from("prayer_encouragements").select("id, prayer_id, from_id, body, created_at").in("prayer_id", ids).order("created_at", { ascending: true })
+        sb.from("prayer_encouragements").select("id, prayer_id, from_id, from_name, body, created_at").in("prayer_id", ids).order("created_at", { ascending: true })
       ]).then(function (r) {
         var prays = {}, myP = {};
         ((r[0] && r[0].data) || []).forEach(function (x) {
@@ -5215,7 +5219,7 @@
         var enc = {};
         ((r[1] && r[1].data) || []).forEach(function (e) {
           var pf = profById[e.from_id] || {};
-          (enc[e.prayer_id] = enc[e.prayer_id] || []).push({ id: e.id, from: pf.display_name || "A brother", from_id: e.from_id, url: pf.avatar_url, body: e.body, created_at: e.created_at });
+          (enc[e.prayer_id] = enc[e.prayer_id] || []).push({ id: e.id, from: pf.display_name || "A brother", from_name: e.from_name, from_id: e.from_id, url: pf.avatar_url, body: e.body, created_at: e.created_at });
         });
         wallState.prays = prays; wallState.myPrays = myP; wallState.enc = enc;
         renderWall(); refreshWallBadge(); renderWallPanel(); if (cb) cb();
@@ -5259,7 +5263,7 @@
     var btn = $("circleBody").querySelector('[data-act="post"]'); if (btn) { btn.disabled = true; btn.textContent = "Sharing…"; }
     var isP = wallState.composePrayer !== false;
     upsertProfile().then(function () {
-      return sb.from("prayers").insert({ author_id: myId(), body: body, is_prayer: isP });
+      return sb.from("prayers").insert({ author_id: myId(), body: body, is_prayer: isP, author_name: myName() });
     }).then(function (res) {
       if (res && res.error) { wallErr(res.error, btn, "Post"); return; }
       wallState.composing = false; fb("success"); loadWall();
@@ -5296,7 +5300,7 @@
     var inp = $("circleBody").querySelector('.pw-enc-input[data-id="' + id + '"]');
     var body = ((inp && inp.value) || "").trim(); if (!body) { if (inp) inp.focus(); return; }
     upsertProfile().then(function () {
-      return sb.from("prayer_encouragements").insert({ prayer_id: id, from_id: myId(), body: body });
+      return sb.from("prayer_encouragements").insert({ prayer_id: id, from_id: myId(), body: body, from_name: myName() });
     }).then(function (res) {
       if (res && res.error) { wallErr(res.error); return; }
       fb("success"); showToastMsg("Sent."); loadWall();
@@ -6797,7 +6801,7 @@
     db.textSize = b.getAttribute("data-ts"); save(); applyTextSize(db.textSize); buzz(8);
   });
 
-  var APP_VERSION = "v27";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v28";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
