@@ -271,6 +271,19 @@
   .hr-label { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-faint); margin-top: 12px; }
   .health-note { margin-top: 20px; font-size: 15px; line-height: 1.55; color: var(--ink-soft); text-align: center; font-style: italic; }
   .health-connect { font-size: 14px; color: var(--ink-soft); line-height: 1.5; }
+  /* Local Weather widget */
+  .wx-row { display: flex; align-items: center; gap: 16px; }
+  .wx-icon { width: 50px; height: 50px; flex-shrink: 0; fill: none; stroke: var(--accent); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+  .wx-temp { font-size: 40px; color: var(--ink); line-height: 1; }
+  .wx-cond { font-size: 13px; color: var(--ink-soft); margin-top: 5px; }
+  .wx-side { margin-left: auto; text-align: right; min-width: 0; }
+  .wx-city { font-size: 13px; color: var(--ink); }
+  .wx-hl { font-size: 12px; color: var(--ink-faint); margin-top: 4px; }
+  .wx-setup { display: flex; gap: 8px; }
+  .wx-setup input[type="text"] { flex: 1; }
+  .wx-connect { font-size: 14px; color: var(--ink-soft); line-height: 1.5; margin-bottom: 12px; }
+  .wx-change { background: none; border: none; color: var(--accent); cursor: pointer; font-family: inherit; font-size: 12px; margin-top: 14px; padding: 2px; }
+  .wx-change:hover { opacity: 0.8; }
   .label {
     font-size: 11px;
     letter-spacing: 0.22em;
@@ -2235,6 +2248,11 @@
       <div class="panel" id="healthPanel"></div>
     </section>
 
+    <section data-w="weather" data-w-title="Local Weather">
+      <p class="label">Local Weather</p>
+      <div class="panel" id="weatherPanel"></div>
+    </section>
+
     <section id="trendsSection" data-w="trends" data-w-title="Trends">
       <p class="label">Trends · Integration over time</p>
       <div class="panel" id="trendsPanel">
@@ -2704,6 +2722,7 @@
   db.pillarSkip = db.pillarSkip || {};    // dateKey -> true when a man opts out of tracking that day
   db.gratitude = db.gratitude || {};      // dateKey -> [g1, g2, g3]
   db.oura = db.oura || null;              // { token } — personal Oura access token (private to this account)
+  db.weather = db.weather || null;        // { name, lat, lon } — chosen city for the weather widget
   db.prayers = db.prayers || [];          // [{id, scope:'others'|'mine', who, text, created, answered}]
   db.habits = db.habits || [];            // [{id, name, icon}]
   db.habitLog = db.habitLog || {};        // dateKey -> {habitId: true}
@@ -4110,6 +4129,75 @@
     renderOuraSettings(); renderHealth();
     var m = $("ouraMsg"); m.className = "oura-msg"; m.textContent = "Disconnected.";
   });
+
+  // ----- Local Weather (Open-Meteo — free, browser-friendly, no key) -----
+  var weatherCache = null;
+  var WX_SUN = '<circle cx="12" cy="12" r="5"/><line x1="12" y1="1.5" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="22.5"/><line x1="2.5" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="21.5" y2="12"/><line x1="4.6" y1="4.6" x2="6.4" y2="6.4"/><line x1="17.6" y1="17.6" x2="19.4" y2="19.4"/><line x1="4.6" y1="19.4" x2="6.4" y2="17.6"/><line x1="17.6" y1="6.4" x2="19.4" y2="4.6"/>';
+  var WX_CLOUD = '<path d="M7 18h9.5a3.5 3.5 0 0 0 .3-6.98A5 5 0 0 0 7.4 9.7 3.6 3.6 0 0 0 7 18z"/>';
+  var WX_PARTLY = '<circle cx="16.5" cy="7.5" r="2.6"/><line x1="16.5" y1="2.6" x2="16.5" y2="3.9"/><line x1="20.6" y1="7.5" x2="21.9" y2="7.5"/><line x1="19.6" y1="4.4" x2="20.5" y2="3.5"/><path d="M6 18.5h8.5a3.2 3.2 0 0 0 .2-6.4A4.6 4.6 0 0 0 6.2 10.5 3.4 3.4 0 0 0 6 18.5z"/>';
+  var WX_RAIN = '<path d="M7 14.5h9.5a3.5 3.5 0 0 0 .3-6.98A5 5 0 0 0 7.4 6.2 3.6 3.6 0 0 0 7 14.5z"/><line x1="8" y1="17.5" x2="7" y2="20.5"/><line x1="12" y1="17.5" x2="11" y2="20.5"/><line x1="16" y1="17.5" x2="15" y2="20.5"/>';
+  var WX_SNOW = '<path d="M7 14.5h9.5a3.5 3.5 0 0 0 .3-6.98A5 5 0 0 0 7.4 6.2 3.6 3.6 0 0 0 7 14.5z"/><circle cx="8" cy="18.5" r=".7"/><circle cx="12" cy="20" r=".7"/><circle cx="16" cy="18.5" r=".7"/>';
+  var WX_STORM = '<path d="M7 14h9.5a3.5 3.5 0 0 0 .3-6.98A5 5 0 0 0 7.4 5.7 3.6 3.6 0 0 0 7 14z"/><path d="M12.5 15.5 9.8 20h2.6L10.5 23.5"/>';
+  var WX_FOG = '<line x1="4" y1="8.5" x2="20" y2="8.5"/><line x1="4" y1="12.5" x2="20" y2="12.5"/><line x1="6.5" y1="16.5" x2="17.5" y2="16.5"/>';
+  function wxInfo(c) {
+    if (c === 0) return { i: WX_SUN, t: "Clear" };
+    if (c <= 2) return { i: WX_PARTLY, t: c === 1 ? "Mainly clear" : "Partly cloudy" };
+    if (c === 3) return { i: WX_CLOUD, t: "Overcast" };
+    if (c <= 48) return { i: WX_FOG, t: "Fog" };
+    if (c <= 57) return { i: WX_RAIN, t: "Drizzle" };
+    if (c <= 67) return { i: WX_RAIN, t: "Rain" };
+    if (c <= 77) return { i: WX_SNOW, t: "Snow" };
+    if (c <= 82) return { i: WX_RAIN, t: "Showers" };
+    if (c <= 86) return { i: WX_SNOW, t: "Snow showers" };
+    return { i: WX_STORM, t: "Thunderstorm" };
+  }
+  function fetchWeather(loc, cb) {
+    var u = "https://api.open-meteo.com/v1/forecast?latitude=" + loc.lat + "&longitude=" + loc.lon +
+      "&current=temperature_2m,weather_code,apparent_temperature&daily=temperature_2m_max,temperature_2m_min&temperature_unit=fahrenheit&timezone=auto";
+    fetch(u).then(function (r) { return r.json(); }).then(cb).catch(function (e) { cb({ error: String(e) }); });
+  }
+  function paintWeather(data) {
+    var p = $("weatherPanel"); if (!p) return;
+    if (!data || data.error || !data.current) {
+      p.innerHTML = '<div class="wx-connect">Couldn’t load the weather right now.</div><button class="wx-change" id="wxRetry">Try again</button>';
+      var rr = $("wxRetry"); if (rr) rr.onclick = renderWeather; return;
+    }
+    var c = data.current, info = wxInfo(c.weather_code), loc = db.weather || {};
+    var temp = Math.round(c.temperature_2m), feels = Math.round(c.apparent_temperature);
+    var hi = Math.round(data.daily.temperature_2m_max[0]), lo = Math.round(data.daily.temperature_2m_min[0]);
+    p.innerHTML = '<div class="wx-row"><svg class="wx-icon" viewBox="0 0 24 24">' + info.i + '</svg>' +
+      '<div><div class="wx-temp serif">' + temp + '°</div><div class="wx-cond">' + info.t + ' · feels ' + feels + '°</div></div>' +
+      '<div class="wx-side"><div class="wx-city">' + escapeHtml(loc.name || "") + '</div><div class="wx-hl">H ' + hi + '° · L ' + lo + '°</div></div></div>' +
+      '<button class="wx-change" id="wxChange">Change city</button>';
+    var ch = $("wxChange"); if (ch) ch.onclick = function () { db.weather = null; weatherCache = null; save(); renderWeather(); };
+  }
+  function wxSetCity() {
+    var name = $("wxCity").value.trim(); if (!name) { $("wxCity").focus(); return; }
+    var m = $("wxMsg"); m.className = "oura-msg"; m.textContent = "Finding " + name + "…";
+    fetch("https://geocoding-api.open-meteo.com/v1/search?name=" + encodeURIComponent(name) + "&count=1")
+      .then(function (r) { return r.json(); }).then(function (j) {
+        if (!j.results || !j.results.length) { m.className = "oura-msg err"; m.textContent = "Couldn’t find that city — try another spelling."; return; }
+        var g = j.results[0];
+        db.weather = { name: g.name + (g.admin1 ? ", " + g.admin1 : ""), lat: g.latitude, lon: g.longitude };
+        weatherCache = null; save(); renderWeather();
+      }).catch(function () { m.className = "oura-msg err"; m.textContent = "Couldn’t reach the weather service."; });
+  }
+  function renderWeather() {
+    var p = $("weatherPanel"); if (!p) return;
+    if (!db.weather) {
+      p.innerHTML = '<div class="wx-connect">See today’s weather in your city.</div>' +
+        '<div class="wx-setup"><input type="text" id="wxCity" placeholder="Your city" autocomplete="off" maxlength="60" /><button class="modal-secondary" id="wxSet">Set</button></div>' +
+        '<div class="oura-msg" id="wxMsg"></div>';
+      $("wxSet").addEventListener("click", wxSetCity);
+      $("wxCity").addEventListener("keydown", function (e) { if (e.key === "Enter") wxSetCity(); });
+      return;
+    }
+    if (weatherCache) paintWeather(weatherCache); else p.innerHTML = '<div class="wx-connect">Loading your weather…</div>';
+    fetchWeather(db.weather, function (res) {
+      if (res && !res.error) { weatherCache = res; paintWeather(res); }
+      else if (!weatherCache) paintWeather(res);
+    });
+  }
 
   // ===== Voice: dictation (speech-to-text) + voice memos =====
   var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -5642,6 +5730,7 @@
     loadGratitude();
     renderVerse();
     renderHealth();
+    renderWeather();
 
     // scripture: read-checks + notes (one card per plan)
     renderReading();
@@ -5863,6 +5952,7 @@
     pillars:    { title: "The Seven Pillars", core: true, desc: "A gentle weekly audit of the seven areas of a whole life.", icon: '<circle cx="12" cy="5" r="2.4"/><circle cx="18.5" cy="9" r="2.4"/><circle cx="18.5" cy="15" r="2.4"/><circle cx="12" cy="19" r="2.4"/><circle cx="5.5" cy="15" r="2.4"/><circle cx="5.5" cy="9" r="2.4"/>' },
     habits:     { title: "Keystone Habits", core: true, desc: "The daily anchors that hold everything else together.", icon: '<polyline points="4 12 9 17 20 6"/>' },
     health:     { title: "Sleep & Readiness", core: false, desc: "Your Oura readiness and sleep, pulled in each day. Connect Oura in Settings.", icon: '<path d="M12 21s-7-4.6-9.3-8.4C1 9.5 2.6 6 6 6c2 0 3.2 1.2 4 2.4C10.8 7.2 12 6 14 6c3.4 0 5 3.5 3.3 6.6C19 16.4 12 21 12 21z"/>' },
+    weather:    { title: "Local Weather", core: false, desc: "Today's weather in your city — set it once, then it just shows up.", icon: '<circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="4.2" y1="4.2" x2="6.3" y2="6.3"/><line x1="17.7" y1="17.7" x2="19.8" y2="19.8"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/><line x1="4.2" y1="19.8" x2="6.3" y2="17.7"/><line x1="17.7" y1="6.3" x2="19.8" y2="4.2"/>' },
     trends:     { title: "Trends", core: true, desc: "Your Integration score over time.", icon: '<polyline points="3 17 9 11 13 15 21 6"/>' }
   };
   function widgetEls() { return Array.prototype.slice.call(document.querySelectorAll(".wrap > section[data-w]")); }
