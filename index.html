@@ -253,6 +253,17 @@
   .verse-act:hover { background: var(--accent-soft); }
   #verseAnchor svg { width: 16px; height: 16px; fill: none; stroke: var(--accent); stroke-width: 1.7; stroke-linejoin: round; }
   #verseAnchor.on svg { fill: var(--accent); }
+  /* Oura connect (settings) + Sleep & Readiness widget */
+  .oura-row { display: flex; gap: 8px; margin-top: 8px; }
+  .oura-msg { font-size: 12.5px; color: var(--accent); margin-top: 8px; min-height: 16px; }
+  .oura-msg.err { color: #d08a72; }
+  .health-grid { display: flex; gap: 12px; }
+  .health-stat { flex: 1; background: var(--field); border: 1px solid var(--field-edge); border-radius: 12px; padding: 16px 10px; text-align: center; }
+  .health-num { font-size: 30px; color: var(--ink); line-height: 1; }
+  .health-cap { font-size: 10.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); margin-top: 6px; }
+  .health-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 14px; }
+  .health-day { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-faint); }
+  .health-connect { font-size: 14px; color: var(--ink-soft); line-height: 1.5; }
   .label {
     font-size: 11px;
     letter-spacing: 0.22em;
@@ -2195,6 +2206,11 @@
       </div>
     </section>
 
+    <section data-w="health" data-w-title="Sleep & Readiness">
+      <p class="label">Sleep &amp; Readiness</p>
+      <div class="panel" id="healthPanel"></div>
+    </section>
+
     <section id="trendsSection" data-w="trends" data-w-title="Trends">
       <p class="label">Trends · Integration over time</p>
       <div class="panel" id="trendsPanel">
@@ -2493,6 +2509,17 @@
         </div>
       </div>
 
+      <label class="field-label">Connect Oura</label>
+      <div class="oura-connect" id="ouraConnect">
+        <input type="password" id="ouraToken" placeholder="Oura personal access token" autocomplete="off" />
+        <div class="oura-row">
+          <button class="modal-secondary" id="ouraSave" style="flex:1;">Connect</button>
+          <button class="modal-secondary" id="ouraDisconnect" style="flex:1;" hidden>Disconnect</button>
+        </div>
+        <div class="oura-msg" id="ouraMsg"></div>
+        <p class="ob-reading-hint" style="text-align:left;margin-top:6px;">Get a token at <b>cloud.ouraring.com → Personal Access Tokens</b>. Stored privately in your own account.</p>
+      </div>
+
       <label class="field-label">Your data</label>
       <div class="settings-data">
         <button class="modal-secondary" id="exportBtn">Back up my data</button>
@@ -2651,6 +2678,7 @@
   db.ratings = db.ratings || {};          // dateKey -> {pillarKey: {score, why, deep, facets, open}}
   db.pillarSkip = db.pillarSkip || {};    // dateKey -> true when a man opts out of tracking that day
   db.gratitude = db.gratitude || {};      // dateKey -> [g1, g2, g3]
+  db.oura = db.oura || null;              // { token } — personal Oura access token (private to this account)
   db.prayers = db.prayers || [];          // [{id, scope:'others'|'mine', who, text, created, answered}]
   db.habits = db.habits || [];            // [{id, name, icon}]
   db.habitLog = db.habitLog || {};        // dateKey -> {habitId: true}
@@ -3946,6 +3974,81 @@
     var v = VERSES[verseIdx()];
     if (isAnchored(v.ref)) removeAnchor(v.ref); else { addAnchor(v.ref, v.text); playTick(); }
     renderVerse(); buzz(10);
+  });
+
+  // ----- Oura: Sleep & Readiness (personal token via the Supabase edge proxy) -----
+  var ouraCache = null;
+  function ouraFetch(cb) {
+    var tok = db.oura && db.oura.token;
+    if (!tok || typeof sb === "undefined" || !sb) { cb({ error: "not connected" }); return; }
+    var end = todayKey, start = keyOf(new Date(Date.now() - 6 * 86400000));
+    fetch(SUPA_URL + "/functions/v1/oura", {
+      method: "POST",
+      headers: { "content-type": "application/json", "apikey": SUPA_KEY, "Authorization": "Bearer " + ((session && session.access_token) || SUPA_KEY) },
+      body: JSON.stringify({ token: tok, start: start, end: end })
+    }).then(function (r) { return r.json(); }).then(cb).catch(function (e) { cb({ error: String(e) }); });
+  }
+  function latestDay(arr) {
+    if (!arr || !arr.length) return null;
+    return arr.slice().sort(function (a, b) { return (a.day || "") < (b.day || "") ? 1 : -1; })[0];
+  }
+  function paintHealth(d) {
+    var p = $("healthPanel"); if (!p) return;
+    var rd = latestDay(d && d.readiness), sl = latestDay(d && d.sleep);
+    if (!rd && !sl) { p.innerHTML = '<div class="health-connect">No Oura data for the last few days yet.</div>'; return; }
+    p.innerHTML =
+      '<div class="health-grid">' +
+        '<div class="health-stat"><div class="health-num serif">' + (rd && isNum(rd.score) ? rd.score : "—") + '</div><div class="health-cap">Readiness</div></div>' +
+        '<div class="health-stat"><div class="health-num serif">' + (sl && isNum(sl.score) ? sl.score : "—") + '</div><div class="health-cap">Sleep</div></div>' +
+      '</div>' +
+      '<div class="health-foot"><span class="health-day">' + escapeHtml((rd && rd.day) || (sl && sl.day) || "") + '</span>' +
+        '<button class="verse-act" id="healthVitality">Use readiness for Vitality →</button></div>';
+    var hv = $("healthVitality");
+    if (hv) hv.onclick = function () {
+      if (!rd || !isNum(rd.score)) return;
+      var r = rec("vitality"); r.deep = false; r.score = Math.max(0, Math.min(10, Math.round(rd.score / 10)));
+      pillarChanged("vitality"); playTick(); buzz(10);
+      showToastMsg("Vitality set to " + r.score + " from your Oura readiness.", 2600);
+    };
+  }
+  function renderHealth() {
+    var p = $("healthPanel"); if (!p) return;
+    if (!(db.oura && db.oura.token)) {
+      p.innerHTML = '<div class="health-connect">Connect Oura in Settings to see your readiness and sleep here.</div>' +
+        '<button class="grat-add" id="healthConnectBtn" style="margin-top:12px">Open Settings →</button>';
+      var b = $("healthConnectBtn"); if (b) b.onclick = function () { openSettings(); };
+      return;
+    }
+    if (ouraCache) paintHealth(ouraCache); else p.innerHTML = '<div class="health-connect">Loading your Oura data…</div>';
+    ouraFetch(function (res) {
+      if (res && !res.error) { ouraCache = res; paintHealth(res); }
+      else if (!ouraCache) { $("healthPanel").innerHTML = '<div class="health-connect">Couldn’t reach Oura' + (res && res.error && res.error !== "not connected" ? " — " + escapeHtml(res.error) : "") + '</div>'; }
+    });
+  }
+  // Settings: connect / disconnect Oura
+  function renderOuraSettings() {
+    var connected = !!(db.oura && db.oura.token);
+    $("ouraToken").value = "";
+    $("ouraToken").placeholder = connected ? "Connected — paste a new token to replace" : "Oura personal access token";
+    $("ouraDisconnect").hidden = !connected;
+    $("ouraSave").textContent = connected ? "Update" : "Connect";
+    var m = $("ouraMsg"); m.className = "oura-msg"; m.textContent = connected ? "Connected." : "";
+  }
+  $("ouraSave").addEventListener("click", function () {
+    var t = $("ouraToken").value.trim();
+    if (!t) { var m = $("ouraMsg"); m.className = "oura-msg err"; m.textContent = "Paste your Oura token first."; return; }
+    db.oura = { token: t }; save();
+    var msg = $("ouraMsg"); msg.className = "oura-msg"; msg.textContent = "Checking your token…";
+    ouraCache = null;
+    ouraFetch(function (res) {
+      if (res && res.error) { msg.className = "oura-msg err"; msg.textContent = res.error === "not connected" ? "Couldn’t connect." : res.error; }
+      else { ouraCache = res; msg.className = "oura-msg"; msg.textContent = "Connected — your Oura data is flowing."; renderOuraSettings(); renderHealth(); }
+    });
+  });
+  $("ouraDisconnect").addEventListener("click", function () {
+    db.oura = null; ouraCache = null; save();
+    renderOuraSettings(); renderHealth();
+    var m = $("ouraMsg"); m.className = "oura-msg"; m.textContent = "Disconnected.";
   });
 
   // ===== Voice: dictation (speech-to-text) + voice memos =====
@@ -5315,6 +5418,7 @@
     renderNotifyToggle();
     if (typeof renderAccount === "function") renderAccount();
     if (typeof renderSnapButton === "function") renderSnapButton();
+    if (typeof renderOuraSettings === "function") renderOuraSettings();
     $("settingsMsg").textContent = "";
     $("lockCoach").hidden = true; $("lockToggle").classList.remove("coach-target"); // clear any coach mark
     $("settings").hidden = false;
@@ -5470,6 +5574,7 @@
     jcardLoad(JCARDS.evening);
     loadGratitude();
     renderVerse();
+    renderHealth();
 
     // scripture: read-checks + notes (one card per plan)
     renderReading();
@@ -5690,6 +5795,7 @@
     evening:    { title: "End of Day Reflection", core: false, desc: "A closing question to reflect on before you rest.", icon: '<path d="M20 14a8 8 0 1 1-9.9-9.9A7 7 0 0 0 20 14z"/>' },
     pillars:    { title: "The Seven Pillars", core: true, desc: "A gentle weekly audit of the seven areas of a whole life.", icon: '<circle cx="12" cy="5" r="2.4"/><circle cx="18.5" cy="9" r="2.4"/><circle cx="18.5" cy="15" r="2.4"/><circle cx="12" cy="19" r="2.4"/><circle cx="5.5" cy="15" r="2.4"/><circle cx="5.5" cy="9" r="2.4"/>' },
     habits:     { title: "Keystone Habits", core: true, desc: "The daily anchors that hold everything else together.", icon: '<polyline points="4 12 9 17 20 6"/>' },
+    health:     { title: "Sleep & Readiness", core: false, desc: "Your Oura readiness and sleep, pulled in each day. Connect Oura in Settings.", icon: '<path d="M12 21s-7-4.6-9.3-8.4C1 9.5 2.6 6 6 6c2 0 3.2 1.2 4 2.4C10.8 7.2 12 6 14 6c3.4 0 5 3.5 3.3 6.6C19 16.4 12 21 12 21z"/>' },
     trends:     { title: "Trends", core: true, desc: "Your Integration score over time.", icon: '<polyline points="3 17 9 11 13 15 21 6"/>' }
   };
   function widgetEls() { return Array.prototype.slice.call(document.querySelectorAll(".wrap > section[data-w]")); }
