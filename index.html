@@ -1789,6 +1789,15 @@
   #circleBody.fellow-body { max-width: 620px; margin: 0 auto; padding: 2px 18px 120px; }
   .profile-btn { width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--field-edge); background: var(--field); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; color: var(--accent); overflow: hidden; background-size: cover; background-position: center; flex: 0 0 auto; }
 
+  /* Journal destination */
+  .journal-page { max-width: 620px; margin: 0 auto; padding: 4px 18px 120px; }
+  .jp-compose { background: var(--field); border: 1px solid var(--field-edge); border-radius: 16px; padding: 15px 16px; margin-bottom: 24px; transition: border-color 0.2s ease; }
+  .jp-compose:focus-within { border-color: var(--accent); }
+  .jp-compose textarea { width: 100%; background: transparent; border: none; outline: none; resize: none; color: var(--ink); font-family: "Fraunces", Georgia, serif; font-size: 17px; line-height: 1.6; min-height: 92px; }
+  .jp-actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 8px; }
+  .jp-stream .th-day:first-child { margin-top: 0; }
+  .jp-empty { color: var(--ink-faint); font-style: italic; font-size: 14px; padding: 30px 10px; text-align: center; line-height: 1.6; }
+
   /* Bottom sheets (reading settings + profile) */
   .sheet-overlay { position: fixed; inset: 0; z-index: 100; background: rgba(0,0,0,0.5); display: flex; align-items: flex-end; justify-content: center; }
   .sheet-overlay[hidden] { display: none; }
@@ -2467,7 +2476,7 @@
   </div>
 
   <!-- Floating thought capture -->
-  <button class="fab" id="fab" aria-label="Capture a thought">
+  <button class="fab" id="fab" aria-label="Capture a thought" hidden>
     <span class="fab-label">Capture a thought</span>
     <svg class="fab-bubble" viewBox="0 0 24 24" aria-hidden="true">
       <path d="M5 4.5h14a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-8l-4.5 4v-4H5a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2z"/>
@@ -2791,6 +2800,23 @@
   </div>
 
   <!-- Your Circle (Tribes) -->
+  <!-- Journal destination (free writing) -->
+  <div class="appview" id="journalView" hidden>
+    <div class="fellow-chrome"><div class="fellow-title serif">Journal</div></div>
+    <div class="journal-page">
+      <div class="jp-compose">
+        <textarea id="jpText" placeholder="Write freely…"></textarea>
+        <div class="jp-actions">
+          <button class="voice-btn" data-voice="dictate" data-target="jpText" aria-label="Dictate">
+            <svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><line x1="12" y1="18" x2="12" y2="21"/></svg><span>Dictate</span>
+          </button>
+          <button class="save-mini" id="jpSubmit">Add to journal</button>
+        </div>
+      </div>
+      <div class="jp-stream" id="journalStream"></div>
+    </div>
+  </div>
+
   <!-- Fellowship (prayer wall) destination -->
   <div class="appview" id="fellowshipView" hidden>
     <div class="fellow-chrome">
@@ -2903,6 +2929,10 @@
     <button class="nav-btn" id="nav_home">
       <svg viewBox="0 0 24 24"><path d="M4 11.5 12 5l8 6.5"/><path d="M5.5 10.5V19a1 1 0 0 0 1 1H10v-5h4v5h3.5a1 1 0 0 0 1-1v-8.5"/></svg>
       <span>Home</span>
+    </button>
+    <button class="nav-btn" id="nav_journal">
+      <svg viewBox="0 0 24 24"><path d="M4 20.5l4.5-1L19 9l-3.5-3.5L5 16z"/><line x1="14" y1="7" x2="17.5" y2="10.5"/></svg>
+      <span>Journal</span>
     </button>
     <button class="nav-btn" id="nav_bible">
       <svg viewBox="0 0 24 24"><path d="M5 4a2 2 0 0 1 2-2h11v18H7a2 2 0 0 0-2 2z"/><path d="M5 20a2 2 0 0 1 2-2h11"/><line x1="12" y1="6" x2="12" y2="13"/><line x1="9" y1="9" x2="15" y2="9"/></svg>
@@ -4687,15 +4717,18 @@
   function setView(name) {
     currentView = name;
     var wrap = document.querySelector(".wrap"); if (wrap) wrap.hidden = (name !== "home");
+    $("journalView").hidden = (name !== "journal");
     $("bibleView").hidden = (name !== "bible");
     $("fellowshipView").hidden = (name !== "fellowship");
-    ["home", "bible", "fellowship"].forEach(function (v) { var b = $("nav_" + v); if (b) b.classList.toggle("active", v === name); });
-    var fab = $("fab"); if (fab) fab.hidden = (name !== "home");
+    ["home", "journal", "bible", "fellowship"].forEach(function (v) { var b = $("nav_" + v); if (b) b.classList.toggle("active", v === name); });
+    var fab = $("fab"); if (fab) fab.hidden = true;   // the floating bubble is retired — journaling lives on the Journal tab
+    if (name === "journal") renderJournalPage();
     if (name === "fellowship") { renderProfileBtn(); openWall(); }
     if (name !== "bible" && typeof closeVerseMenu === "function") closeVerseMenu();
     window.scrollTo(0, 0);
   }
   $("nav_home").addEventListener("click", function () { setView("home"); buzz(8); });
+  $("nav_journal").addEventListener("click", function () { setView("journal"); buzz(8); });
   $("nav_bible").addEventListener("click", function () { if (currentView !== "bible") openBible(db.lastPassage || "John 1"); buzz(8); });
   $("nav_fellowship").addEventListener("click", function () { setView("fellowship"); buzz(8); });
 
@@ -4771,6 +4804,48 @@
         renderProfileBtn(); openProfile(); if (currentView === "fellowship") loadWall();
       });
     }, function () { $("profileMsg").textContent = "Upload failed — is the avatars bucket set up?"; });
+  });
+
+  // ----- Journal destination (free writing, backed by the thought stream) -----
+  function renderJournalPage() {
+    var el = $("journalStream"); if (!el) return;
+    var list = db.thoughts.slice().sort(function (a, b) { return a.ts < b.ts ? 1 : -1; });
+    if (!list.length) { el.innerHTML = '<div class="jp-empty">Your journal is a blank page.<br>Write freely above — it’s just for you.</div>'; return; }
+    var html = "", curDay = "";
+    list.forEach(function (t) {
+      if (t.dateKey !== curDay) { curDay = t.dateKey; html += '<div class="th-day">' + thoughtDayLabel(curDay) + "</div>"; }
+      var moodBadge = (typeof t.mood === "number") ? '<span class="th-mood" style="background:' + moodColor(t.mood) + '">' + t.mood + '</span>' : '';
+      html += '<div class="th-item" data-id="' + t.id + '"><div class="th-top">' + moodBadge +
+        '<span class="th-time">' + timeLabel(t.ts) + '</span>' +
+        '<button class="th-star' + (t.star ? " on" : "") + '" data-act="star">' + starSvg(t.star) + '</button>' +
+        '<button class="th-del" data-act="del">×</button></div>' +
+        (t.text ? '<div class="th-text">' + escapeHtml(t.text) + "</div>" : "") +
+        (t.voice ? '<audio controls src="' + t.voice + '"></audio>' : "") + "</div>";
+    });
+    el.innerHTML = html;
+  }
+  function journalPaneSync() { var tp = $("thoughtsPane"); if (tp && !tp.hidden && typeof renderThoughts === "function") renderThoughts(); }
+  $("jpSubmit").addEventListener("click", function () {
+    var ta = $("jpText"), text = (ta.value || "").trim(); if (!text) { ta.focus(); return; }
+    addThought({ text: text });
+    ta.value = "";
+    renderJournalPage(); journalPaneSync();
+    if (typeof playPop === "function") playPop(); buzz(12); showToastMsg("Added to your journal.");
+  });
+  $("journalStream").addEventListener("click", function (e) {
+    var btn = e.target.closest("[data-act]"); if (!btn) return;
+    var item = e.target.closest(".th-item"); if (!item) return;
+    var id = item.getAttribute("data-id"), th = null;
+    for (var i = 0; i < db.thoughts.length; i++) if (db.thoughts[i].id === id) { th = db.thoughts[i]; break; }
+    if (!th) return;
+    var act = btn.getAttribute("data-act");
+    if (act === "star") { th.star = !th.star; save(); buzz(8); renderJournalPage(); journalPaneSync(); }
+    else if (act === "del") {
+      confirmDialog("Delete this journal entry?", "Delete", function () {
+        db.thoughts = db.thoughts.filter(function (x) { return x.id !== id; });
+        save(); buzz(10); renderJournalPage(); journalPaneSync();
+      });
+    }
   });
 
   // ===== Voice: dictation (speech-to-text) + voice memos =====
