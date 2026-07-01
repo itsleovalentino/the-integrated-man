@@ -231,22 +231,6 @@
 
   /* ---- sections ---- */
   section { margin-bottom: 38px; }
-
-  /* ---- home zones (a hero "Today", a quieter "Track") ---- */
-  .zone-head { margin: 6px 0 18px; }
-  .zone-head.zone-first { margin-top: 0; }
-  .zone-title { display: inline-block; line-height: 1.1; }
-  .zone-head.zone-today .zone-title {
-    font-size: 25px; font-weight: 500; letter-spacing: -0.01em; color: var(--ink);
-  }
-  .zone-head.zone-track {
-    margin-top: 40px; padding-top: 26px; border-top: 1px solid rgba(255,255,255,0.08);
-  }
-  :root[data-theme="light"] .zone-head.zone-track { border-top-color: rgba(0,0,0,0.08); }
-  .zone-head.zone-track .zone-title {
-    font-size: 12.5px; font-weight: 500; letter-spacing: 0.16em; text-transform: uppercase;
-    color: var(--ink-faint);
-  }
   /* gratitude widget */
   .grat-lead { font-size: 16px; color: var(--ink-soft); margin: 0 0 16px; }
   .grat-list { display: flex; flex-direction: column; gap: 12px; }
@@ -1865,6 +1849,27 @@
   .chap-step:disabled { opacity: 0.24; cursor: default; }
   .nav-sep { width: 1px; align-self: center; height: 26px; margin: 0 4px; background: rgba(255,255,255,0.14); border-radius: 1px; }
   :root[data-theme="light"] .nav-sep { background: rgba(0,0,0,0.10); }
+  /* Journal bubble — its own glassy tool, set apart from the nav pill */
+  .journal-bubble {
+    position: fixed; right: 16px; bottom: calc(12px + env(safe-area-inset-bottom)); z-index: 46;
+    width: 56px; height: 56px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--ink); cursor: pointer;
+    background: rgba(40,40,44,0.5);
+    -webkit-backdrop-filter: blur(34px) saturate(1.9); backdrop-filter: blur(34px) saturate(1.9);
+    border: 1px solid rgba(255,255,255,0.14);
+    box-shadow: 0 12px 38px -10px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.16), inset 0 -1px 0 rgba(0,0,0,0.22);
+    transition: transform 0.34s cubic-bezier(.4,0,.2,1), opacity 0.34s ease, background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+  }
+  :root[data-theme="light"] .journal-bubble {
+    background: rgba(255,255,255,0.55); border-color: rgba(0,0,0,0.08);
+    box-shadow: 0 12px 38px -12px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.8);
+  }
+  .journal-bubble svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+  .journal-bubble:active { transform: scale(0.9); }
+  .journal-bubble.active { color: var(--accent); border-color: rgba(212,175,110,0.45); }
+  .journal-bubble.nav-off { transform: translateY(180%); opacity: 0; pointer-events: none; }
+  .journal-bubble[hidden] { display: none !important; }
   .nav-btn {
     flex: 0 0 auto; min-width: 60px; background: none; border: none; cursor: pointer;
     display: flex; flex-direction: column; align-items: center; gap: 3px;
@@ -3182,12 +3187,12 @@
       <span>Fellowship</span>
       <span class="nav-badge" id="navFellowshipBadge"></span>
     </button>
-    <span class="nav-sep" aria-hidden="true"></span>
-    <button class="nav-btn nav-journal" id="nav_journal">
-      <svg viewBox="0 0 24 24"><path d="M4 20.5l4.5-1L19 9l-3.5-3.5L5 16z"/><line x1="14" y1="7" x2="17.5" y2="10.5"/></svg>
-      <span>Journal</span>
-    </button>
   </nav>
+
+  <!-- Journal — a bubble off to the side; taps straight into a blank note -->
+  <button class="journal-bubble" id="journalBubble" aria-label="Journal — drop a thought" hidden>
+    <svg viewBox="0 0 24 24"><path d="M4 20.5l4.5-1L19 9l-3.5-3.5L5 16z"/><line x1="14" y1="7" x2="17.5" y2="10.5"/></svg>
+  </button>
 
 
   <div class="verse-menu" id="verseMenu" hidden>
@@ -5336,12 +5341,14 @@
     $("bibleView").hidden = (name !== "bible");
     $("fellowshipView").hidden = (name !== "fellowship");
     ["home", "journal", "bible", "fellowship"].forEach(function (v) { var b = $("nav_" + v); if (b) b.classList.toggle("active", v === name); });
-    var fab = $("fab"); if (fab) fab.hidden = true;   // the floating bubble is retired — journaling lives on the Journal tab
+    var jb = $("journalBubble"); if (jb) jb.classList.toggle("active", name === "journal");
+    var fab = $("fab"); if (fab) fab.hidden = true;   // the old capture FAB is retired — journaling lives on the Journal bubble
     if (name === "journal") renderJournalTab();
     if (name === "fellowship") { renderProfileBtn(); openWall(); }
     if (name !== "bible" && typeof closeVerseMenu === "function") closeVerseMenu();
     syncNavPosition();
     $("bottomNav").classList.remove("nav-off");   // always reveal the nav when switching views
+    $("journalBubble").classList.remove("nav-off");
     window.scrollTo(0, 0);
   }
   function syncNavPosition() {
@@ -5349,7 +5356,15 @@
     $("bottomNav").classList.toggle("nav-docked", currentView === "home" && document.body.classList.contains("journal-docked"));
   }
   $("nav_home").addEventListener("click", function () { setView("home"); buzz(8); });
-  $("nav_journal").addEventListener("click", function () { setView("journal"); buzz(8); });
+  // Journal bubble → straight into a blank note, ready to type
+  $("journalBubble").addEventListener("click", function () {
+    journalTab = "notes";
+    setView("journal");
+    if (typeof renderJournalTab === "function") renderJournalTab();
+    var t = $("jpText");
+    if (t) { t.innerHTML = ""; setTimeout(function () { t.focus(); }, 80); }
+    buzz(8);
+  });
   $("nav_bible").addEventListener("click", function () { if (currentView !== "bible") openBible(db.lastPassage || "John 1"); buzz(8); });
   $("nav_fellowship").addEventListener("click", function () { setView("fellowship"); buzz(8); });
 
@@ -5377,8 +5392,8 @@
   }
   $("chapPrev").addEventListener("click", function () { goChapter(-1); });
   $("chapNext").addEventListener("click", function () { goChapter(1); });
-  function hideReadingChrome() { if (currentView !== "bible") return; $("bottomNav").classList.add("nav-off"); }
-  function showReadingChrome() { $("bottomNav").classList.remove("nav-off"); }
+  function hideReadingChrome() { if (currentView !== "bible") return; $("bottomNav").classList.add("nav-off"); $("journalBubble").classList.add("nav-off"); }
+  function showReadingChrome() { $("bottomNav").classList.remove("nav-off"); $("journalBubble").classList.remove("nav-off"); }
   (function () {
     var bv = $("bibleView"), lastY = 0, idle = null;
     bv.addEventListener("scroll", function () {
@@ -6825,7 +6840,7 @@
     db.textSize = b.getAttribute("data-ts"); save(); applyTextSize(db.textSize); buzz(8);
   });
 
-  var APP_VERSION = "v31";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v32";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
@@ -6910,7 +6925,7 @@
     // the gate: nothing else is usable until a session exists
     $("onboard").hidden = true; $("authModal").hidden = true;
     $("journalDrawer").hidden = true; $("journalOverlay").hidden = true; document.body.classList.remove("journal-docked");
-    $("bottomNav").hidden = true; $("bibleView").hidden = true; $("fellowshipView").hidden = true;
+    $("bottomNav").hidden = true; $("journalBubble").hidden = true; $("bibleView").hidden = true; $("fellowshipView").hidden = true;
     $("welcome").hidden = false;
   }
   $("welcomeCreate").addEventListener("click", function () { $("welcome").hidden = true; openAuth("signup"); });
@@ -6922,7 +6937,7 @@
     if (!(db.profile && db.profile.onboarded)) { openOnboarding(); }
     else {
       $("onboard").hidden = true; if (typeof applyJournalMode === "function") applyJournalMode(); // in the app → dock journal if wide
-      $("bottomNav").hidden = false; setView("home");                // reveal the bottom nav; land on Home
+      $("bottomNav").hidden = false; $("journalBubble").hidden = false; setView("home");   // reveal the nav + journal bubble; land on Home
       renderProfileBtn(); applyReaderPrefs();
     }
     if (typeof upsertProfile === "function") upsertProfile();       // ensure a community profile row exists
@@ -6949,7 +6964,7 @@
     save();
     if (typeof upsertProfile === "function") upsertProfile();   // register the name in the community profile from the start
     $("onboard").hidden = true;
-    $("bottomNav").hidden = false; setView("home"); renderProfileBtn();
+    $("bottomNav").hidden = false; $("journalBubble").hidden = false; setView("home"); renderProfileBtn();
     dailyRefresh();
   });
 
@@ -7401,21 +7416,6 @@
       wrap.insertBefore(s, anchor);                 // re-sequence right before the action buttons
       s.classList.toggle("w-disabled", !e.on);
     });
-    renderZones();
-  }
-  // ---- home: a single "Today" heading over the day's widgets (never repeats, survives reorder) ----
-  function renderZones() {
-    var wrap = document.querySelector(".wrap"); if (!wrap) return;
-    Array.prototype.forEach.call(wrap.querySelectorAll(".zone-head"), function (h) { h.remove(); });
-    if (customizing) return;   // label off while rearranging — the drag grid reads cleaner
-    var first = widgetEls().filter(function (s) {
-      return !s.classList.contains("w-disabled") && !s.classList.contains("w-locked");
-    })[0];
-    if (!first) return;
-    var h = document.createElement("div");
-    h.className = "zone-head zone-today zone-first";
-    h.innerHTML = '<span class="zone-title serif">Today</span>';
-    wrap.insertBefore(h, first);
   }
   function captureLayout() {
     db.layout = widgetEls().map(function (s) { return { key: s.getAttribute("data-w"), on: !s.classList.contains("w-disabled") }; });
@@ -7445,7 +7445,6 @@
     customizing = true;
     document.querySelector(".wrap").classList.add("customizing");
     $("customizeBar").hidden = false;
-    renderZones();   // strip zone labels for a clean drag grid
     widgetEls().forEach(function (s) { if (!s.classList.contains("w-disabled")) widgetControlsFor(s); }); // only widgets on the home
     buzz(10);
   }
@@ -7456,7 +7455,6 @@
     document.querySelector(".wrap").classList.remove("customizing");
     $("customizeBar").hidden = true;
     captureLayout();
-    renderZones();   // redraw zone labels over the new arrangement
     playTick();
   }
   // pointer-based drag reorder
