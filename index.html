@@ -62,7 +62,7 @@
     --ink-high: #f6f4ee;
     --ink: #f3f1ea;
     --ink-soft: #a4a29b;
-    --ink-faint: #66645f;
+    --ink-faint: #82807a;
     --accent: #cbb27e;
     --accent-hover: #d8c290;
     --accent-soft: rgba(203, 178, 126, 0.12);
@@ -202,9 +202,10 @@
   .mini-chain { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
   .chain-cell {
     width: 11px; height: 11px; border-radius: 3px;
-    background: var(--field); border: 1px solid var(--field-edge);
+    background: rgba(255,255,255,0.055); border: 1px solid rgba(255,255,255,0.13);
     transition: background 0.2s ease;
   }
+  :root[data-theme="light"] .chain-cell { background: rgba(0,0,0,0.04); border-color: rgba(0,0,0,0.14); }
   .chain-cell.blank { background: none; border: none; }
   .chain-cell.filled {
     background: var(--accent); border-color: var(--accent);
@@ -3623,6 +3624,18 @@
   }
   function buzz(ms) { if (!db.hapticsOn) return; try { if (navigator.vibrate) navigator.vibrate(ms || 12); } catch (e) {} }
   function buzzPattern(p) { if (!db.hapticsOn) return; try { if (navigator.vibrate) navigator.vibrate(p); } catch (e) {} }
+  // Semantic feedback — one call routes haptic + sound together by intent, so every
+  // interaction of the same class *feels* the same. (Each primitive already respects its toggle.)
+  function fb(kind, el) {
+    switch (kind) {
+      case "select":    buzz(8); playTick(); break;                                  // a tap / toggle / selection
+      case "commit":    buzz(14); playTick(); break;                                 // a committed action (save, send)
+      case "success":   buzzPattern([0, 16, 55, 26]); playChime(); break;            // something completed
+      case "celebrate": buzzPattern([0, 22, 45, 22, 45, 55]); playChime(); if (el) celebrate(el, true); break; // a signature moment
+      case "error":     buzzPattern([0, 40, 45, 40]); break;                         // gentle warning
+      default:          buzz(10); playPop();
+    }
+  }
   function playFanfare() { // an earned, gentle ascending triad — warm, not cheesy
     var notes = [261.63, 329.63, 392.0, 523.25]; // C E G C
     notes.forEach(function (f, i) { setTimeout(function () { tone(f, 0.45, "triangle", 0.05); }, i * 95); });
@@ -4260,7 +4273,10 @@
         if (stillCurrent(passage)) renderVerses(data.verses);   // ignore a stale load that arrived after the user moved on
       })
       .catch(function () {
-        if (stillCurrent(passage)) $("bibleBody").innerHTML = '<div class="bible-loading">Couldn’t load the text here — use the Bible Gateway link below.</div>';
+        if (stillCurrent(passage)) {
+          $("bibleBody").innerHTML = '<div class="bible-loading">Couldn’t load this chapter — check your connection, or use the Bible Gateway link below.</div>';
+          showToastRetry("Couldn’t load the page.", function () { loadChapter(db.lastPassage || passage); });
+        }
       });
   }
   function loadChapter(passage) {
@@ -4814,12 +4830,17 @@
       healthRing(rScore, HR_LEAF, "Readiness") + healthRing(sScore, HR_MOON, "Sleep") + '</div>' +
       '<div class="health-note">' + escapeHtml(healthNote(rScore, sScore)) + '</div>' +
       stepsBar(d && d.activity);
+    // celebrate the first time today's steps cross the goal
+    var actToday = (d && d.activity || []).filter(function (a) { return a.day === todayKey; })[0];
+    if (actToday && isNum(actToday.steps) && actToday.steps >= (db.stepGoal || 8000) && db._stepHitDay !== todayKey) {
+      db._stepHitDay = todayKey; save(); setTimeout(function () { fb("celebrate", $("healthPanel")); }, 350);
+    }
   }
   $("healthPanel").addEventListener("click", function (e) {
     var el = e.target.closest("[data-act]"); if (!el) return;
     var act = el.getAttribute("data-act");
-    if (act === "goalToggle") { stepsGoalOpen = !stepsGoalOpen; paintHealth(ouraCache); }
-    else if (act === "setGoal") { db.stepGoal = +el.getAttribute("data-g"); save(); stepsGoalOpen = false; paintHealth(ouraCache); playTick(); buzz(10); }
+    if (act === "goalToggle") { stepsGoalOpen = !stepsGoalOpen; paintHealth(ouraCache); fb("select"); }
+    else if (act === "setGoal") { db.stepGoal = +el.getAttribute("data-g"); save(); stepsGoalOpen = false; paintHealth(ouraCache); fb("select"); }
   });
   function renderHealth() {
     var p = $("healthPanel"); if (!p) return;
@@ -5100,7 +5121,7 @@
         wallState.prays = prays; wallState.myPrays = myP; wallState.enc = enc;
         renderWall(); refreshWallBadge(); renderWallPanel(); if (cb) cb();
       }, function (e) { console.error("wall detail read failed:", e); renderWall(); refreshWallBadge(); renderWallPanel(); if (cb) cb(); });
-    }, function (e) { console.error("wall read exception:", e); showToastMsg("Couldn’t reach the wall — check your connection."); if (cb) cb(); });
+    }, function (e) { console.error("wall read exception:", e); showToastRetry("Couldn’t reach the wall.", function () { loadWall(); }); if (cb) cb(); });
   }
 
   function openWall() {  // load the fellowship wall (the view is switched by setView)
@@ -5140,7 +5161,7 @@
       return sb.from("prayers").insert({ author_id: myId(), body: body });
     }).then(function (res) {
       if (res && res.error) { wallErr(res.error, btn, "Share with the wall"); return; }
-      wallState.composing = false; playChime(); buzz(12); loadWall();
+      wallState.composing = false; fb("success"); loadWall();
     }).catch(function (e) { wallErr(e, btn, "Share with the wall"); });
   }
   function doPrayWall(id) {
@@ -5152,7 +5173,7 @@
         : sb.from("prayer_prays").insert({ prayer_id: id, user_id: myId() });
     }).then(function (res) {
       if (res && res.error) { wallErr(res.error); return; }
-      if (!prayed) { playTick(); buzz(10); } loadWall();
+      if (!prayed) { fb("select"); } loadWall();
     }).catch(function (e) { wallErr(e); });
   }
   function doSendEnc(id) {
@@ -5162,7 +5183,7 @@
       return sb.from("prayer_encouragements").insert({ prayer_id: id, from_id: myId(), body: body });
     }).then(function (res) {
       if (res && res.error) { wallErr(res.error); return; }
-      playChime(); buzz(12); showToastMsg("Sent."); loadWall();
+      fb("success"); showToastMsg("Sent."); loadWall();
     }).catch(function (e) { wallErr(e); });
   }
   function doAnswerWall(id) {
@@ -5170,7 +5191,7 @@
     var note = ((inp && inp.value) || "").trim();
     sb.from("prayers").update({ answered: true, answered_at: new Date().toISOString(), answered_note: note || null }).eq("id", id).then(function (res) {
       if (res.error) { showToastMsg(res.error.message); return; }
-      delete wallState.answerOpen[id]; playChime(); buzz(14); showToastMsg("Answered — He is faithful."); loadWall();
+      delete wallState.answerOpen[id]; fb("celebrate"); showToastMsg("Answered — He is faithful."); loadWall();
     });
   }
 
@@ -5370,7 +5391,7 @@
     addThought({ text: text });
     el.innerHTML = "";
     renderJournalPage(); journalPaneSync();
-    if (typeof playPop === "function") playPop(); buzz(12); showToastMsg("Added to your journal.");
+    fb("success"); showToastMsg("Added to your journal.");
   });
   $("journalStream").addEventListener("click", function (e) {
     var entry = e.target.closest(".jp-entry"); if (!entry) return;
@@ -5773,6 +5794,13 @@
     b._action = null;
     $("toast").hidden = false;
     clearTimeout(toastTimer); toastTimer = setTimeout(function () { $("toast").hidden = true; }, ms || 6000);
+  }
+  function showToastRetry(text, retryFn) {
+    var b = $("toastBody");
+    b.innerHTML = '<div class="toast-text">' + escapeHtml(text) + '</div><div class="toast-kicker" style="margin-top:5px;color:var(--accent)">Tap to try again</div>';
+    b._action = function () { $("toast").hidden = true; if (retryFn) retryFn(); };
+    $("toast").hidden = false;
+    clearTimeout(toastTimer); toastTimer = setTimeout(function () { $("toast").hidden = true; }, 9000);
   }
   // gentle every-2-weeks nudge to download an off-device backup (browsers can't auto-save files)
   function maybeBackupReminder() {
