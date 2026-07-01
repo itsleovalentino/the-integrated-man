@@ -1773,6 +1773,13 @@
   .bible-ctl.icon-only { padding: 0; width: 38px; height: 38px; justify-content: center; flex: 0 0 auto; }
   .bible-ctl svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.6; flex: 0 0 auto; }
   .bible-ctl .aa { font-weight: 600; font-size: 16px; letter-spacing: 0.02em; }
+  .bible-chrome-r { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
+  .bible-ctl.playing { background: var(--accent); color: var(--read-bg); border-color: var(--accent); }
+  .bible-ctl.loading { opacity: 0.6; }
+  #bibleAudio .ic-pause { display: none; }
+  #bibleAudio.playing .ic-play { display: none; }
+  #bibleAudio.playing .ic-pause { display: block; }
+  #bibleAudioEl { display: none; }
   .bible-paper-wrap { max-width: 660px; margin: 0 auto; padding: 4px 22px 140px; }
   #bibleView .bible-paper { max-width: 100%; max-height: none; overflow: visible; animation: none; margin: 0; }
 
@@ -2660,13 +2667,20 @@
           <svg viewBox="0 0 24 24"><path d="M6 3h12v18l-6-4-6 4z"/></svg>
         </button>
       </div>
-      <button class="bible-ctl icon-only" id="bibleAa" aria-label="Reading settings"><span class="aa">Aa</span></button>
+      <div class="bible-chrome-r">
+        <button class="bible-ctl icon-only" id="bibleAudio" aria-label="Listen">
+          <svg viewBox="0 0 24 24" class="ic-play"><path d="M8 5v14l11-7z" fill="currentColor" stroke="none"/></svg>
+          <svg viewBox="0 0 24 24" class="ic-pause"><rect x="6" y="5" width="4" height="14" rx="1" fill="currentColor" stroke="none"/><rect x="14" y="5" width="4" height="14" rx="1" fill="currentColor" stroke="none"/></svg>
+        </button>
+        <button class="bible-ctl icon-only" id="bibleAa" aria-label="Reading settings"><span class="aa">Aa</span></button>
+      </div>
     </div>
     <div class="bible-paper-wrap">
       <div class="bible-paper" id="biblePaper">
         <div class="bible-body" id="bibleBody"></div>
-        <a class="bible-gateway" id="bibleGateway" target="_blank" rel="noopener">Open in ESV on Bible Gateway →</a>
+        <a class="bible-gateway" id="bibleGateway" target="_blank" rel="noopener">Read this chapter on Bible Gateway →</a>
       </div>
+      <audio id="bibleAudioEl" preload="none"></audio>
     </div>
   </div>
 
@@ -2878,6 +2892,10 @@
   <div class="sheet-overlay" id="readSheet" hidden>
     <div class="sheet">
       <div class="sheet-head"><div class="sheet-title serif">Reading</div><button class="sheet-x" id="readSheetX">×</button></div>
+      <div class="sheet-row">
+        <div class="sheet-row-label">Translation</div>
+        <select class="ob-book" id="readVersion"></select>
+      </div>
       <div class="sheet-row">
         <div class="sheet-row-label">Typeface</div>
         <div class="seg" id="readFont">
@@ -4079,7 +4097,38 @@
       if (el) { el.classList.add("context", "flash"); setTimeout(function () { el.scrollIntoView({ block: "center" }); }, 40); }
     }
   }
-  function loadChapter(passage) {
+  // ---- translations (WEB is free via bible-api.com; the rest via the API.Bible proxy) ----
+  var BIBLE_VERSIONS = [
+    { id: "web-free", label: "World English (WEB)", source: "free" },
+    { id: "a556c5305ee15c3f-01", label: "Christian Standard (CSB)", source: "api" },
+    { id: "63097d2a0a2f7db3-01", label: "New King James (NKJV)", source: "api" },
+    { id: "d6e14a625393b4da-01", label: "New Living (NLT)", source: "api" },
+    { id: "de4e12af7f28f599-01", label: "King James (KJV)", source: "api" },
+    { id: "06125adad2d5898a-01", label: "American Standard (ASV)", source: "api" }
+  ];
+  var API_ABBR = ["GEN","EXO","LEV","NUM","DEU","JOS","JDG","RUT","1SA","2SA","1KI","2KI","1CH","2CH","EZR","NEH","EST","JOB","PSA","PRO","ECC","SNG","ISA","JER","LAM","EZK","DAN","HOS","JOL","AMO","OBA","JON","MIC","NAM","HAB","ZEP","HAG","ZEC","MAL","MAT","MRK","LUK","JHN","ACT","ROM","1CO","2CO","GAL","EPH","PHP","COL","1TH","2TH","1TI","2TI","TIT","PHM","HEB","JAS","1PE","2PE","1JN","2JN","3JN","JUD","REV"];
+  var AUDIO_BIBLE = "105a06b6146d11e7-01";   // WEB Drama New Testament (audio)
+  function curVersion() { var v = db.bibleVersion || "web-free"; return BIBLE_VERSIONS.filter(function (x) { return x.id === v; })[0] || BIBLE_VERSIONS[0]; }
+  function abbrevOf(bookName) { for (var i = 0; i < BOOKS.length; i++) if (BOOKS[i][0] === bookName) return API_ABBR[i]; return null; }
+  function chapterIdOf(passage) { var m = (passage || "").match(/^(.*?)\s+(\d+)$/); if (!m) return null; var ab = abbrevOf(m[1].trim()); return ab ? ab + "." + m[2] : null; }
+  function bibleProxy(payload, cb) {
+    fetch(SUPA_URL + "/functions/v1/bible", {
+      method: "POST",
+      headers: { "content-type": "application/json", "apikey": SUPA_KEY, "Authorization": "Bearer " + ((typeof session !== "undefined" && session) ? session.access_token : SUPA_KEY) },
+      body: JSON.stringify(payload)
+    }).then(function (r) { return r.json(); }).then(cb).catch(function (e) { cb({ error: String(e) }); });
+  }
+  function parseApiChapter(content, bookName, chapter) {
+    var verses = [], first = content.search(/\[\d+\]/);
+    if (first < 0) return verses;
+    var parts = content.slice(first).split(/\[(\d+)\]\s*/);   // ["","1","text ","2","text ",...]
+    for (var i = 1; i < parts.length; i += 2) {
+      var vn = parseInt(parts[i], 10), txt = (parts[i + 1] || "").replace(/\s+/g, " ").trim();
+      if (txt) verses.push({ book_name: bookName, chapter: chapter, verse: vn, text: txt });
+    }
+    return verses;
+  }
+  function loadChapterFree(passage) {
     if (db.bibleCache[passage]) { renderVerses(db.bibleCache[passage]); return; }
     $("bibleBody").innerHTML = '<div class="bible-loading">Opening the page…</div>';
     fetch("https://bible-api.com/" + encodeURIComponent(passage) + "?translation=web")
@@ -4090,9 +4139,51 @@
         renderVerses(data.verses);
       })
       .catch(function () {
-        $("bibleBody").innerHTML = '<div class="bible-loading">Couldn’t load the text here — ' +
-          'use the Bible Gateway link below to read this passage.</div>';
+        $("bibleBody").innerHTML = '<div class="bible-loading">Couldn’t load the text here — use the Bible Gateway link below.</div>';
       });
+  }
+  function loadChapter(passage) {
+    var v = curVersion();
+    if (v.source === "free") { loadChapterFree(passage); return; }
+    var m = (passage || "").match(/^(.*?)\s+(\d+)$/), chapterId = chapterIdOf(passage);
+    if (!m || !chapterId) { loadChapterFree(passage); return; }
+    var cacheKey = v.id + "|" + passage;
+    if (db.bibleCache[cacheKey]) { renderVerses(db.bibleCache[cacheKey]); return; }
+    $("bibleBody").innerHTML = '<div class="bible-loading">Opening the page…</div>';
+    bibleProxy({ action: "chapter", bibleId: v.id, chapterId: chapterId }, function (res) {
+      if (res && res.content) {
+        var verses = parseApiChapter(res.content, m[1].trim(), +m[2]);
+        if (verses.length) { db.bibleCache[cacheKey] = verses; save(); renderVerses(verses); return; }
+      }
+      // graceful fallback: show WEB so the reader always works even before the proxy is deployed
+      if (res && res.error) console.warn("bible proxy:", res.error);
+      loadChapterFree(passage);
+    });
+  }
+  // translation picker (in the Reading sheet) + audio
+  function fillVersionSelect() {
+    var sel = $("readVersion"); if (!sel) return;
+    sel.innerHTML = BIBLE_VERSIONS.map(function (v) { return '<option value="' + v.id + '">' + v.label + '</option>'; }).join("");
+    sel.value = db.bibleVersion || "web-free";
+  }
+  function bindVersionSelect() {
+    var sel = $("readVersion"); if (!sel || sel._wired) return; sel._wired = true;
+    sel.addEventListener("change", function () {
+      db.bibleVersion = this.value; save();
+      if (db.lastPassage) loadChapter(db.lastPassage);
+    });
+  }
+  function toggleBibleAudio() {
+    var el = $("bibleAudioEl"), btn = $("bibleAudio");
+    if (el && !el.paused) { el.pause(); return; }
+    var chapterId = chapterIdOf(db.lastPassage || "John 1");
+    if (!chapterId) { showToastMsg("Pick a chapter first."); return; }
+    btn.classList.add("loading");
+    bibleProxy({ action: "audio", audioId: AUDIO_BIBLE, chapterId: chapterId }, function (res) {
+      btn.classList.remove("loading");
+      if (res && res.url) { el.src = res.url; el.play().catch(function () { showToastMsg("Couldn’t play the audio."); }); }
+      else { showToastMsg("Audio is available for the New Testament (once the Bible proxy is set up)."); }
+    });
   }
   var contextRef = null;   // when opened from Verse of the Day, the verse to spotlight
   function openBible(passage, focusRef) {
@@ -4173,6 +4264,12 @@
   $("bibleAnchors").addEventListener("click", openAnchors);
   $("biblePick").addEventListener("click", openBiblePicker);
   $("bibleAa").addEventListener("click", openReadSheet);
+  $("bibleAudio").addEventListener("click", toggleBibleAudio);
+  (function () {
+    var el = $("bibleAudioEl"), btn = $("bibleAudio");
+    function sync() { btn.classList.toggle("playing", !!(el && !el.paused && !el.ended)); }
+    ["play", "pause", "ended"].forEach(function (ev) { el.addEventListener(ev, sync); });
+  })();
 
   // ===== Open your Bible (leather table of contents) =====
   var bpTestament = "ot", bpBook = "Genesis";
@@ -4871,7 +4968,7 @@
     Array.prototype.forEach.call($("readBg").children, function (b) { b.classList.toggle("sel", b.getAttribute("data-bg") === (p.bg || "paper")); });
     $("readSizeVal").textContent = READER_SIZE_NAMES[(typeof p.size === "number" ? p.size : 2)] || "Default";
   }
-  function openReadSheet() { syncReadSheet(); $("readSheet").hidden = false; }
+  function openReadSheet() { fillVersionSelect(); bindVersionSelect(); syncReadSheet(); $("readSheet").hidden = false; }
   $("readSheetX").addEventListener("click", function () { $("readSheet").hidden = true; });
   $("readSheet").addEventListener("click", function (e) {
     if (e.target === this) { this.hidden = true; return; }
