@@ -297,11 +297,10 @@
   /* glassy disc behind each ring */
   .hr-wrap::before {
     content: ""; position: absolute; inset: 11%; border-radius: 50%;
-    background: radial-gradient(circle at 50% 32%, rgba(255,255,255,0.08), rgba(255,255,255,0.02) 62%, transparent 80%);
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.10), inset 0 -6px 14px rgba(0,0,0,0.28);
-    -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+    background: radial-gradient(circle at 50% 34%, rgba(255,255,255,0.05), transparent 68%);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.07);
   }
-  :root[data-theme="light"] .hr-wrap::before { background: radial-gradient(circle at 50% 32%, rgba(255,255,255,0.7), rgba(0,0,0,0.02) 70%, transparent 82%); box-shadow: inset 0 1px 0 rgba(255,255,255,0.8), inset 0 -6px 14px rgba(0,0,0,0.05); }
+  :root[data-theme="light"] .hr-wrap::before { background: radial-gradient(circle at 50% 34%, rgba(255,255,255,0.6), transparent 72%); box-shadow: inset 0 1px 0 rgba(255,255,255,0.7); }
   .hr-svg { position: relative; width: 100%; height: 100%; transform: rotate(-90deg); }
   .hr-track { fill: none; stroke: rgba(255,255,255,0.09); stroke-width: 6.5; }
   :root[data-theme="light"] .hr-track { stroke: rgba(0,0,0,0.07); }
@@ -1798,6 +1797,9 @@
     color: #b09a6a; cursor: pointer;
   }
   .page-close:hover { color: #6a5c44; }
+  .page-edit { position: absolute; top: 15px; left: 18px; background: none; border: 1px solid rgba(160,124,66,0.45); color: #8a6d30; border-radius: 999px; padding: 5px 14px; font-family: inherit; font-size: 13px; cursor: pointer; transition: background 0.2s ease; }
+  .page-edit:hover { background: rgba(160,124,66,0.1); }
+  .page-edit[hidden] { display: none; }
   .page-nav {
     flex-shrink: 0;
     width: 46px; height: 46px; border-radius: 50%;
@@ -2975,6 +2977,7 @@
     <button class="page-nav" id="pagePrev" aria-label="Older entry">‹</button>
     <div class="paper" id="paper">
       <button class="page-close" id="pageClose" aria-label="Close">×</button>
+      <button class="page-edit" id="pageEdit" type="button" hidden>Edit</button>
       <div class="paper-date" id="paperDate"></div>
       <div class="paper-body" id="paperBody"></div>
     </div>
@@ -3079,14 +3082,6 @@
         <button class="seg-opt" data-theme="dark" type="button">Dark</button>
         <button class="seg-opt" data-theme="auto" type="button">Auto</button>
       </div>
-
-      <label class="field-label">Text size</label>
-      <div class="seg seg-full" id="textSizeSeg">
-        <button class="seg-opt" data-ts="default" type="button">Default</button>
-        <button class="seg-opt" data-ts="large" type="button">Large</button>
-        <button class="seg-opt" data-ts="larger" type="button">Larger</button>
-      </div>
-      <div class="sheet-hint" style="margin-top:6px">Scales reading &amp; writing text — the daily reading, prompts, journal, and prayers.</div>
 
       <label class="field-label">Account</label>
       <div class="account-row" id="accountRow"></div>
@@ -3878,6 +3873,22 @@
   }
   function buzz(ms) { if (!db.hapticsOn) return; try { if (navigator.vibrate) navigator.vibrate(ms || 12); } catch (e) {} }
   function buzzPattern(p) { if (!db.hapticsOn) return; try { if (navigator.vibrate) navigator.vibrate(p); } catch (e) {} }
+  // Warm the audio pipeline on the very first interaction so tap sounds fire instantly.
+  // (A suspended AudioContext adds latency to the first few sounds — this removes it.)
+  (function () {
+    function warm() {
+      try {
+        if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
+        if (actx.state === "suspended") actx.resume();
+        var g = actx.createGain(); g.gain.value = 0.00001; g.connect(actx.destination);
+        var o = actx.createOscillator(); o.connect(g); o.start(); o.stop(actx.currentTime + 0.02);
+      } catch (e) {}
+      window.removeEventListener("pointerdown", warm, true);
+      window.removeEventListener("touchend", warm, true);
+    }
+    window.addEventListener("pointerdown", warm, true);
+    window.addEventListener("touchend", warm, true);
+  })();
   // Semantic feedback — one call routes haptic + sound together by intent, so every
   // interaction of the same class *feels* the same. (Each primitive already respects its toggle.)
   function fb(kind, el) {
@@ -5816,7 +5827,7 @@
   });
 
   // ---- Focused writer: a blank canvas opened by the journal bubble / "Write a note" ----
-  var writerRec = null, writerChunks = [], writerVoice = null;
+  var writerRec = null, writerChunks = [], writerVoice = null, writerEditId = null;
   function writerTextValue() { return ($("writerText").innerText || "").replace(/ /g, " "); }
   function titlePlain() { return ($("writerTitle").innerText || "").split("\n").join(" ").trim(); }
   function syncWriterEmpty() {
@@ -5839,7 +5850,7 @@
     return tmp.innerHTML;
   }
   function openWriter() {
-    writerVoice = null;
+    writerVoice = null; writerEditId = null;
     $("writerTitle").innerHTML = ""; $("writerText").innerHTML = "";
     syncWriterEmpty();
     $("fmtBold").classList.remove("active"); $("fmtItalic").classList.remove("active");
@@ -5850,6 +5861,19 @@
     $("writerView").hidden = false;
     buzz(18); if (typeof playPop === "function") playPop();
     setTimeout(function () { $("writerTitle").focus(); }, 90);
+  }
+  // open the writer pre-filled to edit an existing note
+  function openWriterEdit(t) {
+    openWriter();
+    writerEditId = t.id;
+    var lines = (t.text || "").split("\n");
+    var title = (t.title && t.title.trim()) ? t.title.trim() : (t.html ? "" : (lines[0] || "").trim());
+    $("writerTitle").innerText = title;
+    if (t.html) { $("writerText").innerHTML = sanitizeNoteHtml(t.html); }
+    else { $("writerText").innerText = title ? lines.slice(1).join("\n") : (t.text || ""); }
+    writerVoice = t.voice || null; renderWriterMemo();
+    syncWriterEmpty();
+    try { $("writerDate").textContent = new Date(t.ts).toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" }); } catch (e) {}
   }
   function stopWriterRec() { if (writerRec && writerRec.state !== "inactive") { try { writerRec.stop(); } catch (e) {} } }
   // show the recorded memo inline, so you keep writing and it saves with the note
@@ -5889,11 +5913,24 @@
     var combined = title + (title && bodyText ? "\n" : "") + bodyText;
     var bodyHtml = sanitizeNoteHtml($("writerText").innerHTML);
     var hasRich = /<(b|strong|i|em|u)\b/i.test(bodyHtml);
-    addThought({ text: combined, title: title || null, html: hasRich ? bodyHtml : null, voice: writerVoice });
-    writerVoice = null;
+    if (writerEditId) {
+      var arr = db.thoughts || [];
+      for (var i = 0; i < arr.length; i++) {
+        if (arr[i].id === writerEditId) {
+          arr[i].text = combined; arr[i].title = title || null;
+          arr[i].html = hasRich ? bodyHtml : null; arr[i].voice = writerVoice;
+          arr[i].edited = new Date().toISOString();
+          break;
+        }
+      }
+      save();
+    } else {
+      addThought({ text: combined, title: title || null, html: hasRich ? bodyHtml : null, voice: writerVoice });
+    }
+    writerEditId = null; writerVoice = null;
     fb("success");
     writerToNotes();
-    showToastMsg("Added to your journal.", 2200);
+    showToastMsg("Saved to your journal.", 2200);
   }
   $("notesNew").addEventListener("click", openWriter);
   $("writerClose").addEventListener("click", writerToNotes);
@@ -5944,10 +5981,12 @@
   });
 
   // ---- Full-page note reader (tap a note → read it on its own page) ----
+  var notePageId = null;
   function openNotePage(id) {
     var t = null, arr = db.thoughts || [];
     for (var i = 0; i < arr.length; i++) if (arr[i].id === id) { t = arr[i]; break; }
     if (!t) return;
+    notePageId = id;
     var when = "";
     try { when = new Date(t.ts).toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" }); } catch (e) { when = t.dateKey || ""; }
     try { when += " · " + new Date(t.ts).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" }); } catch (e) {}
@@ -5968,9 +6007,18 @@
     if (!html) html = '<div class="paper-empty">An empty note.</div>';
     $("paperBody").innerHTML = html;
     $("pagePrev").style.display = "none"; $("pageNext").style.display = "none";
+    $("pageEdit").hidden = false;   // notes are editable
     $("pageView").hidden = false; $("paper").scrollTop = 0;
     if (typeof playPage === "function") playPage();
   }
+  $("pageEdit").addEventListener("click", function () {
+    if (!notePageId) return;
+    var arr = db.thoughts || [], t = null;
+    for (var i = 0; i < arr.length; i++) if (arr[i].id === notePageId) { t = arr[i]; break; }
+    if (!t) return;
+    $("pageView").hidden = true;
+    openWriterEdit(t);
+  });
 
   // ===== Voice: dictation (speech-to-text) + voice memos =====
   var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -7167,6 +7215,7 @@
     pageIdx = pageKeys.indexOf(k);
     if (pageIdx < 0) return;
     $("pagePrev").style.display = ""; $("pageNext").style.display = "";   // restore arrows (note reader hides them)
+    $("pageEdit").hidden = true; notePageId = null;
     renderPaper(k);
     updatePageNav();
     $("pageView").hidden = false;
@@ -7212,20 +7261,7 @@
   });
   if (window.matchMedia) { try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { if (db.theme === "auto") applyTheme("auto"); }); } catch (e) {} }
 
-  // Content-only text size (scales reading/writing text via --read-scale; leaves chrome/layout alone)
-  function applyTextSize(sz) {
-    if (["large", "larger"].indexOf(sz) < 0) sz = "default";
-    if (sz === "default") root.removeAttribute("data-textsize"); else root.setAttribute("data-textsize", sz);
-    var seg = $("textSizeSeg"); if (seg) Array.prototype.forEach.call(seg.children, function (b) { b.classList.toggle("sel", b.getAttribute("data-ts") === sz); });
-  }
-  if (["default", "large", "larger"].indexOf(db.textSize) < 0) db.textSize = "default";
-  applyTextSize(db.textSize);
-  $("textSizeSeg").addEventListener("click", function (e) {
-    var b = e.target.closest("[data-ts]"); if (!b) return;
-    db.textSize = b.getAttribute("data-ts"); save(); applyTextSize(db.textSize); buzz(8);
-  });
-
-  var APP_VERSION = "v44";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v45";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
