@@ -1517,16 +1517,24 @@
   /* freeze the real content; only the controls are interactive while customizing */
   .customizing section[data-w] > :not(.w-controls) { pointer-events: none; }
   .customizing .w-controls {
-    display: flex; align-items: center; gap: 10px; margin-bottom: 10px;
+    display: flex; align-items: center; gap: 7px; margin-bottom: 10px;
     padding: 4px 2px; touch-action: none;
   }
   .w-drag {
-    flex-shrink: 0; width: 34px; height: 34px; border-radius: 9px; cursor: grab;
+    flex-shrink: 0; width: 38px; height: 38px; border-radius: 10px; cursor: grab;
     display: inline-flex; align-items: center; justify-content: center;
-    background: var(--field); border: 1px solid var(--field-edge); color: var(--ink-faint);
+    background: var(--field); border: 1px solid var(--field-edge); color: var(--ink-soft);
   }
-  .w-drag:active { cursor: grabbing; }
-  .w-drag svg { width: 16px; height: 16px; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+  .w-drag:active { cursor: grabbing; background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+  .w-drag svg { width: 18px; height: 18px; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+  .w-move {
+    flex-shrink: 0; width: 34px; height: 38px; border-radius: 10px; cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: var(--field); border: 1px solid var(--field-edge); color: var(--ink-soft); transition: transform 0.12s ease;
+  }
+  .w-move svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+  .w-move:active { transform: scale(0.88); background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+  .w-move:disabled { opacity: 0.28; cursor: default; }
   .w-title { flex: 1; min-width: 0; font-size: 14px; color: var(--ink); font-weight: 500; }
   .w-remove {
     flex-shrink: 0; display: inline-flex; align-items: center; gap: 6px;
@@ -2577,7 +2585,7 @@
     </div>
 
     <div class="customize-bar" id="customizeBar" hidden>
-      <div class="cb-text"><b>Customize your home</b><span>Drag to reorder · remove or add widgets</span></div>
+      <div class="cb-text"><b>Customize your home</b><span>Reorder with ↑ ↓ or drag · add &amp; remove</span></div>
       <div class="cb-actions">
         <button class="cb-add" id="openGalleryBtn" type="button">+ Add widget</button>
         <button class="cb-done" id="customizeDone">Save</button>
@@ -7261,7 +7269,7 @@
   });
   if (window.matchMedia) { try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { if (db.theme === "auto") applyTheme("auto"); }); } catch (e) {} }
 
-  var APP_VERSION = "v45";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v46";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
@@ -7850,15 +7858,36 @@
     c.innerHTML =
       '<span class="w-drag" aria-label="Drag to reorder"><svg viewBox="0 0 24 24"><line x1="5" y1="9" x2="19" y2="9"/><line x1="5" y1="15" x2="19" y2="15"/></svg></span>' +
       '<span class="w-title">' + escapeHtml(title) + '</span>' +
+      '<button class="w-move" data-dir="up" type="button" aria-label="Move up"><svg viewBox="0 0 24 24"><polyline points="6 14 12 8 18 14"/></svg></button>' +
+      '<button class="w-move" data-dir="down" type="button" aria-label="Move down"><svg viewBox="0 0 24 24"><polyline points="6 10 12 16 18 10"/></svg></button>' +
       '<button class="w-remove" type="button" aria-label="Remove from home">' +
         '<svg viewBox="0 0 24 24" style="width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2"><line x1="5" y1="12" x2="19" y2="12"/></svg>Remove</button>';
     s.insertBefore(c, s.firstChild);
     c.querySelector(".w-remove").addEventListener("click", function () {
       s.classList.add("w-disabled"); // off → hidden → available again in the gallery
-      captureLayout(); buzz(10);
+      captureLayout(); refreshMoveButtons(); buzz(10);
     });
+    c.querySelector('[data-dir="up"]').addEventListener("click", function () { moveWidget(s, -1); });
+    c.querySelector('[data-dir="down"]').addEventListener("click", function () { moveWidget(s, 1); });
     c.querySelector(".w-drag").addEventListener("pointerdown", function (e) { startDrag(e, s); });
     return c;
+  }
+  function visibleWidgets() { return widgetEls().filter(function (x) { return !x.classList.contains("w-disabled") && !x.classList.contains("w-locked"); }); }
+  function refreshMoveButtons() {
+    var list = visibleWidgets();
+    list.forEach(function (s, i) {
+      var up = s.querySelector('.w-move[data-dir="up"]'), dn = s.querySelector('.w-move[data-dir="down"]');
+      if (up) up.disabled = (i === 0);
+      if (dn) dn.disabled = (i === list.length - 1);
+    });
+  }
+  function moveWidget(s, dir) {
+    var list = visibleWidgets(), i = list.indexOf(s);
+    if (dir < 0 && i > 0) list[i - 1].before(s);
+    else if (dir > 0 && i < list.length - 1) list[i + 1].after(s);
+    else return;
+    captureLayout(); refreshMoveButtons(); buzz(12); fb("select");
+    try { s.scrollIntoView({ block: "nearest", behavior: "smooth" }); } catch (e) {}
   }
   function enterCustomize() {
     if (customizing) return;
@@ -7866,6 +7895,7 @@
     document.querySelector(".wrap").classList.add("customizing");
     $("customizeBar").hidden = false;
     widgetEls().forEach(function (s) { if (!s.classList.contains("w-disabled")) widgetControlsFor(s); }); // only widgets on the home
+    refreshMoveButtons();
     buzz(10);
   }
   function exitCustomize() {
@@ -7887,19 +7917,31 @@
     document.addEventListener("pointermove", onDragMove);
     document.addEventListener("pointerup", endDrag, { once: true });
   }
-  function onDragMove(e) {
+  var dragY = 0, autoTimer = null, autoDir = 0;
+  function placeDrag() {
     if (!dragEl) return;
     var siblings = widgetEls().filter(function (s) { return s !== dragEl && !s.classList.contains("w-disabled"); });
     var anchor = $("homeActions"), wrap = document.querySelector(".wrap"), placed = false;
     for (var i = 0; i < siblings.length; i++) {
       var r = siblings[i].getBoundingClientRect();
-      if (e.clientY < r.top + r.height / 2) { wrap.insertBefore(dragEl, siblings[i]); placed = true; break; }
+      if (dragY < r.top + r.height / 2) { wrap.insertBefore(dragEl, siblings[i]); placed = true; break; }
     }
     if (!placed) wrap.insertBefore(dragEl, anchor); // past the last one → drop at the end
   }
+  function onDragMove(e) {
+    if (!dragEl) return;
+    dragY = e.clientY;
+    placeDrag();
+    // auto-scroll when you drag near the top/bottom edge — so you can move a widget all the way up
+    var vh = window.innerHeight;
+    autoDir = e.clientY < 110 ? -1 : (e.clientY > vh - 150 ? 1 : 0);
+    if (autoDir && !autoTimer) autoTimer = setInterval(function () { window.scrollBy(0, autoDir * 11); placeDrag(); }, 16);
+    else if (!autoDir && autoTimer) { clearInterval(autoTimer); autoTimer = null; }
+  }
   function endDrag() {
     document.removeEventListener("pointermove", onDragMove);
-    if (dragEl) { dragEl.classList.remove("dragging"); dragEl = null; buzz(10); captureLayout(); }
+    if (autoTimer) { clearInterval(autoTimer); autoTimer = null; } autoDir = 0;
+    if (dragEl) { dragEl.classList.remove("dragging"); dragEl = null; buzz(10); captureLayout(); refreshMoveButtons(); }
   }
   $("customizeBtn").addEventListener("click", function () { customizing ? exitCustomize() : enterCustomize(); });
   $("customizeDone").addEventListener("click", exitCustomize);
