@@ -1103,9 +1103,10 @@
   }
   .habit-icon svg { width: 16px; height: 16px; stroke: currentColor; stroke-width: 1.8; fill: none; stroke-linecap: round; stroke-linejoin: round; }
   .habit-name { flex: 1; min-width: 0; font-size: 15px; }
-  /* streak flame — heats up as the streak grows; unmistakably a streak, sitting ON the text line */
-  .habit-name { display: inline-flex; align-items: center; flex-wrap: wrap; }
-  .hab-flame { display: inline-flex; align-items: center; gap: 4px; margin-left: 8px; font-size: 12px; font-weight: 700; padding: 3px 9px 3px 6px; border-radius: 999px; font-variant-numeric: tabular-nums; transition: all 0.3s ease; }
+  /* streak flame — heats up as the streak grows; lives on the cadence line so long
+     habit names never push it onto an awkward wrapped line */
+  .habit-cad { display: inline-flex; align-items: center; }
+  .hab-flame { display: inline-flex; align-items: center; gap: 4px; margin-left: 7px; font-size: 12px; font-weight: 700; padding: 2px 9px 2px 6px; border-radius: 999px; font-variant-numeric: tabular-nums; transition: all 0.3s ease; }
   .hab-flame svg { width: 14px; height: 14px; }
   .hab-flame.heat-0 { color: var(--ink-faint); background: rgba(255,255,255,0.06); }
   .hab-flame.heat-1 { color: #d3b06a; background: rgba(211,176,106,0.15); }
@@ -1129,23 +1130,32 @@
     45% { transform: scale(0.88); }
     100% { transform: scale(1); }
   }
-  /* the reading moment: a small leather Bible pops up and closes */
-  .book-pop { position: fixed; z-index: 320; width: 54px; height: 40px; perspective: 300px; pointer-events: none;
-    animation: bookIn 0.24s cubic-bezier(0.2,0.8,0.3,1.3), bookSettle 0.3s ease 0.62s forwards; }
-  .book-pop .bk-half { position: absolute; top: 0; width: 27px; height: 40px; border-radius: 3px; }
-  .book-pop .bk-right { right: 0; background: linear-gradient(135deg, #3a2d1e, #241a10); border-radius: 3px 6px 6px 3px;
-    box-shadow: 0 4px 14px rgba(0,0,0,0.45), inset 0 0 0 1px rgba(203,178,126,0.25); }
-  .book-pop .bk-pages { position: absolute; top: 2px; right: 25px; width: 24px; height: 36px; background: linear-gradient(90deg, #efe9da, #d9d2bf); border-radius: 2px 0 0 2px; }
-  .book-pop .bk-left { left: 0; background: linear-gradient(225deg, #3a2d1e, #241a10); border-radius: 6px 3px 3px 6px;
-    box-shadow: inset 0 0 0 1px rgba(203,178,126,0.25); transform-origin: right center;
-    transform: rotateY(-150deg); animation: bookClose 0.42s cubic-bezier(0.5,0,0.8,0.4) 0.18s forwards;
-    display: flex; align-items: center; justify-content: center; backface-visibility: hidden; }
+  /* the reading moment: an OPEN book — two cream pages — whose left page folds over
+     and shuts into a leather cover with a gold cross, blooming gold as it closes */
+  .book-pop { position: fixed; z-index: 320; width: 58px; height: 42px; perspective: 340px; pointer-events: none;
+    animation: bookIn 0.22s cubic-bezier(0.2,0.8,0.3,1.3), bookSettle 0.34s ease 0.82s forwards; }
+  .book-pop::before { content: ""; position: absolute; inset: -24px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(203,178,126,0.6), rgba(203,178,126,0) 65%);
+    opacity: 0; animation: bookBloom 0.55s ease-out 0.5s; }
+  .book-pop .bk-base { position: absolute; right: 0; top: 0; width: 29px; height: 42px; border-radius: 2px 5px 5px 2px;
+    background: linear-gradient(135deg, #3a2d1e, #241a10); box-shadow: 0 4px 14px rgba(0,0,0,0.45), inset 0 0 0 1px rgba(203,178,126,0.28); }
+  .book-pop .bk-base::after { content: ""; position: absolute; left: 2px; top: 2px; width: 25px; height: 38px;
+    border-radius: 1px 3px 3px 1px; background: linear-gradient(100deg, #efe9da, #ddd5c2); }
+  .book-pop .bk-flap { position: absolute; left: 0; top: 0; width: 29px; height: 42px; transform-origin: right center;
+    transform-style: preserve-3d; animation: bookClose 0.5s cubic-bezier(0.6,0,0.75,0.35) 0.16s forwards; }
+  .book-pop .bk-face { position: absolute; inset: 0; backface-visibility: hidden; }
+  .book-pop .bk-page { border-radius: 5px 2px 2px 5px; background: linear-gradient(260deg, #efe9da, #d9d2bf); box-shadow: inset -3px 0 4px rgba(0,0,0,0.12); }
+  .book-pop .bk-cover { transform: rotateY(180deg); border-radius: 2px 5px 5px 2px;
+    background: linear-gradient(225deg, #3a2d1e, #241a10);
+    box-shadow: inset 0 0 0 1px rgba(203,178,126,0.4), 0 2px 12px rgba(0,0,0,0.45);
+    display: flex; align-items: center; justify-content: center; }
   .book-pop .bk-cross { width: 12px; height: 16px; position: relative; }
-  .book-pop .bk-cross::before { content: ""; position: absolute; left: 5px; top: 0; width: 2px; height: 16px; background: rgba(203,178,126,0.85); }
-  .book-pop .bk-cross::after { content: ""; position: absolute; left: 1px; top: 4px; width: 10px; height: 2px; background: rgba(203,178,126,0.85); }
+  .book-pop .bk-cross::before { content: ""; position: absolute; left: 5px; top: 0; width: 2px; height: 16px; background: rgba(203,178,126,0.9); }
+  .book-pop .bk-cross::after { content: ""; position: absolute; left: 1px; top: 4px; width: 10px; height: 2px; background: rgba(203,178,126,0.9); }
   @keyframes bookIn { from { transform: scale(0.5) translateY(8px); opacity: 0; } to { transform: scale(1) translateY(0); opacity: 1; } }
-  @keyframes bookClose { to { transform: rotateY(0deg); } }
-  @keyframes bookSettle { 0% { transform: scale(1); opacity: 1; } 30% { transform: scale(1.08); opacity: 1; } 100% { transform: scale(0.85) translateY(-4px); opacity: 0; } }
+  @keyframes bookClose { to { transform: rotateY(-180deg); } }
+  @keyframes bookBloom { 0% { opacity: 0; transform: scale(0.55); } 35% { opacity: 1; } 100% { opacity: 0; transform: scale(1.3); } }
+  @keyframes bookSettle { 0% { transform: scale(1); opacity: 1; } 30% { transform: scale(1.1); opacity: 1; } 100% { transform: scale(0.85) translateY(-5px); opacity: 0; } }
   .habit-streak {
     flex-shrink: 0;
     font-size: 11.5px; letter-spacing: 0.1em; text-transform: uppercase;
@@ -3279,6 +3289,17 @@
         <p class="ob-reading-hint" style="text-align:left;margin-top:6px;">Tap <a href="https://cloud.ouraring.com/personal-access-tokens" target="_blank" rel="noopener" class="oura-link">Get your Oura token&nbsp;↗</a>, create one, copy it, and paste it above. It's stored privately in your own account.</p>
       </div>
 
+      <label class="field-label">Audio Bible</label>
+      <div class="oura-connect" id="fcbhConnect">
+        <input type="password" id="fcbhKeyInput" placeholder="Bible Brain API key" autocomplete="off" />
+        <div class="oura-row">
+          <button class="modal-secondary" id="fcbhSave" style="flex:1;">Connect</button>
+          <button class="modal-secondary" id="fcbhDisconnect" style="flex:1;" hidden>Disconnect</button>
+        </div>
+        <div class="oura-msg" id="fcbhMsg"></div>
+        <p class="ob-reading-hint" style="text-align:left;margin-top:6px;">Unlocks the full dramatized audio Bible — Old and New Testament — with word-for-word verse following. Tap <a href="https://www.faithcomesbyhearing.com/audio-bible-resources/bible-brain" target="_blank" rel="noopener" class="oura-link">Get a free Bible Brain key&nbsp;↗</a>, request a key, copy it, and paste it above. Without it, audio covers the New Testament only.</p>
+      </div>
+
       <label class="field-label">Your data</label>
       <div class="settings-data">
         <button class="modal-secondary" id="exportBtn">Back up my data</button>
@@ -4038,13 +4059,13 @@
     setTimeout(function () { layer.remove(); }, 820);
   }
   // ---------- reward moments (habit flame slam + Bible close) ----------
-  function prefersStill() { try { return window.matchMedia("(prefers-reduced-motion: reduce)").matches; } catch (e) { return false; } }
+  // These play for everyone: they're brief, user-initiated rewards, not ambient motion.
+  // (iOS "Reduce Motion" is ON for many users and was silently eating them entirely.)
   // a flame lifts off the check, hangs, then slams onto the streak pill — impact runs onImpact()
   function flameSlam(row, btn, onImpact) {
-    if (prefersStill()) { onImpact(); return; }
     var start = btn.getBoundingClientRect();
     var pill = row.querySelector(".hab-flame");
-    var nameEl = row.querySelector(".habit-name");
+    var nameEl = row.querySelector(".habit-cad") || row.querySelector(".habit-name");
     var end = pill ? pill.getBoundingClientRect() : (nameEl ? nameEl.getBoundingClientRect() : start);
     var f = document.createElement("div");
     f.className = "flame-fly"; f.innerHTML = FLAME_SVG;
@@ -4063,17 +4084,16 @@
       setTimeout(function () { f.remove(); onImpact(); }, 520);
     });
   }
-  // a small leather Bible pops above the check and closes — today's reading, done
+  // an open Bible pops above the check and closes its cover — today's reading, done
   function bookPop(btn) {
-    if (prefersStill()) return;
     var r = btn.getBoundingClientRect();
     var b = document.createElement("div");
     b.className = "book-pop";
-    b.innerHTML = '<div class="bk-pages"></div><div class="bk-half bk-right"></div><div class="bk-half bk-left"><div class="bk-cross"></div></div>';
-    b.style.left = Math.max(8, Math.min(r.left + r.width / 2 - 27, window.innerWidth - 62)) + "px";
-    b.style.top = Math.max(10, r.top - 50) + "px";
+    b.innerHTML = '<div class="bk-base"></div><div class="bk-flap"><div class="bk-face bk-page"></div><div class="bk-face bk-cover"><div class="bk-cross"></div></div></div>';
+    b.style.left = Math.max(8, Math.min(r.left + r.width / 2 - 29, window.innerWidth - 66)) + "px";
+    b.style.top = Math.max(10, r.top - 52) + "px";
     document.body.appendChild(b);
-    setTimeout(function () { b.remove(); }, 1000);
+    setTimeout(function () { b.remove(); }, 1250);
   }
 
   // ---------- sound (synthesized — no files) + haptics ----------
@@ -4101,6 +4121,22 @@
   function playTick() { // warm, short pluck — friendly, not eerie
     tone(659.25, 0.13, "triangle", 0.05);
     tone(1318.5, 0.05, "sine", 0.014); // faint sparkle on top
+  }
+  function playEmber() { // a low thump + a breath of crackle — the fire taking the win
+    var ac = audio(); if (!ac) return;
+    var t = ac.currentTime;
+    // the thump: a sine dropping fast, felt more than heard
+    var o = ac.createOscillator(), g = ac.createGain();
+    o.type = "sine"; o.frequency.setValueAtTime(130, t); o.frequency.exponentialRampToValueAtTime(46, t + 0.16);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.1, t + 0.012); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.22);
+    o.connect(g); g.connect(ac.destination); o.start(t); o.stop(t + 0.26);
+    // the crackle: a short burst of sparse noise through a bandpass, dying quickly
+    var len = Math.floor(ac.sampleRate * 0.22), buf = ac.createBuffer(1, len, ac.sampleRate), d = buf.getChannelData(0);
+    for (var i = 0; i < len; i++) { var env = 1 - i / len; d[i] = (Math.random() * 2 - 1) * env * env * (Math.random() < 0.12 ? 1 : 0.22); }
+    var src = ac.createBufferSource(); src.buffer = buf;
+    var bp = ac.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.value = 2500; bp.Q.value = 0.7;
+    var g2 = ac.createGain(); g2.gain.setValueAtTime(0.055, t);
+    src.connect(bp); bp.connect(g2); g2.connect(ac.destination); src.start(t + 0.015);
   }
   function playChime() { // deep, resonant — a low fifth that blooms (warm, restrained)
     tone(130.81, 1.3, "sine", 0.085);
@@ -4851,22 +4887,41 @@
     var m = (passage || "").match(/^(.*?)\s+\d+$/); if (!m) return false;
     return BOOKS.slice(39).some(function (b) { return b[0] === m[1].trim(); });
   }
-  function clearReadingHl() { var e = document.querySelector("#bibleBody .bv.reading"); if (e) e.classList.remove("reading"); }
+  // clear EVERY highlight — a single-element clear left orphans glowing forever when two ever existed
+  function clearReadingHl() { Array.prototype.forEach.call(document.querySelectorAll("#bibleBody .bv.reading"), function (e) { e.classList.remove("reading"); }); }
   var audioReady = { chapterId: null, url: null }, audioEls = [], audioCum = [], audioTotal = 0;
+  var audioStamps = { chapterId: null, list: [] };   // real per-verse timecodes (Bible Brain), when the fileset has them
+  var audioByVerse = {};                             // verse number -> live DOM element
   function stopAudio() { var el = $("bibleAudioEl"); if (el) { try { el.pause(); el.removeAttribute("src"); el.load(); } catch (e) {} } clearReadingHl(); var b = $("bibleAudio"); if (b) b.classList.remove("playing"); }
   function buildAudioVerseMap() {
     audioEls = Array.prototype.slice.call(document.querySelectorAll("#bibleBody .bv"));
-    audioCum = []; audioTotal = 0;
-    audioEls.forEach(function (el) { audioCum.push(audioTotal); audioTotal += (el.getAttribute("data-text") || el.textContent || "").length + 8; });
+    audioCum = []; audioTotal = 0; audioByVerse = {};
+    audioEls.forEach(function (el) {
+      audioCum.push(audioTotal); audioTotal += (el.getAttribute("data-text") || el.textContent || "").length + 8;
+      var m = (el.getAttribute("data-ref") || "").match(/:(\d+)$/); if (m) audioByVerse[+m[1]] = el;
+    });
   }
   function audioHighlight() {
     var el = $("bibleAudioEl");
-    if (!el.duration || !audioEls.length || !audioTotal) return;
-    // small forward lead so the highlight reads slightly ahead of the voice rather than lagging behind
-    var frac = el.currentTime / el.duration + 0.028;
-    var target = frac * audioTotal, idx = 0;
-    for (var i = 0; i < audioCum.length; i++) { if (audioCum[i] <= target) idx = i; else break; }
-    var vEl = audioEls[idx], cur = document.querySelector("#bibleBody .bv.reading");
+    if (!el.duration) return;
+    // self-heal: if the chapter re-rendered while playing, the map points at ghost
+    // nodes no longer on screen — the exact cause of the "stuck highlight" bug
+    if (audioEls.length && audioEls[0] && !audioEls[0].isConnected) buildAudioVerseMap();
+    var vEl = null;
+    if (audioStamps.chapterId === chapterIdOf(db.lastPassage || "") && audioStamps.list.length) {
+      // exact per-verse timecodes — true karaoke, immune to music and narrator pauses
+      var tNow = el.currentTime + 0.15, vNum = null;
+      for (var i = 0; i < audioStamps.list.length; i++) { if (audioStamps.list[i].t <= tNow) vNum = audioStamps.list[i].v; else break; }
+      if (vNum == null) { clearReadingHl(); return; }   // still in the chapter intro — nothing glows yet
+      vEl = audioByVerse[vNum] || null;
+    } else if (audioEls.length && audioTotal) {
+      // no timecodes for this recording → best-effort estimate by text length
+      var frac = el.currentTime / el.duration + 0.028;
+      var target = frac * audioTotal, idx = 0;
+      for (var j = 0; j < audioCum.length; j++) { if (audioCum[j] <= target) idx = j; else break; }
+      vEl = audioEls[idx];
+    }
+    var cur = document.querySelector("#bibleBody .bv.reading");
     if (!vEl || cur === vEl) return;
     clearReadingHl(); vEl.classList.add("reading");
     try { vEl.scrollIntoView({ block: "center", behavior: "smooth" }); } catch (e) {}
@@ -4900,10 +4955,25 @@
         var fid = sets[i++];
         fetch("https://4.dbt.io/api/bibles/filesets/" + fid + "/" + book + "/" + ch + "?v=4&key=" + encodeURIComponent(db.fcbhKey))
           .then(function (r) { return r.json(); })
-          .then(function (j) { var p = j && j.data && j.data[0] && j.data[0].path; if (p) cb(p); else tryNext(); })
+          .then(function (j) { var p = j && j.data && j.data[0] && j.data[0].path; if (p) cb(p, fid); else tryNext(); })
           .catch(tryNext);
       })();
     });
+  }
+  // per-verse timecodes for a Bible Brain recording — unlocks EXACT karaoke sync.
+  // Not every recording has them; when absent we quietly fall back to estimation.
+  function fcbhStampsFor(fid, passage) {
+    var m = (passage || "").match(/^(.*?)\s+(\d+)$/); if (!m || !db.fcbhKey) return;
+    var book = abbrevOf(m[1].trim()), ch = m[2], cid = chapterIdOf(passage);
+    if (!book || !cid) return;
+    fetch("https://4.dbt.io/api/bibles/filesets/" + fid + "/timestamps/" + book + "/" + ch + "?v=4&key=" + encodeURIComponent(db.fcbhKey))
+      .then(function (r) { return r.json(); })
+      .then(function (j) {
+        var list = ((j && j.data) || []).map(function (s) { return { v: parseInt(s.verse_start, 10), t: parseFloat(s.timestamp) }; })
+          .filter(function (s) { return s.v > 0 && isFinite(s.t); })
+          .sort(function (a, b) { return a.t - b.t; });
+        if (list.length && chapterIdOf(db.lastPassage || "") === cid) audioStamps = { chapterId: cid, list: list };
+      }).catch(function () {});
   }
   function apiBibleChapterAudio(passage, cb) {
     var aid = curVersionAudioId(), cid = chapterIdOf(passage);
@@ -4911,13 +4981,20 @@
     apiBible("/audio-bibles/" + aid + "/chapters/" + cid, function (res) { cb((res && res.data && res.data.resourceUrl) || null); });
   }
   function resolveAudioUrl(passage, cb) {
-    if (db.fcbhKey) { fcbhChapterAudio(passage, function (url) { if (url) cb(url); else apiBibleChapterAudio(passage, cb); }); return; }
+    if (db.fcbhKey) {
+      fcbhChapterAudio(passage, function (url, fid) {
+        if (url) { if (fid) fcbhStampsFor(fid, passage); cb(url); }
+        else apiBibleChapterAudio(passage, cb);
+      });
+      return;
+    }
     apiBibleChapterAudio(passage, cb);
   }
   function audioAvailable(passage) { return !!db.fcbhKey || (!!curVersionAudioId() && isNTPassage(passage)); }
   function updateAudioBtn(passage) {
     var btn = $("bibleAudio"); if (!btn) return;
     stopAudio(); audioReady = { chapterId: null, url: null };
+    audioStamps = { chapterId: null, list: [] };   // timecodes belong to one chapter+recording only
     btn.hidden = !audioAvailable(passage);
     if (audioAvailable(passage)) preloadAudio(passage);
   }
@@ -4944,7 +5021,17 @@
     var idx = audioEls.indexOf(vEl); if (idx < 0) return;
     var el = $("bibleAudioEl"), cid = chapterIdOf(db.lastPassage || "");
     function seekAndGo() {
-      var go = function () { if (el.duration && audioTotal) el.currentTime = Math.min(el.duration - 0.5, (audioCum[idx] / audioTotal) * el.duration); applyAudioRate(); };
+      var go = function () {
+        var vm = (audioEls[idx] && audioEls[idx].getAttribute("data-ref") || "").match(/:(\d+)$/);
+        if (vm && audioStamps.chapterId === cid && audioStamps.list.length) {
+          // exact seek: jump to this verse's real timecode
+          var vn = +vm[1], tt = null;
+          for (var i = 0; i < audioStamps.list.length; i++) { if (audioStamps.list[i].v <= vn) tt = audioStamps.list[i].t; else break; }
+          if (tt != null && el.duration) { el.currentTime = Math.min(el.duration - 0.5, tt); applyAudioRate(); return; }
+        }
+        if (el.duration && audioTotal) el.currentTime = Math.min(el.duration - 0.5, (audioCum[idx] / audioTotal) * el.duration);
+        applyAudioRate();
+      };
       var p = el.play();
       if (p && p.then) p.then(function () { if (el.duration) go(); else el.addEventListener("loadedmetadata", go, { once: true }); });
       else go();
@@ -5533,6 +5620,37 @@
   });
 
   // Settings: connect / disconnect Bible Brain (FCBH) — full OT+NT dramatized audio
+  function renderFcbhSettings() {
+    var connected = !!db.fcbhKey;
+    $("fcbhKeyInput").value = "";
+    $("fcbhKeyInput").placeholder = connected ? "Connected — paste a new key to replace" : "Bible Brain API key";
+    $("fcbhDisconnect").hidden = !connected;
+    $("fcbhSave").textContent = connected ? "Update" : "Connect";
+    var m = $("fcbhMsg"); m.className = "oura-msg"; m.textContent = connected ? "Connected — full audio Bible unlocked." : "";
+  }
+  $("fcbhSave").addEventListener("click", function () {
+    var k = $("fcbhKeyInput").value.trim();
+    var msg = $("fcbhMsg");
+    if (!k) { msg.className = "oura-msg err"; msg.textContent = "Paste your Bible Brain key first."; return; }
+    msg.className = "oura-msg"; msg.textContent = "Checking your key…";
+    fetch("https://4.dbt.io/api/bibles?v=4&key=" + encodeURIComponent(k) + "&language_code=eng&media=audio_drama&limit=1")
+      .then(function (r) { return r.json(); })
+      .then(function (j) {
+        if (j && j.data && j.data.length) {
+          db.fcbhKey = k; fcbhSets = null; save();
+          msg.className = "oura-msg"; msg.textContent = "Connected — the full dramatized Bible is ready.";
+          renderFcbhSettings();
+          if (typeof updateAudioBtn === "function" && db.lastPassage) updateAudioBtn(db.lastPassage);
+        } else { msg.className = "oura-msg err"; msg.textContent = "That key didn’t work — check it and try again."; }
+      })
+      .catch(function () { msg.className = "oura-msg err"; msg.textContent = "Couldn’t reach Bible Brain — check your connection."; });
+  });
+  $("fcbhDisconnect").addEventListener("click", function () {
+    db.fcbhKey = null; fcbhSets = null; save();
+    renderFcbhSettings();
+    if (typeof updateAudioBtn === "function" && db.lastPassage) updateAudioBtn(db.lastPassage);
+    var m = $("fcbhMsg"); m.className = "oura-msg"; m.textContent = "Disconnected — audio falls back to the New Testament.";
+  });
 
   // ----- Local Weather (Open-Meteo — free, browser-friendly, no key) -----
   var weatherCache = null;
@@ -7235,8 +7353,8 @@
       var unit = c === "weekly" ? "w" : "d";
       return '<div class="habit' + (!expected && !done ? " dim" : "") + '" data-id="' + h.id + '">' +
         '<span class="habit-icon"><svg viewBox="0 0 24 24">' + icon + '</svg></span>' +
-        '<span class="habit-main"><span class="habit-name">' + escapeHtml(h.name) + streakPill(s, unit) + '</span>' +
-          '<span class="habit-cad">' + cadenceLabel(c) + '</span></span>' +
+        '<span class="habit-main"><span class="habit-name">' + escapeHtml(h.name) + '</span>' +
+          '<span class="habit-cad">' + cadenceLabel(c) + streakPill(s, unit) + '</span></span>' +
         '<button class="hab-check' + (done ? ' checked' : '') + '" data-act="check" aria-label="Mark done">' +
           '<svg viewBox="0 0 24 24"><polyline points="5 12 10 17 19 7"/></svg></button>' +
         '<button class="habit-edit" data-act="edit" aria-label="Edit">' +
@@ -7279,9 +7397,9 @@
             setTimeout(function () { fresh.classList.remove("slammed"); }, 600);
           }
           if (allDone) {
-            playFanfare(); buzzPattern([0, 40, 70, 40, 70, 130]);
+            playEmber(); playFanfare(); buzzPattern([0, 40, 70, 40, 70, 130]);
             showToastMsg("Every anchor, complete. Well done.", 3200);
-          } else { playTick(); buzz(22); }
+          } else { playEmber(); buzzPattern([0, 15, 55]); }
         });
       }
     } else if (act === "edit") {
@@ -7780,7 +7898,7 @@
   });
   if (window.matchMedia) { try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { if (db.theme === "auto") applyTheme("auto"); }); } catch (e) {} }
 
-  var APP_VERSION = "v57";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v58";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
@@ -7951,6 +8069,7 @@
     renderNotifyToggle();
     if (typeof renderAccount === "function") renderAccount();
     if (typeof renderOuraSettings === "function") renderOuraSettings();
+    if (typeof renderFcbhSettings === "function") renderFcbhSettings();
     $("settingsMsg").textContent = "";
     $("lockCoach").hidden = true; $("lockToggle").classList.remove("coach-target"); // clear any coach mark
     $("settings").hidden = false;
