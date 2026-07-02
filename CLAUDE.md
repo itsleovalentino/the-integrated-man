@@ -31,11 +31,14 @@ customize mode (home widgets) → init + auto-renew.
 
 ## Run / deploy
 
-- **Run locally:** it's just `index.html` — open it directly or serve the folder with any static server.
+- **Run locally:** `.claude/launch.json` serves the folder on :8765 (preview tools), or open `index.html`.
 - **Deploy:** bump `APP_VERSION` in index.html **and** `CACHE` in sw.js (keep them in lockstep, e.g.
-  `v54`/`tim-v54`), commit, `git push origin main`. GitHub Pages auto-deploys from `main`.
-- Verify live: `curl -s https://itsleovalentino.github.io/the-integrated-man/ | grep APP_VERSION`
-- Pages deploys occasionally hang GitHub-side (~10 min then fail) — re-trigger with an empty commit.
+  `v55`/`tim-v55`), commit, `git push origin main`. GitHub Pages auto-deploys from `main`.
+- **A push is NOT a deploy.** Always verify:
+  `curl -s https://itsleovalentino.github.io/the-integrated-man/ | grep APP_VERSION` and `gh run list`.
+  Pages deploys can time out GitHub-side (check githubstatus.com for Pages incidents) — re-trigger
+  with an empty commit once GitHub recovers. On July 2 2026 a Pages incident kept a critical
+  data-loss fix (v54) undeployed for hours while users kept hitting the bug it fixed.
 - **Never ask for git tokens.** Credentials are handled (gh CLI / macOS keychain). If a push 403s,
   report it — Leo re-seeds the keychain himself.
 
@@ -73,6 +76,26 @@ There is no hard delete of user content anywhere, and it must stay that way:
 - Thoughts: `softDeleteThought(id)` moves the record to `db.noteTrash` with `_deletedAt`; an undo
   toast + `restoreThought(id)` bring it back. Deletes find records **by id**, first match only.
 - Day entries: snapshot into `db.trash[dateKey]` before clearing; restorable from the Trash view.
+
+## Recovery & save transparency
+
+- `mergeRecover()` + the Settings "Recover lost entries" button: strictly ADDITIVE merge from the
+  on-device snapshot AND the cloud — adds missing records by id/key, never overwrites. Any new
+  record type must be added to `mergeRecover` or it silently won't be recoverable.
+- The writer shows a live honest save status (`renderSaveStatus`, `#writerStatus`): "Saving…" →
+  "Saved ✓" only after `writeLocal()` actually returned ok (`lastWriteOk`) and sync confirmed.
+  Never show "saved" for a write that wasn't verified.
+- There is deliberately NO wholesale "restore snapshot" button (removed in v55) — replacing the
+  whole journal with an older copy is an overwrite; recovery is merge-only. File import in
+  Settings remains the only full-replace path, for true disaster recovery.
+
+## Incident history (why the rules exist)
+
+- **June 30 2026:** sign-in raced the cloud pull; an empty fresh state overwrote the cloud and
+  wiped an account → pull-first gating + `pulled` flag + `updatedAt` freshness guard.
+- **July 2 2026:** base64 voice memos blew the ~5MB localStorage quota; `save()` failed silently
+  for a whole morning of entries → audio vault in IndexedDB, loud failure banner, visible save
+  status, additive recovery. Compounded by a GitHub Pages incident that delayed the fix.
 
 ## Design system
 

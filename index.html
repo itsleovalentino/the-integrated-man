@@ -2089,7 +2089,12 @@
   .writer-close { flex: 0 0 auto; width: 42px; height: 42px; display: inline-flex; align-items: center; justify-content: center; background: none; border: none; color: var(--ink-soft); cursor: pointer; border-radius: 50%; transition: color 0.2s ease; }
   .writer-close:hover { color: var(--ink); }
   .writer-close svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-  .writer-date { flex: 1; text-align: center; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-faint); }
+  .writer-mid { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 0; }
+  .writer-date { text-align: center; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-faint); }
+  /* honest save status: every save is VISIBLE — device first, then cloud */
+  .writer-status { min-height: 13px; text-align: center; font-size: 10.5px; letter-spacing: 0.06em; color: var(--ink-faint); transition: color 0.3s ease; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+  .writer-status.ok { color: var(--accent); }
+  .writer-status.warn { color: #d0806a; }
   .writer-save { flex: 0 0 auto; background: none; border: none; color: var(--accent); font-family: inherit; font-size: 15.5px; font-weight: 600; letter-spacing: 0.01em; cursor: pointer; padding: 8px 12px; transition: opacity 0.2s ease; }
   .writer-save:active { opacity: 0.5; }
   .writer-scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding-bottom: 40px; }
@@ -3031,7 +3036,7 @@
       <button class="writer-close" id="writerClose" aria-label="Back to your notes">
         <svg viewBox="0 0 24 24"><polyline points="15 5 8 12 15 19"/></svg>
       </button>
-      <span class="writer-date" id="writerDate"></span>
+      <div class="writer-mid"><span class="writer-date" id="writerDate"></span><span class="writer-status" id="writerStatus" aria-live="polite"></span></div>
       <button class="writer-save" id="writerSave">Done</button>
     </div>
     <div class="writer-scroll">
@@ -3254,7 +3259,6 @@
         <button class="modal-secondary" id="importBtn">Restore from a file</button>
         <input type="file" id="importFile" accept="application/json" hidden />
       </div>
-      <button class="modal-secondary" id="restoreSnapBtn" style="width:100%;margin-top:8px;" hidden></button>
       <button class="modal-secondary" id="recoverBtn" style="width:100%;margin-top:8px;">Recover lost entries</button>
       <p class="ob-reading-hint" style="margin-top:8px;text-align:left;">Your journal lives safely in the cloud and on this device, with an automatic on-device snapshot as a backstop. <b>Recover lost entries</b> safely pulls any notes, checks, or reflections from every backup and merges them back in — it never overwrites what you have. Download a file now and then for extra peace of mind.</p>
       <div class="settings-msg" id="settingsMsg"></div>
@@ -3626,12 +3630,16 @@
     lastSnapAt = now;
     try { localStorage.setItem(SAFE_KEY, JSON.stringify({ t: now, data: clean || splitAudio(db).clean })); } catch (e) {}
   }
+  var lastWriteOk = true; // did the most recent durable device write land? (drives the visible save status)
   function save() {
     db.updatedAt = Date.now(); // freshness stamp so cloud sync never overwrites newer local data
     var w = writeLocal();                                   // durable, audio-free, quota-proof write
+    lastWriteOk = w.ok;
     snapshotSafe(w.clean);                                  // keep a local safety copy (text only)
     if (w.ok) storageOk(); else storageBlocked();           // never fail silently
     if (typeof cloudPushSoon === "function") cloudPushSoon(); // mirror to the cloud if signed in
+    if (typeof renderSaveStatus === "function") renderSaveStatus();
+    return w.ok;
   }
   var db = load();
   db.profile = db.profile || null;        // {name, season, plan, onboarded}
@@ -6170,6 +6178,7 @@
     $("writerRec").classList.remove("recording");
     var micLbl = $("writerRec").querySelector(".writer-mic-lbl"); if (micLbl) micLbl.textContent = "Voice memo";
     renderWriterMemo();
+    clearSaveStatus();   // fresh note → no save claim until something is actually written + stored
     try { $("writerDate").textContent = new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" }); } catch (e) { $("writerDate").textContent = ""; }
     $("writerView").hidden = false;
     buzz(18); if (typeof playPop === "function") playPop();
@@ -6249,8 +6258,33 @@
     }
     return true;
   }
+  // ---- honest save status in the writer bar: you SEE every save land, device first, then cloud ----
+  var savePending = false;
+  function clearSaveStatus() { var el = $("writerStatus"); if (el) { el.textContent = ""; el.className = "writer-status"; } }
+  function renderSaveStatus() {
+    var el = $("writerStatus"); if (!el || $("writerView").hidden) return;
+    var signedIn = (typeof sb !== "undefined" && sb && typeof session !== "undefined" && session);
+    var sync = (typeof syncState === "string") ? syncState : "synced";
+    var cls = "", txt = "";
+    if (savePending) { txt = "Saving…"; }
+    else if (!lastWriteOk) { cls = "warn"; txt = signedIn ? "Not saved on this device — sending to your account…" : "⚠ Couldn’t save on this device"; }
+    else if (!signedIn) { cls = "ok"; txt = "Saved on this device ✓"; }
+    else if (sync === "synced") { cls = "ok"; txt = "Saved ✓"; }
+    else if (sync === "saving") { txt = "Saved on device ✓ · syncing…"; }
+    else if (sync === "offline") { txt = "Saved on device ✓ · offline, will sync"; }
+    else { txt = "Saved on device ✓ · retrying sync…"; }
+    el.className = "writer-status" + (cls ? " " + cls : "");
+    el.textContent = txt;
+  }
   var writerAutosaveTimer = null;
-  function scheduleWriterAutosave() { clearTimeout(writerAutosaveTimer); writerAutosaveTimer = setTimeout(function () { if (commitWriter()) renderJournalPage(); }, 900); }
+  function scheduleWriterAutosave() {
+    clearTimeout(writerAutosaveTimer);
+    savePending = true; renderSaveStatus();
+    writerAutosaveTimer = setTimeout(function () {
+      savePending = false;
+      if (commitWriter()) renderJournalPage(); else clearSaveStatus();   // empty note → nothing to save, say nothing
+    }, 900);
+  }
   // "Done" → save the note and go back Home (a clear finish + the way out of the split)
   function saveWriter() {
     var had = commitWriter();
@@ -6260,7 +6294,7 @@
     document.body.classList.remove("j-notes-wide");
     fb("success");
     setView("home");
-    if (had) showToastMsg("Saved to your journal.", 2000);
+    if (had) showToastMsg(lastWriteOk ? "Saved to your journal." : "This device couldn’t store it — sent to your account instead.", lastWriteOk ? 2000 : 3200);
   }
   $("notesNew").addEventListener("click", function () { commitWriter(); openWriter(); renderJournalPage(); });
   $("writerClose").addEventListener("click", writerToNotes);
@@ -7663,7 +7697,7 @@
   });
   if (window.matchMedia) { try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { if (db.theme === "auto") applyTheme("auto"); }); } catch (e) {} }
 
-  var APP_VERSION = "v54";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v55";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
@@ -7833,7 +7867,6 @@
     renderLockToggle();
     renderNotifyToggle();
     if (typeof renderAccount === "function") renderAccount();
-    if (typeof renderSnapButton === "function") renderSnapButton();
     if (typeof renderOuraSettings === "function") renderOuraSettings();
     $("settingsMsg").textContent = "";
     $("lockCoach").hidden = true; $("lockToggle").classList.remove("coach-target"); // clear any coach mark
@@ -7925,7 +7958,7 @@
           if (t.voice && !cur.voice) { cur.voice = t.voice; added++; } }
       });
     }
-    ["morning", "journal"].forEach(function (m) { var s = src[m]; if (!s) return; db[m] = db[m] || {};
+    ["morning", "journal", "evening"].forEach(function (m) { var s = src[m]; if (!s) return; db[m] = db[m] || {};
       for (var k in s) { if (s[k] && !(db[m][k] && String(db[m][k]).trim())) { db[m][k] = s[k]; added++; } } });
     ["habitLog", "readLog", "pillarSkip"].forEach(function (m) { var s = src[m]; if (!s) return; db[m] = db[m] || {};
       for (var day in s) {
@@ -7940,6 +7973,19 @@
     if (src.voice) { db.voice = db.voice || { journal: {}, evening: {} };
       for (var sec in src.voice) { db.voice[sec] = db.voice[sec] || {};
         for (var dk in src.voice[sec]) { if (src.voice[sec][dk] && !db.voice[sec][dk]) db.voice[sec][dk] = src.voice[sec][dk]; } } }
+    if (Array.isArray(src.anchors)) { db.anchors = db.anchors || [];
+      var aHave = {}; db.anchors.forEach(function (a) { if (a && a.ref) aHave[a.ref] = 1; });
+      src.anchors.forEach(function (a) { if (a && a.ref && !aHave[a.ref]) { db.anchors.push(a); aHave[a.ref] = 1; added++; } }); }
+    ["scriptureNotes", "pinned"].forEach(function (m) { var s = src[m]; if (!s) return; db[m] = db[m] || {};
+      for (var k in s) { if (s[k] && !db[m][k]) { db[m][k] = s[k]; added++; } } });
+    if (src.scriptureNoteLog) { db.scriptureNoteLog = db.scriptureNoteLog || {};
+      for (var snDay in src.scriptureNoteLog) { db.scriptureNoteLog[snDay] = db.scriptureNoteLog[snDay] || {};
+        var snRefs = src.scriptureNoteLog[snDay] || {};
+        for (var snRef in snRefs) { if (snRefs[snRef] && !db.scriptureNoteLog[snDay][snRef]) { db.scriptureNoteLog[snDay][snRef] = snRefs[snRef]; added++; } } } }
+    // even soft-deleted notes come along (into the trash, not the journal) — recoverable everywhere
+    if (Array.isArray(src.noteTrash)) { db.noteTrash = db.noteTrash || []; db.thoughts = db.thoughts || [];
+      var tHave = {}; db.thoughts.concat(db.noteTrash).forEach(function (t) { if (t && t.id) tHave[t.id] = 1; });
+      src.noteTrash.forEach(function (t) { if (t && t.id && !tHave[t.id]) { db.noteTrash.push(t); tHave[t.id] = 1; } }); }
     return added;
   }
   function recoverEntries() {
@@ -7965,25 +8011,11 @@
   $("recoverBtn").addEventListener("click", function () {
     confirmDialog("Search your on-device snapshot and cloud backup for any entries missing here, and merge them back in? This only adds — it never removes or overwrites what you have.", "Recover", recoverEntries);
   });
-  // ----- restore the on-device safety snapshot -----
+  // The on-device safety snapshot is a silent backstop: it is only ever read by
+  // "Recover lost entries" (additive merge). The old wholesale "Restore snapshot"
+  // button was removed — replacing the whole journal with an older copy is exactly
+  // the kind of overwrite this app must never offer.
   function readSnapshot() { try { return JSON.parse(localStorage.getItem(SAFE_KEY)); } catch (e) { return null; } }
-  function renderSnapButton() {
-    var snap = readSnapshot(), btn = $("restoreSnapBtn");
-    if (snap && snap.data) {
-      var d = new Date(snap.t || Date.now());
-      btn.textContent = "Restore on-device snapshot (" + months[d.getMonth()] + " " + d.getDate() + ", " +
-        String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0") + ")";
-      btn.hidden = false;
-    } else { btn.hidden = true; }
-  }
-  $("restoreSnapBtn").addEventListener("click", function () {
-    var snap = readSnapshot(); if (!snap || !snap.data) return;
-    confirmDialog("Restore your last on-device snapshot? This replaces what's here now.", "Restore", function () {
-      persistClean(snap.data);
-      $("settingsMsg").textContent = "Restored. Reloading…";
-      setTimeout(function () { location.reload(); }, 500);
-    });
-  });
   $("importBtn").addEventListener("click", function () { $("importFile").click(); });
   $("importFile").addEventListener("change", function () {
     var f = this.files && this.files[0];
@@ -8108,7 +8140,7 @@
   var sb = (window.supabase && SUPA_URL) ? window.supabase.createClient(SUPA_URL, SUPA_KEY) : null;
   var session = null, authMode = "signup", pushTimer = null;
   var syncState = "synced", needsPush = false, pushRetry = null, lastSyncedAt = 0; // reliable sync: keep trying until the cloud confirms
-  function setSync(s) { syncState = s; if (typeof renderAccount === "function") renderAccount(); }
+  function setSync(s) { syncState = s; if (typeof renderAccount === "function") renderAccount(); if (typeof renderSaveStatus === "function") renderSaveStatus(); }
   // heavy / device-local data we don't sync into the JSON blob (kept local).
   // Audio is stripped to tiny refs by splitAudio; bibleCache is a big re-fetchable cache.
   var SYNC_SKIP = { bibleCache: 1 };
