@@ -319,6 +319,10 @@
   .steps-wrap.hit .steps-fill { background: linear-gradient(90deg, #8aa85a, #aac06a 80%); box-shadow: 0 0 18px rgba(138,168,90,0.55); }
   .steps-sub { font-size: 12.5px; color: var(--ink-faint); margin-top: 10px; }
   .steps-sub.steps-hit { color: #8aa85a; }
+  .steps-synced { display: inline-flex; align-items: center; gap: 6px; margin-top: 12px; padding: 0; background: none; border: none; cursor: pointer; font-family: inherit; font-size: 11px; color: var(--ink-faint); opacity: 0.85; transition: opacity 0.2s ease; }
+  .steps-synced:hover { opacity: 1; color: var(--ink-soft); }
+  .steps-synced:active { opacity: 0.5; }
+  .steps-synced svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
   .steps-goals { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
   .steps-goal-chip { background: var(--field); border: 1px solid var(--field-edge); color: var(--ink-soft); border-radius: 999px; padding: 8px 14px; font-family: inherit; font-size: 13px; cursor: pointer; transition: color 0.2s ease, border-color 0.2s ease; }
   .steps-goal-chip.sel { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
@@ -4996,7 +5000,15 @@
   });
 
   // ----- Oura: Sleep & Readiness (personal token via the Supabase edge proxy) -----
-  var ouraCache = null;
+  var ouraCache = null, ouraFetchedAt = 0, ouraRefreshing = false;
+  function relTimeShort(ms) {
+    if (!ms) return "";
+    var s = Math.max(0, Math.round((Date.now() - ms) / 1000));
+    if (s < 45) return "just now";
+    var m = Math.round(s / 60); if (m < 60) return m + "m ago";
+    var h = Math.round(m / 60); if (h < 24) return h + "h ago";
+    return Math.round(h / 24) + "d ago";
+  }
   function ouraFetch(cb) {
     var tok = db.oura && db.oura.token;
     // require a signed-in session — the proxy verifies the user's JWT, so only real app users can call it
@@ -5072,7 +5084,11 @@
       '<button class="steps-goal-btn" data-act="goalToggle">Goal ' + fmtNum(goal) + ' <span class="sgb-edit">✎</span></button></div>' +
       '<div class="steps-count-row"><span class="steps-count">' + fmtNum(steps) + '</span><span class="steps-goal-lbl">/ ' + fmtNum(goal) + '</span></div>' +
       '<div class="steps-bar"><div class="steps-fill" style="width:' + pct + '%"></div></div>' +
-      '<div class="steps-sub' + (hit ? " steps-hit" : "") + '">' + sub + '</div>' + editor + '</div>';
+      '<div class="steps-sub' + (hit ? " steps-hit" : "") + '">' + sub + '</div>' + editor +
+      '<button class="steps-synced" data-act="refreshOura">' +
+        '<svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>' +
+        '<span>' + (ouraRefreshing ? "Refreshing…" : "Updated from Oura " + relTimeShort(ouraFetchedAt)) + '</span></button>' +
+      '</div>';
   }
   function paintHealth(d) {
     var p = $("healthPanel"); if (!p) return;
@@ -5098,6 +5114,15 @@
     var act = el.getAttribute("data-act");
     if (act === "goalToggle") { stepsGoalOpen = !stepsGoalOpen; paintHealth(ouraCache); fb("select"); }
     else if (act === "setGoal") { db.stepGoal = +el.getAttribute("data-g"); save(); stepsGoalOpen = false; paintHealth(ouraCache); fb("select"); }
+    else if (act === "refreshOura") {
+      if (ouraRefreshing) return;
+      ouraRefreshing = true; paintHealth(ouraCache); fb("select");
+      ouraFetch(function (res) {
+        ouraRefreshing = false;
+        if (res && !res.error) { ouraCache = res; ouraFetchedAt = Date.now(); }
+        paintHealth(ouraCache);
+      });
+    }
   });
   function renderHealth() {
     var p = $("healthPanel"); if (!p) return;
@@ -5109,7 +5134,7 @@
     }
     if (ouraCache) paintHealth(ouraCache); else p.innerHTML = '<div class="health-connect">Loading your Oura data…</div>';
     ouraFetch(function (res) {
-      if (res && !res.error) { ouraCache = res; paintHealth(res); }
+      if (res && !res.error) { ouraCache = res; ouraFetchedAt = Date.now(); paintHealth(res); }
       else if (!ouraCache) { $("healthPanel").innerHTML = '<div class="health-connect">Couldn’t reach Oura' + (res && res.error && res.error !== "not connected" ? " — " + escapeHtml(res.error) : "") + '</div>'; }
     });
   }
@@ -7129,7 +7154,7 @@
     db.textSize = b.getAttribute("data-ts"); save(); applyTextSize(db.textSize); buzz(8);
   });
 
-  var APP_VERSION = "v37";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v38";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
