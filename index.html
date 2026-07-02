@@ -4099,11 +4099,18 @@
     var rows = Array.prototype.slice.call(listEl.querySelectorAll(".habit"));
     if (!rows.length) { if (onMerge) onMerge(); return; }
     var card = listEl.closest(".card") || listEl;
-    var cr = card.getBoundingClientRect();
-    var cx = cr.left + cr.width / 2, cy = cr.top + cr.height / 2;
+    // converge at the heart of the habit ROWS themselves — the card's center sits low
+    // (it includes the add-a-habit input), which sent the fire down onto the box
+    var pts = rows.map(function (row) {
+      var r = (row.querySelector(".hab-flame") || row.querySelector(".hab-check") || row).getBoundingClientRect();
+      return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+    });
+    var cx = 0, cy = 0;
+    pts.forEach(function (p) { cx += p.x; cy += p.y; });
+    cx = cx / pts.length; cy = cy / pts.length;
     var LAND = 90 + 30 + (rows.length - 1) * 70 + 280;   // anticipation + last launch + shortest flight
     rows.forEach(function (row, i) {
-      var from = (row.querySelector(".hab-flame") || row.querySelector(".hab-check") || row).getBoundingClientRect();
+      var from = { left: pts[i].x - 1, top: pts[i].y - 1, width: 2, height: 2 };
       var f = document.createElement("div");
       f.className = "flame-fly"; f.innerHTML = FLAME_SVG;
       var x0 = from.left + from.width / 2 - 11, y0 = from.top + from.height / 2 - 11;
@@ -4197,48 +4204,44 @@
     g.gain.setTargetAtTime(0.0001, at + 0.006, 0.02 + Math.random() * 0.02);
     o.connect(g); g.connect(panTo(ac, pan)); o.start(at); o.stop(at + 0.15);
   }
-  // Ember sound, designed with (and reviewed by) a sound-design pass:
-  // ember character lives at 400-1200Hz and BLOOMS (no fast broadband onset = no slap);
-  // pitch rises (ignition), 7Hz flutter (fire's flicker), sparse falling-chirp sparks in
-  // stereo, and a slow gold shimmer at ~1.5kHz — the part that tingles.
+  // Ember sound v3, per Leo: "simple and calm ember burn. Not loud. A flame or quiet pop."
+  // NOTHING tonal with pitch movement (a falling 2-4kHz tone IS a bird chirp — v2's mistake).
+  // Just: a soft breath of warm air, a low flickering glow, and one or two quiet noise pops.
   function playEmber() {
     var ac = audio(); if (!ac) return;
-    var t = ac.currentTime;
-    // breath of air over coals: two decorrelated noise beds, bandpassed, blooming in over 140ms
+    var t = ac.currentTime + 0.02;   // small offset — never ride the audio-engine wake-up click (the occasional "slap")
+    // breath of air over coals: quiet bandpassed noise blooming in, cooling out
     [-0.2, 0.2].forEach(function (pan) {
-      var len = Math.floor(ac.sampleRate * 0.7), buf = ac.createBuffer(1, len, ac.sampleRate), d = buf.getChannelData(0);
+      var len = Math.floor(ac.sampleRate * 0.65), buf = ac.createBuffer(1, len, ac.sampleRate), d = buf.getChannelData(0);
       for (var i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
       var src = ac.createBufferSource(); src.buffer = buf;
       var bp = ac.createBiquadFilter(); bp.type = "bandpass"; bp.Q.value = 0.8;
-      bp.frequency.setValueAtTime(850, t); bp.frequency.exponentialRampToValueAtTime(380, t + 0.55);
+      bp.frequency.setValueAtTime(700, t); bp.frequency.exponentialRampToValueAtTime(350, t + 0.5);
       var g = ac.createGain();
       g.gain.setValueAtTime(0.0001, t);
-      g.gain.setTargetAtTime(0.025, t, 0.045);            // ~140ms bloom, no transient
-      g.gain.setTargetAtTime(0.0001, t + 0.22, 0.18);     // cooling, not cut
-      src.connect(bp); bp.connect(g); g.connect(panTo(ac, pan)); src.start(t); src.stop(t + 0.75);
+      g.gain.setTargetAtTime(0.017, t, 0.06);             // gentle bloom
+      g.gain.setTargetAtTime(0.0001, t + 0.2, 0.18);      // cooling, not cut
+      src.connect(bp); bp.connect(g); g.connect(panTo(ac, pan)); src.start(t); src.stop(t + 0.7);
     });
-    // ignition: a rising warmth with a 7Hz flicker (phone speakers actually reproduce this range)
+    // low glow: a STATIC warmth with fire's slow flicker — no pitch movement, nothing to chirp
     var o = ac.createOscillator(), og = ac.createGain(), fl = ac.createOscillator(), fg = ac.createGain();
-    o.type = "sine"; o.frequency.setValueAtTime(165, t); o.frequency.exponentialRampToValueAtTime(220, t + 0.35);
-    og.gain.setValueAtTime(0.0001, t); og.gain.setTargetAtTime(0.038, t, 0.05); og.gain.setTargetAtTime(0.0001, t + 0.24, 0.12);
-    fl.type = "sine"; fl.frequency.value = 7; fg.gain.value = 0.012;   // ±30% flutter on the warmth
+    o.type = "sine"; o.frequency.value = 170;
+    og.gain.setValueAtTime(0.0001, t); og.gain.setTargetAtTime(0.022, t, 0.06); og.gain.setTargetAtTime(0.0001, t + 0.2, 0.14);
+    fl.type = "sine"; fl.frequency.value = 6.5; fg.gain.value = 0.007;
     fl.connect(fg); fg.connect(og.gain);
     o.connect(og); og.connect(ac.destination); o.start(t); o.stop(t + 0.6); fl.start(t); fl.stop(t + 0.6);
-    // sparks: 4-5 falling chirps, clustered at the flare then thinning, spread in stereo
-    var pops = 4 + Math.floor(Math.random() * 2);
+    // one or two quiet pops: tiny NOISE snaps (a knot in the wood), not tones
+    var pops = 1 + Math.floor(Math.random() * 2);
     for (var p = 0; p < pops; p++) {
-      var frac = Math.pow(Math.random(), 2);   // log-weighted toward the start
-      sparkPop(ac, t + 0.05 + frac * 0.32, 1900 + Math.random() * 2600, 0.012 + Math.random() * 0.016, (Math.random() * 2 - 1) * 0.35);
+      var pt = t + 0.06 + Math.random() * 0.22;
+      var plen = Math.floor(ac.sampleRate * 0.014), pbuf = ac.createBuffer(1, plen, ac.sampleRate), pd = pbuf.getChannelData(0);
+      for (var j = 0; j < plen; j++) { var env = 1 - j / plen; pd[j] = (Math.random() * 2 - 1) * env * env; }
+      var ps = ac.createBufferSource(); ps.buffer = pbuf;
+      var hp = ac.createBiquadFilter(); hp.type = "highpass"; hp.frequency.value = 1500; hp.Q.value = 0.7;
+      var pg = ac.createGain(); pg.gain.value = 0.02 + Math.random() * 0.012;
+      ps.connect(hp); hp.connect(pg); pg.connect(panTo(ac, (Math.random() * 2 - 1) * 0.3));
+      ps.start(pt);
     }
-    // the tingle: two gold partials a hair apart, beating slowly as they bloom and fade
-    [1568, 1571.6].forEach(function (f) {
-      var so = ac.createOscillator(), sg = ac.createGain();
-      so.type = "sine"; so.frequency.value = f;
-      sg.gain.setValueAtTime(0.0001, t + 0.08);
-      sg.gain.setTargetAtTime(0.006, t + 0.08, 0.09);
-      sg.gain.setTargetAtTime(0.0001, t + 0.35, 0.25);
-      so.connect(sg); sg.connect(ac.destination); so.start(t + 0.08); so.stop(t + 1.2);
-    });
   }
   function playBlaze() { // every anchor done: heat rising, a hard flare that settles, and a chapel fifth
     var ac = audio(); if (!ac) return;
@@ -8006,7 +8009,7 @@
   });
   if (window.matchMedia) { try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { if (db.theme === "auto") applyTheme("auto"); }); } catch (e) {} }
 
-  var APP_VERSION = "v59";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v60";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
