@@ -327,6 +327,19 @@
   .steps-synced:hover { opacity: 1; color: var(--ink-soft); }
   .steps-synced:active { opacity: 0.5; }
   .steps-synced svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  /* health widget metric editor (only in customize mode) */
+  .customizing #healthPanel .health-editor, .customizing #healthPanel .health-editor * { pointer-events: auto; }
+  .health-editor { border: 1px dashed var(--accent); border-radius: 14px; padding: 12px 14px; margin-bottom: 16px; background: var(--accent-soft); }
+  .he-lbl { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 10px; }
+  .he-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .he-chip { background: var(--field); border: 1px solid var(--field-edge); color: var(--ink-soft); border-radius: 999px; padding: 7px 14px; font-family: inherit; font-size: 13px; cursor: pointer; transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease; }
+  .he-chip.on { background: var(--accent); border-color: var(--accent); color: var(--bg); font-weight: 600; }
+  .hm-cal .steps-fill { background: linear-gradient(90deg, #d59f5a, #e6c07a) !important; box-shadow: 0 0 14px rgba(213,159,90,0.45) !important; }
+  .hm-stress { margin-top: 22px; padding-top: 20px; border-top: 1px solid var(--panel-edge); }
+  .hm-stress-l { font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-faint); }
+  .hm-stress-v { font-size: 26px; color: var(--ink); font-weight: 300; margin-top: 6px; }
+  .hm-stress-v span { font-size: 14px; color: var(--ink-faint); }
+  .hm-stress-s { font-size: 12.5px; color: var(--ink-soft); margin-top: 3px; }
   .steps-goals { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
   .steps-goal-chip { background: var(--field); border: 1px solid var(--field-edge); color: var(--ink-soft); border-radius: 999px; padding: 8px 14px; font-family: inherit; font-size: 13px; cursor: pointer; transition: color 0.2s ease, border-color 0.2s ease; }
   .steps-goal-chip.sel { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
@@ -3225,7 +3238,7 @@
     <div class="fellow-chrome"><div class="fellow-title serif">Journal</div></div>
     <div class="journal-page">
       <div class="seg jt-seg" id="journalSeg">
-        <button class="seg-btn active" data-jt="days">Days</button>
+        <button class="seg-btn active" data-jt="days">Reflections</button>
         <button class="seg-btn" data-jt="notes">Notes</button>
       </div>
       <div id="jtDays">
@@ -3470,6 +3483,8 @@
   db.gratitude = db.gratitude || {};      // dateKey -> [g1, g2, g3]
   db.oura = db.oura || null;              // { token } — personal Oura access token (private to this account)
   if (typeof db.stepGoal !== "number") db.stepGoal = 8000;   // daily steps goal (Oura activity)
+  db.healthMetrics = db.healthMetrics || {};                 // which metrics the Sleep & Readiness widget shows
+  (function () { var dm = { readiness: true, sleep: true, activity: true, steps: true, calories: false, stress: false }; for (var k in dm) if (typeof db.healthMetrics[k] !== "boolean") db.healthMetrics[k] = dm[k]; })();
   db.fcbhKey = db.fcbhKey || null;        // Bible Brain (FCBH) API key → full OT+NT dramatized audio
   db.weather = db.weather || null;        // { name, lat, lon } — chosen city for the weather widget
   db.prayers = db.prayers || [];          // [{id, scope:'others'|'mine', who, text, created, answered}]
@@ -5155,22 +5170,59 @@
         '<span>' + (ouraRefreshing ? "Refreshing…" : "Updated from Oura " + relTimeShort(ouraFetchedAt)) + '</span></button>' +
       '</div>';
   }
-  // ---- customizable 3rd metric (all auto from Oura's daily activity) ----
+  // ---- calories + stress (extra metrics you can switch on in the widget editor) ----
+  function caloriesBar(activity) {
+    if (!activity || !activity.length) return "";
+    var rec = activity.filter(function (a) { return a.day === todayKey; })[0] || latestDay(activity);
+    var cal = rec && isNum(rec.active_calories) ? Math.round(rec.active_calories) : null;
+    if (cal == null) return "";
+    var goal = (rec && isNum(rec.target_calories) && rec.target_calories > 0) ? Math.round(rec.target_calories) : 500;
+    var pct = Math.max(0, Math.min(100, Math.round(cal / goal * 100))), hit = cal >= goal;
+    return '<div class="steps-wrap hm-cal' + (hit ? " hit" : "") + '">' +
+      '<div class="steps-head"><div class="steps-title">🔥 Active calories</div></div>' +
+      '<div class="steps-count-row"><span class="steps-count">' + fmtNum(cal) + '</span><span class="steps-goal-lbl">/ ' + fmtNum(goal) + ' kcal</span></div>' +
+      '<div class="steps-bar"><div class="steps-fill" style="width:' + pct + '%"></div></div>' +
+      '<div class="steps-sub' + (hit ? " steps-hit" : "") + '">' + (hit ? "Goal reached — strong." : fmtNum(goal - cal) + " kcal to go · " + pct + "% there") + '</div></div>';
+  }
+  function stressStat(stress) {
+    if (!stress || !stress.length) return "";
+    var rec = stress.filter(function (a) { return a.day === todayKey; })[0] || latestDay(stress);
+    var secs = rec && isNum(rec.stress_high) ? rec.stress_high : null;
+    if (secs == null) return "";
+    var h = Math.floor(secs / 3600), mn = Math.round((secs % 3600) / 60);
+    var txt = h ? (h + "h" + (mn ? " " + mn + "m" : "")) : (mn + "m");
+    var sum = rec.day_summary ? (rec.day_summary.charAt(0).toUpperCase() + rec.day_summary.slice(1)) : "";
+    return '<div class="hm-stress"><div class="hm-stress-l">〰&nbsp; Stress today</div>' +
+      '<div class="hm-stress-v">' + txt + ' <span>high</span></div>' + (sum ? '<div class="hm-stress-s">' + escapeHtml(sum) + ' day</div>' : '') + '</div>';
+  }
+  function healthEditor() {
+    var m = db.healthMetrics, opts = [["readiness", "Readiness"], ["sleep", "Sleep"], ["activity", "Activity"], ["steps", "Steps"], ["calories", "Calories"], ["stress", "Stress"]];
+    return '<div class="health-editor"><div class="he-lbl">Show in this widget</div><div class="he-chips">' +
+      opts.map(function (o) { return '<button class="he-chip' + (m[o[0]] ? " on" : "") + '" data-act="metricToggle" data-m="' + o[0] + '">' + o[1] + '</button>'; }).join("") +
+      '</div></div>';
+  }
   function paintHealth(d) {
     var p = $("healthPanel"); if (!p) return;
-    var rd = latestDay(d && d.readiness), sl = latestDay(d && d.sleep);
-    if (!rd && !sl) { p.innerHTML = '<div class="health-connect">No Oura data for the last few days yet.</div>'; return; }
+    var m = db.healthMetrics;
+    var rd = latestDay(d && d.readiness), sl = latestDay(d && d.sleep), ac = latestDay(d && d.activity);
+    if (!rd && !sl && !ac) { p.innerHTML = (customizing ? healthEditor() : "") + '<div class="health-connect">No Oura data for the last few days yet.</div>'; return; }
     var rScore = rd && isNum(rd.score) ? rd.score : null;
     var sScore = sl && isNum(sl.score) ? sl.score : null;
-    var ac = latestDay(d && d.activity);
     var aScore = ac && isNum(ac.score) ? ac.score : null;
-    p.innerHTML = '<div class="health-rings">' +
-      healthRing(rScore, HR_LEAF, "Readiness") + healthRing(sScore, HR_MOON, "Sleep") + healthRing(aScore, HR_ACTIVITY, "Activity", "#9ed36f") + '</div>' +
-      '<div class="health-note">' + escapeHtml(healthNote(rScore, sScore)) + '</div>' +
-      stepsBar(d && d.activity);
+    var rings = "";
+    if (m.readiness) rings += healthRing(rScore, HR_LEAF, "Readiness");
+    if (m.sleep) rings += healthRing(sScore, HR_MOON, "Sleep");
+    if (m.activity) rings += healthRing(aScore, HR_ACTIVITY, "Activity", "#9ed36f");
+    var html = (customizing ? healthEditor() : "");
+    if (rings) html += '<div class="health-rings">' + rings + '</div>';
+    if (m.readiness || m.sleep) html += '<div class="health-note">' + escapeHtml(healthNote(rScore, sScore)) + '</div>';
+    if (m.steps) html += stepsBar(d && d.activity);
+    if (m.calories) html += caloriesBar(d && d.activity);
+    if (m.stress) html += stressStat(d && d.stress);
+    p.innerHTML = html || '<div class="health-connect">No metrics selected — open Customize to add some.</div>';
     // celebrate the first time today's steps cross the goal
     var actToday = (d && d.activity || []).filter(function (a) { return a.day === todayKey; })[0];
-    if (actToday && isNum(actToday.steps) && actToday.steps >= (db.stepGoal || 8000) && db._stepHitDay !== todayKey) {
+    if (m.steps && actToday && isNum(actToday.steps) && actToday.steps >= (db.stepGoal || 8000) && db._stepHitDay !== todayKey) {
       db._stepHitDay = todayKey; save();
       setTimeout(function () {
         showCongrats("Goal reached", fmtNum(actToday.steps) + " steps today — well walked.", "👟");
@@ -5180,6 +5232,7 @@
   $("healthPanel").addEventListener("click", function (e) {
     var el = e.target.closest("[data-act]"); if (!el) return;
     var act = el.getAttribute("data-act");
+    if (act === "metricToggle") { var mk = el.getAttribute("data-m"); db.healthMetrics[mk] = !db.healthMetrics[mk]; save(); paintHealth(ouraCache); fb("select"); return; }
     if (act === "goalToggle") { stepsGoalOpen = !stepsGoalOpen; paintHealth(ouraCache); fb("select"); }
     else if (act === "setGoal") { db.stepGoal = +el.getAttribute("data-g"); save(); stepsGoalOpen = false; paintHealth(ouraCache); fb("select"); }
     else if (act === "refreshOura") {
@@ -5468,13 +5521,15 @@
       var ids = prayers.map(function (p) { return p.id; });
       if (!ids.length) { wallState.prays = {}; wallState.myPrays = {}; wallState.enc = {}; renderWall(); refreshWallBadge(); renderWallPanel(); if (cb) cb(); return; }
       Promise.all([
-        sb.from("prayer_prays").select("prayer_id, user_id").in("prayer_id", ids),
+        sb.from("prayer_prays").select("*").in("prayer_id", ids),
         sb.from("prayer_encouragements").select("id, prayer_id, from_id, from_name, body, created_at").in("prayer_id", ids).order("created_at", { ascending: true })
       ]).then(function (r) {
         var prays = {}, myP = {};
         ((r[0] && r[0].data) || []).forEach(function (x) {
           var pf = profById[x.user_id] || {};
-          (prays[x.prayer_id] = prays[x.prayer_id] || []).push({ name: pf.display_name || "A brother", url: pf.avatar_url });
+          // prefer the name/photo captured on the reaction itself (works even if profiles aren't readable), then profile
+          var nm = (x.user_id === myId() && hasRealName()) ? myName() : bestName([x.user_name, pf.display_name]);
+          (prays[x.prayer_id] = prays[x.prayer_id] || []).push({ name: nm, url: x.user_avatar || pf.avatar_url });
           if (x.user_id === myId()) myP[x.prayer_id] = true;
         });
         var enc = {};
@@ -5582,7 +5637,7 @@
     upsertProfile().then(function () {
       return prayed
         ? sb.from("prayer_prays").delete().eq("prayer_id", id).eq("user_id", myId())
-        : sb.from("prayer_prays").insert({ prayer_id: id, user_id: myId() });
+        : sb.from("prayer_prays").insert({ prayer_id: id, user_id: myId(), user_name: myName(), user_avatar: (db.profile && db.profile.avatarUrl) || null });
     }).then(function (res) {
       if (res && res.error) { wallErr(res.error); return; }
       if (!prayed) { fb("select"); } loadWall();
@@ -5805,7 +5860,7 @@
     var el = $("journalDays"); if (!el) return;
     var keys = journalKeys();
     if (!keys.length) {
-      el.innerHTML = '<div class="jp-empty">No days saved yet.<br>Your reflections, gratitude, and pillar check-ins gather here.</div>';
+      el.innerHTML = '<div class="jp-empty">No reflections yet.<br>Your daily prompt, gratitude, and pillar check-ins gather here.</div>';
       return;
     }
     var pinned = keys.filter(function (k) { return db.pinned[k]; });
@@ -7394,7 +7449,7 @@
   });
   if (window.matchMedia) { try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { if (db.theme === "auto") applyTheme("auto"); }); } catch (e) {} }
 
-  var APP_VERSION = "v48";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v49";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
@@ -8021,6 +8076,7 @@
     $("customizeBar").hidden = false;
     widgetEls().forEach(function (s) { if (!s.classList.contains("w-disabled")) widgetControlsFor(s); }); // only widgets on the home
     refreshMoveButtons();
+    if (typeof paintHealth === "function" && ouraCache) paintHealth(ouraCache);   // reveal the metric editor
     buzz(10);
   }
   function exitCustomize() {
@@ -8029,6 +8085,7 @@
     Array.prototype.forEach.call(document.querySelectorAll(".w-controls"), function (c) { c.remove(); });
     document.querySelector(".wrap").classList.remove("customizing");
     $("customizeBar").hidden = true;
+    if (typeof paintHealth === "function" && ouraCache) paintHealth(ouraCache);   // hide the metric editor
     captureLayout();
     if (typeof cloudPush === "function") cloudPush();   // flush the new layout to the cloud right away
     fb("success");
