@@ -291,16 +291,16 @@
   .oura-msg.err { color: #d08a72; }
   .oura-link { color: var(--accent); font-weight: 500; text-decoration: underline; text-underline-offset: 2px; }
   .oura-link:hover { opacity: 0.85; }
-  .health-rings { display: flex; gap: 16px; justify-content: center; }
-  .health-ring { flex: 1; max-width: 130px; text-align: center; }
-  .hr-wrap { position: relative; width: 100px; height: 100px; margin: 0 auto; }
-  .hr-svg { width: 100px; height: 100px; transform: rotate(-90deg); }
+  .health-rings { display: flex; gap: 10px; justify-content: center; }
+  .health-ring { flex: 1 1 0; min-width: 0; max-width: 116px; text-align: center; }
+  .hr-wrap { position: relative; width: 100%; max-width: 96px; aspect-ratio: 1 / 1; margin: 0 auto; }
+  .hr-svg { width: 100%; height: 100%; transform: rotate(-90deg); }
   .hr-track { fill: none; stroke: var(--field-edge); stroke-width: 7; }
   .hr-fill { fill: none; stroke-width: 7; stroke-linecap: round; transition: stroke-dashoffset 0.9s cubic-bezier(.2,.7,.2,1); }
   .hr-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; }
   .hr-icon { width: 18px; height: 18px; fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
-  .hr-num { font-size: 24px; color: var(--ink); line-height: 1; font-variant-numeric: tabular-nums; }
-  .hr-label { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-faint); margin-top: 12px; }
+  .hr-num { font-size: 22px; color: var(--ink); line-height: 1; font-variant-numeric: tabular-nums; }
+  .hr-label { font-size: 10.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); margin-top: 12px; }
   .health-note { margin-top: 20px; font-size: 15px; line-height: 1.55; color: var(--ink-soft); text-align: center; font-style: italic; }
   .health-connect { font-size: 14px; color: var(--ink-soft); line-height: 1.5; }
   /* Steps tracker */
@@ -323,18 +323,7 @@
   .steps-synced:hover { opacity: 1; color: var(--ink-soft); }
   .steps-synced:active { opacity: 0.5; }
   .steps-synced svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-  /* customizable 3rd metric */
-  .m3-wrap { margin-top: 22px; padding-top: 20px; border-top: 1px solid var(--field-edge); }
-  .m3-fill { background: var(--m3, var(--accent)) !important; box-shadow: 0 0 12px -3px var(--m3, var(--accent)) !important; }
-  .m3-ic { width: 15px; height: 15px; vertical-align: -2px; margin-right: 2px; fill: none; stroke: var(--m3, var(--accent)); stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
-  .m3-editor { margin-top: 14px; display: flex; flex-direction: column; gap: 10px; }
-  .m3-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-  .m3-lbl { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--ink-faint); flex: 0 0 auto; }
-  .m3-off { margin-top: 22px; padding-top: 20px; border-top: 1px solid var(--field-edge); }
-  .m3-add { display: block; width: 100%; background: none; border: 1px dashed var(--field-edge); color: var(--ink-soft); border-radius: 12px; padding: 12px 16px; font-family: inherit; font-size: 14px; cursor: pointer; transition: border-color 0.2s ease, color 0.2s ease; }
-  .m3-add:hover { border-color: var(--accent); color: var(--accent); }
   .steps-goals { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
-  .m3-row .steps-goals { margin-top: 0; }
   .steps-goal-chip { background: var(--field); border: 1px solid var(--field-edge); color: var(--ink-soft); border-radius: 999px; padding: 8px 14px; font-family: inherit; font-size: 13px; cursor: pointer; transition: color 0.2s ease, border-color 0.2s ease; }
   .steps-goal-chip.sel { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
   /* Local Weather widget */
@@ -3151,17 +3140,6 @@
         <p class="ob-reading-hint" style="text-align:left;margin-top:6px;">Tap <a href="https://cloud.ouraring.com/personal-access-tokens" target="_blank" rel="noopener" class="oura-link">Get your Oura token&nbsp;↗</a>, create one, copy it, and paste it above. It's stored privately in your own account.</p>
       </div>
 
-      <label class="field-label">Dramatized audio (Bible Brain)</label>
-      <div class="oura-connect" id="fcbhConnect">
-        <input type="password" id="fcbhKey" placeholder="Bible Brain API key" autocomplete="off" />
-        <div class="oura-row">
-          <button class="modal-secondary" id="fcbhSave" style="flex:1;">Connect</button>
-          <button class="modal-secondary" id="fcbhDisconnect" style="flex:1;" hidden>Disconnect</button>
-        </div>
-        <div class="oura-msg" id="fcbhMsg"></div>
-        <p class="ob-reading-hint" style="text-align:left;margin-top:6px;">Adds full <b>Old + New Testament</b> dramatized audio. Request a free key at <a href="https://4.dbt.io/api_key/request" target="_blank" rel="noopener" class="oura-link">Bible Brain&nbsp;↗</a> (non-commercial), then paste it here.</p>
-      </div>
-
       <label class="field-label">Your data</label>
       <div class="settings-data">
         <button class="modal-secondary" id="exportBtn">Back up my data</button>
@@ -3446,7 +3424,6 @@
   db.gratitude = db.gratitude || {};      // dateKey -> [g1, g2, g3]
   db.oura = db.oura || null;              // { token } — personal Oura access token (private to this account)
   if (typeof db.stepGoal !== "number") db.stepGoal = 8000;   // daily steps goal (Oura activity)
-  db.metric3 = db.metric3 || { type: "move", goal: 60 };     // customizable 3rd metric in the health widget
   db.fcbhKey = db.fcbhKey || null;        // Bible Brain (FCBH) API key → full OT+NT dramatized audio
   db.weather = db.weather || null;        // { name, lat, lon } — chosen city for the weather widget
   db.prayers = db.prayers || [];          // [{id, scope:'others'|'mine', who, text, created, answered}]
@@ -5050,6 +5027,7 @@
   }
   var HR_LEAF = '<path d="M4 20c0-9 6-15 16-16 0 10-7 16-16 16z"/><path d="M4 20 14.5 9.5"/>';
   var HR_MOON = '<path d="M20 14a8 8 0 1 1-9.9-9.9A7 7 0 0 0 20 14z"/>';
+  var HR_ACTIVITY = '<path d="M3 12h4l2.5-7 5 14 2.5-7H21"/>';
   function healthColor(v) { return v >= 85 ? "#8aa85a" : v >= 70 ? "#c9a86a" : "#d59f3b"; }
   function healthRing(score, iconSvg, label) {
     var has = isNum(score), C = 263.894; // 2·π·42
@@ -5114,61 +5092,18 @@
       '</div>';
   }
   // ---- customizable 3rd metric (all auto from Oura's daily activity) ----
-  var metric3Open = false;
-  var METRIC3 = {
-    move:     { name: "Move", unit: "min", emoji: "🏃", color: "#5d8cb4", goals: [30, 45, 60, 90, 120],
-                icon: '<path d="M3 12h4l2-6 4 12 2-6h6"/>',
-                read: function (r) { return Math.round(((r.high_activity_time || 0) + (r.medium_activity_time || 0) + (r.low_activity_time || 0)) / 60); } },
-    calories: { name: "Active burn", unit: "kcal", emoji: "🔥", color: "#d59f5a", goals: [300, 400, 500, 600, 800],
-                icon: '<path d="M12 3c2 3 4 4 4 8a4 4 0 0 1-8 0c0-2 1-3 2-4 0 2 2 2 2 0 0-1 0-2-2-4z"/>',
-                read: function (r) { return isNum(r.active_calories) ? Math.round(r.active_calories) : null; } },
-    score:    { name: "Activity score", unit: "", emoji: "⭐", color: "#8aa85a", goals: [100], fixedGoal: 100,
-                icon: '<polyline points="4 15 9 10 13 14 20 6"/>',
-                read: function (r) { return isNum(r.score) ? r.score : null; } }
-  };
-  function metric3Editor(type) {
-    var opts = [["move", "Move"], ["calories", "Calories"], ["score", "Activity"], ["off", "Off"]];
-    var typeRow = '<div class="m3-row"><span class="m3-lbl">Show</span><div class="steps-goals">' +
-      opts.map(function (o) { return '<button class="steps-goal-chip' + (o[0] === type ? " sel" : "") + '" data-act="m3Type" data-t="' + o[0] + '">' + o[1] + '</button>'; }).join("") + '</div></div>';
-    var goalRow = "", M = METRIC3[type];
-    if (M && !M.fixedGoal) {
-      var g = db.metric3.goal || M.goals[0];
-      goalRow = '<div class="m3-row"><span class="m3-lbl">Goal</span><div class="steps-goals">' +
-        M.goals.map(function (gg) { return '<button class="steps-goal-chip' + (gg === g ? " sel" : "") + '" data-act="m3Goal" data-g="' + gg + '">' + fmtNum(gg) + '</button>'; }).join("") + '</div></div>';
-    }
-    return '<div class="m3-editor">' + typeRow + goalRow + '</div>';
-  }
-  function metric3Bar(activity) {
-    var conf = db.metric3 || { type: "move", goal: 60 }, type = conf.type;
-    if (type === "off" || !METRIC3[type]) {
-      return '<div class="m3-off"><button class="m3-add" data-act="m3Toggle">+ Add a third metric</button>' + (metric3Open ? metric3Editor("off") : "") + '</div>';
-    }
-    var M = METRIC3[type];
-    var rec = (activity || []).filter(function (a) { return a.day === todayKey; })[0] || latestDay(activity);
-    var val = rec ? M.read(rec) : null;
-    if (val == null) return metric3Open ? '<div class="m3-off">' + metric3Editor(type) + '</div>' : "";
-    var goal = M.fixedGoal || conf.goal || M.goals[0];
-    var pct = Math.max(0, Math.min(100, Math.round(val / goal * 100))), hit = val >= goal;
-    var unitLbl = M.unit ? (" " + M.unit) : "";
-    var sub = hit ? "Goal reached — nicely done." : (fmtNum(goal - val) + unitLbl + " to go · " + pct + "% there");
-    return '<div class="steps-wrap m3-wrap' + (hit ? " hit" : "") + '" style="--m3:' + M.color + '">' +
-      '<div class="steps-head"><div class="steps-title"><svg class="m3-ic" viewBox="0 0 24 24" aria-hidden="true">' + M.icon + '</svg> ' + M.name + '</div>' +
-      '<button class="steps-goal-btn" data-act="m3Toggle">' + (M.fixedGoal ? "Change" : "Goal " + fmtNum(goal)) + ' <span class="sgb-edit">✎</span></button></div>' +
-      '<div class="steps-count-row"><span class="steps-count">' + fmtNum(val) + '</span><span class="steps-goal-lbl">/ ' + fmtNum(goal) + unitLbl + '</span></div>' +
-      '<div class="steps-bar"><div class="steps-fill m3-fill" style="width:' + pct + '%"></div></div>' +
-      '<div class="steps-sub' + (hit ? " steps-hit" : "") + '">' + sub + '</div>' +
-      (metric3Open ? metric3Editor(type) : "") + '</div>';
-  }
   function paintHealth(d) {
     var p = $("healthPanel"); if (!p) return;
     var rd = latestDay(d && d.readiness), sl = latestDay(d && d.sleep);
     if (!rd && !sl) { p.innerHTML = '<div class="health-connect">No Oura data for the last few days yet.</div>'; return; }
     var rScore = rd && isNum(rd.score) ? rd.score : null;
     var sScore = sl && isNum(sl.score) ? sl.score : null;
+    var ac = latestDay(d && d.activity);
+    var aScore = ac && isNum(ac.score) ? ac.score : null;
     p.innerHTML = '<div class="health-rings">' +
-      healthRing(rScore, HR_LEAF, "Readiness") + healthRing(sScore, HR_MOON, "Sleep") + '</div>' +
+      healthRing(rScore, HR_LEAF, "Readiness") + healthRing(sScore, HR_MOON, "Sleep") + healthRing(aScore, HR_ACTIVITY, "Activity") + '</div>' +
       '<div class="health-note">' + escapeHtml(healthNote(rScore, sScore)) + '</div>' +
-      stepsBar(d && d.activity) + metric3Bar(d && d.activity);
+      stepsBar(d && d.activity);
     // celebrate the first time today's steps cross the goal
     var actToday = (d && d.activity || []).filter(function (a) { return a.day === todayKey; })[0];
     if (actToday && isNum(actToday.steps) && actToday.steps >= (db.stepGoal || 8000) && db._stepHitDay !== todayKey) {
@@ -5177,30 +5112,12 @@
         showCongrats("Goal reached", fmtNum(actToday.steps) + " steps today — well walked.", "👟");
       }, 400);
     }
-    // celebrate the first time the 3rd metric crosses its goal
-    var m3 = db.metric3;
-    if (actToday && m3 && m3.type !== "off" && METRIC3[m3.type]) {
-      var M3 = METRIC3[m3.type], v3 = M3.read(actToday), g3 = M3.fixedGoal || m3.goal;
-      if (isNum(v3) && v3 >= g3 && db._m3HitDay !== (todayKey + m3.type)) {
-        db._m3HitDay = todayKey + m3.type; save();
-        setTimeout(function () {
-          showCongrats("Goal reached", fmtNum(v3) + (M3.unit ? " " + M3.unit : "") + " — " + M3.name.toLowerCase() + " goal hit.", M3.emoji);
-        }, 1000);
-      }
-    }
   }
   $("healthPanel").addEventListener("click", function (e) {
     var el = e.target.closest("[data-act]"); if (!el) return;
     var act = el.getAttribute("data-act");
     if (act === "goalToggle") { stepsGoalOpen = !stepsGoalOpen; paintHealth(ouraCache); fb("select"); }
     else if (act === "setGoal") { db.stepGoal = +el.getAttribute("data-g"); save(); stepsGoalOpen = false; paintHealth(ouraCache); fb("select"); }
-    else if (act === "m3Toggle") { metric3Open = !metric3Open; paintHealth(ouraCache); fb("select"); }
-    else if (act === "m3Type") {
-      var t = el.getAttribute("data-t"); db.metric3.type = t;
-      if (t !== "off" && METRIC3[t] && !METRIC3[t].fixedGoal) db.metric3.goal = METRIC3[t].goals[Math.floor(METRIC3[t].goals.length / 2)];
-      save(); paintHealth(ouraCache); fb("select");
-    }
-    else if (act === "m3Goal") { db.metric3.goal = +el.getAttribute("data-g"); save(); metric3Open = false; paintHealth(ouraCache); fb("select"); }
     else if (act === "refreshOura") {
       if (ouraRefreshing) return;
       ouraRefreshing = true; paintHealth(ouraCache); fb("select");
@@ -5252,33 +5169,6 @@
   });
 
   // Settings: connect / disconnect Bible Brain (FCBH) — full OT+NT dramatized audio
-  function renderFcbhSettings() {
-    var connected = !!db.fcbhKey;
-    $("fcbhKey").value = "";
-    $("fcbhKey").placeholder = connected ? "Connected — paste a new key to replace" : "Bible Brain API key";
-    $("fcbhDisconnect").hidden = !connected;
-    $("fcbhSave").textContent = connected ? "Update" : "Connect";
-    var m = $("fcbhMsg"); m.className = "oura-msg"; m.textContent = connected ? "Connected — full Bible dramatized audio." : "";
-  }
-  $("fcbhSave").addEventListener("click", function () {
-    var t = $("fcbhKey").value.trim(), m = $("fcbhMsg");
-    if (!t) { m.className = "oura-msg err"; m.textContent = "Paste your Bible Brain key first."; return; }
-    m.className = "oura-msg"; m.textContent = "Checking your key…";
-    fetch("https://4.dbt.io/api/bibles?v=4&key=" + encodeURIComponent(t) + "&language_code=eng&media=audio_drama&limit=5")
-      .then(function (r) { return r.json(); })
-      .then(function (j) {
-        if (j && j.data) {
-          db.fcbhKey = t; fcbhSets = null; save(); renderFcbhSettings();
-          if (typeof updateAudioBtn === "function" && currentView === "bible") updateAudioBtn(db.lastPassage);
-          m.className = "oura-msg"; m.textContent = "Connected — dramatized OT + NT audio is on.";
-        } else { m.className = "oura-msg err"; m.textContent = (j && j.error && (j.error.message || j.error)) || "That key was rejected."; }
-      }).catch(function () { m.className = "oura-msg err"; m.textContent = "Couldn’t reach Bible Brain — check the key."; });
-  });
-  $("fcbhDisconnect").addEventListener("click", function () {
-    db.fcbhKey = null; fcbhSets = null; save(); renderFcbhSettings();
-    if (typeof updateAudioBtn === "function" && currentView === "bible") updateAudioBtn(db.lastPassage);
-    var m = $("fcbhMsg"); m.className = "oura-msg"; m.textContent = "Disconnected.";
-  });
 
   // ----- Local Weather (Open-Meteo — free, browser-friendly, no key) -----
   var weatherCache = null;
@@ -7269,7 +7159,7 @@
     db.textSize = b.getAttribute("data-ts"); save(); applyTextSize(db.textSize); buzz(8);
   });
 
-  var APP_VERSION = "v40";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v41";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
@@ -7441,7 +7331,6 @@
     if (typeof renderAccount === "function") renderAccount();
     if (typeof renderSnapButton === "function") renderSnapButton();
     if (typeof renderOuraSettings === "function") renderOuraSettings();
-    if (typeof renderFcbhSettings === "function") renderFcbhSettings();
     $("settingsMsg").textContent = "";
     $("lockCoach").hidden = true; $("lockToggle").classList.remove("coach-target"); // clear any coach mark
     $("settings").hidden = false;
