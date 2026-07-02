@@ -5216,15 +5216,17 @@
       '<div class="steps-sub' + (hit ? " steps-hit" : "") + '">' + (hit ? "Goal reached — strong." : fmtNum(goal - cal) + " kcal to go · " + pct + "% there") + '</div></div>';
   }
   function stressStat(stress) {
-    if (!stress || !stress.length) return "";
+    if (!stress || !stress.length) {
+      return '<div class="hm-stress"><div class="hm-stress-l">〰&nbsp; Stress today</div>' +
+        '<div class="hm-stress-s" style="margin-top:6px">No stress data coming through yet — the Oura function needs to include <b>daily_stress</b> (redeploy it), then give Oura an hour to sync.</div></div>';
+    }
     var rec = stress.filter(function (a) { return a.day === todayKey; })[0] || latestDay(stress);
-    var secs = rec && isNum(rec.stress_high) ? rec.stress_high : null;
-    if (secs == null) return "";
+    var secs = rec && isNum(rec.stress_high) ? rec.stress_high : 0;
     var h = Math.floor(secs / 3600), mn = Math.round((secs % 3600) / 60);
-    var txt = h ? (h + "h" + (mn ? " " + mn + "m" : "")) : (mn + "m");
+    var txt = secs ? (h ? (h + "h" + (mn ? " " + mn + "m" : "")) : (mn + "m")) : "None";
     var sum = rec.day_summary ? (rec.day_summary.charAt(0).toUpperCase() + rec.day_summary.slice(1)) : "";
     return '<div class="hm-stress"><div class="hm-stress-l">〰&nbsp; Stress today</div>' +
-      '<div class="hm-stress-v">' + txt + ' <span>high</span></div>' + (sum ? '<div class="hm-stress-s">' + escapeHtml(sum) + ' day</div>' : '') + '</div>';
+      '<div class="hm-stress-v">' + txt + (secs ? ' <span>high</span>' : '') + '</div>' + (sum ? '<div class="hm-stress-s">' + escapeHtml(sum) + ' day</div>' : '') + '</div>';
   }
   function healthEditor() {
     var m = db.healthMetrics, opts = [["readiness", "Readiness"], ["sleep", "Sleep"], ["activity", "Activity"], ["steps", "Steps"], ["calories", "Calories"], ["stress", "Stress"]];
@@ -5557,11 +5559,13 @@
       ]).then(function (r) {
         var prays = {}, myP = {};
         ((r[0] && r[0].data) || []).forEach(function (x) {
-          var pf = profById[x.user_id] || {};
+          var pf = profById[x.user_id] || {}, mineReact = x.user_id === myId();
           // prefer the name/photo captured on the reaction itself (works even if profiles aren't readable), then profile
-          var nm = (x.user_id === myId() && hasRealName()) ? myName() : bestName([x.user_name, pf.display_name]);
-          (prays[x.prayer_id] = prays[x.prayer_id] || []).push({ name: nm, url: x.user_avatar || pf.avatar_url });
-          if (x.user_id === myId()) myP[x.prayer_id] = true;
+          var nm = (mineReact && hasRealName()) ? myName() : bestName([x.user_name, pf.display_name]);
+          // my own reaction can always use my local photo, even before profiles are readable
+          var url = mineReact ? ((db.profile && db.profile.avatarUrl) || x.user_avatar || pf.avatar_url) : (x.user_avatar || pf.avatar_url);
+          (prays[x.prayer_id] = prays[x.prayer_id] || []).push({ name: nm, url: url });
+          if (mineReact) myP[x.prayer_id] = true;
         });
         var enc = {};
         ((r[1] && r[1].data) || []).forEach(function (e) {
@@ -7499,7 +7503,7 @@
   });
   if (window.matchMedia) { try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { if (db.theme === "auto") applyTheme("auto"); }); } catch (e) {} }
 
-  var APP_VERSION = "v50";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v51";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
