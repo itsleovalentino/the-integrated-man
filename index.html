@@ -402,24 +402,34 @@
   .pw-av-lg { width: 42px; height: 42px; font-size: 14.5px; }
   .pw-av-sm { width: 26px; height: 26px; font-size: 9.5px; }
   /* prayer card */
-  .pw-card { background: var(--field); border: 1px solid var(--field-edge); border-radius: 18px; padding: 17px 18px 15px; margin-bottom: 14px; transition: border-color 0.2s ease; }
-  .pw-card.answered { background: linear-gradient(180deg, var(--accent-soft), var(--field)); }
+  .pw-card { position: relative; overflow: hidden; background: var(--field); border: 1px solid var(--field-edge); border-radius: 18px; padding: 17px 18px 15px; margin-bottom: 14px; transition: border-color 0.2s ease; }
+  /* a rounded accent bar on the left tells you the post type at a glance */
+  .pw-card::before { content: ""; position: absolute; left: 0; top: 15px; bottom: 15px; width: 3px; border-radius: 0 3px 3px 0; }
+  .pw-card.pw-prayer::before { background: #77a3cc; box-shadow: 0 0 12px -2px #77a3cc; }
+  .pw-card.pw-praise::before { background: var(--accent); box-shadow: 0 0 12px -2px var(--accent); }
+  .pw-card.pw-prayer { border-color: rgba(119,163,204,0.26); }
+  .pw-card.pw-praise { border-color: rgba(203,178,126,0.26); }
   .pw-head { display: flex; align-items: center; gap: 12px; margin-bottom: 13px; }
   .pw-who { min-width: 0; flex: 1; }
   .pw-name { font-size: 15px; color: var(--ink); font-weight: 500; }
   .pw-meta { font-size: 12px; color: var(--ink-faint); margin-top: 2px; display: flex; align-items: center; gap: 6px; }
   .pw-answered-tag { color: var(--accent); }
   .pw-body { font-family: "Fraunces", Georgia, serif; font-size: calc(18px * var(--read-scale)); line-height: 1.52; color: var(--ink); margin-bottom: 16px; }
-  .pw-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-  .pw-praying { display: flex; align-items: center; gap: 9px; min-width: 0; }
+  /* one bottom action row: react (+count, +who) · comment */
+  .pw-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 15px; }
   .pw-stack { display: flex; }
   .pw-stack .pw-av-sm { margin-left: -8px; box-shadow: 0 0 0 2px var(--field); }
   .pw-stack .pw-av-sm:first-child { margin-left: 0; }
-  .pw-praying-txt { font-size: 12.5px; color: var(--ink-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .pw-pray-btn { display: inline-flex; align-items: center; gap: 7px; background: var(--accent-soft); border: 1px solid var(--accent); color: var(--accent); border-radius: 999px; padding: 8px 16px; font-family: inherit; font-size: 13.5px; cursor: pointer; flex: 0 0 auto; transition: background 0.2s ease, color 0.2s ease, transform 0.15s ease; }
-  .pw-pray-btn svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.6; }
-  .pw-pray-btn:active { transform: scale(0.96); }
-  .pw-pray-btn.on { background: var(--accent); color: var(--bg); }
+  .pw-react { display: inline-flex; align-items: center; gap: 7px; background: none; border: 1px solid var(--field-edge); color: var(--ink-soft); border-radius: 999px; padding: 8px 15px; font-family: inherit; font-size: 13.5px; cursor: pointer; flex: 0 0 auto; transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease, transform 0.15s ease; }
+  .pw-react svg { width: 15px; height: 15px; fill: currentColor; stroke: none; }
+  .pw-react:active { transform: scale(0.96); }
+  .pw-react.prayer:hover, .pw-react.prayer.on { border-color: #77a3cc; color: #77a3cc; }
+  .pw-react.prayer.on { background: rgba(119,163,204,0.15); }
+  .pw-react.praise:hover, .pw-react.praise.on { border-color: var(--accent); color: var(--accent); }
+  .pw-react.praise.on { background: var(--accent-soft); }
+  .pw-comment-toggle { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; background: none; border: none; color: var(--ink-faint); font-family: inherit; font-size: 13px; cursor: pointer; padding: 8px 2px; transition: color 0.2s ease; }
+  .pw-comment-toggle svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linejoin: round; }
+  .pw-comment-toggle:hover, .pw-comment-toggle.on { color: var(--ink-soft); }
   /* encouragement (private to the asker, non-anonymous) */
   .pw-enc { margin-top: 15px; padding-top: 14px; border-top: 1px solid var(--panel-edge); }
   .pw-enc-label { font-size: 11.5px; color: var(--ink-faint); margin-bottom: 11px; display: flex; align-items: center; gap: 6px; }
@@ -454,7 +464,10 @@
   .pw-answer-x:hover { color: var(--ink); }
   .pw-answer-actions { display: flex; align-items: center; justify-content: flex-end; gap: 12px; margin-top: 10px; }
   /* social feed: tags, delete, comments, prayer toggle */
-  .pw-tag { flex: 0 0 auto; font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent); background: var(--accent-soft); border: 1px solid var(--accent); border-radius: 999px; padding: 3px 9px; align-self: flex-start; }
+  .pw-tag { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 4px; font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase; border-radius: 999px; padding: 3px 9px 3px 7px; align-self: flex-start; }
+  .pw-tag svg { width: 11px; height: 11px; fill: currentColor; stroke: none; }
+  .pw-tag-prayer { color: #77a3cc; background: rgba(119,163,204,0.13); border: 1px solid rgba(119,163,204,0.4); }
+  .pw-tag-praise { color: var(--accent); background: var(--accent-soft); border: 1px solid var(--accent); }
   .pw-post-del { flex: 0 0 auto; background: none; border: none; color: var(--ink-faint); cursor: pointer; padding: 4px; align-self: flex-start; }
   .pw-post-del svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.6; }
   .pw-post-del:hover { color: #d08a72; }
@@ -1857,7 +1870,7 @@
     @keyframes viewIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
     #bibleView:not([hidden]), #fellowshipView:not([hidden]), #journalView:not([hidden]), .wrap:not([hidden]) { animation: viewIn 0.34s cubic-bezier(.2,.7,.2,1); }
     .icon-btn:active, .nav-btn:active, .bible-ctl:active, .chap-step:active, .save-mini:active,
-    .modal-primary:active, .modal-secondary:active, .modal-text:active, .pw-pray-btn:active, .jp-add:active,
+    .modal-primary:active, .modal-secondary:active, .modal-text:active, .pw-react:active, .jp-add:active,
     .steps-goal-chip:active, .seg-opt:active, .grat-add:active, .welcome-create:active, .welcome-signin:active,
     .modal-x:active, .sheet-x:active, .profile-btn:active, .toggle-row:active, .pw-setup:active { transform: scale(0.955); }
   }
@@ -5261,7 +5274,10 @@
   var PW_SEND = '<svg viewBox="0 0 24 24"><path d="M4 12l16-7-7 16-2-7-7-2z"/></svg>';
   var PW_TINY_HEART = '<svg viewBox="0 0 24 24" style="width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:1.7;vertical-align:-1px">' + HEART + '</svg>';
   var PW_TRASH = '<svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M6 6l1 14a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-14"/></svg>';
-  var wallState = { prayers: [], prays: {}, myPrays: {}, enc: {}, shown: 10, composing: false, composePrayer: true, expanded: {} };
+  var PW_CANDLE = '<path d="M12 2.5c1.3 1.5 2.2 2.6 2.2 3.9a2.2 2.2 0 0 1-4.4 0C9.8 5.1 10.7 4 12 2.5z"/><rect x="9.4" y="9" width="5.2" height="11" rx="1.3"/>';
+  var PW_SPARK = '<path d="M12 3l1.7 5.6L19 10l-5.3 1.4L12 17l-1.7-5.6L5 10l5.3-1.4z"/>';
+  var PW_CHAT = '<path d="M5 5h14a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H9l-4 3.5V6a1 1 0 0 1 1-1z"/>';
+  var wallState = { prayers: [], prays: {}, myPrays: {}, enc: {}, shown: 10, composing: false, composePrayer: true, expanded: {}, commentOpen: {} };
 
   function pwColor(name) { var s = 0, n = name || ""; for (var i = 0; i < n.length; i++) s = (s + n.charCodeAt(i)) % PW_PAL.length; return PW_PAL[s]; }
   function pwInitials(name) { var p = (name || "?").trim().split(/\s+/); return ((p[0] ? p[0][0] : "?") + (p[1] ? p[1][0] : "")).toUpperCase(); }
@@ -5326,12 +5342,11 @@
     var stack = reactors.slice(0, 4).map(function (m) { return pwAvatar(m.name, m.url, "sm"); }).join("");
     var count = reactors.length;
     var reactLabel = isPrayer ? (iReacted ? "Praying" : "Pray") : (iReacted ? "Amen’d" : "Amen");
-    var countTxt = count ? (count + (isPrayer ? " praying" : " amen")) : (isPrayer ? "Be the first to pray" : "Be the first to say amen");
-    var foot = '<div class="pw-foot"><div class="pw-praying">' +
-      (count ? '<div class="pw-stack">' + stack + '</div>' : "") + '<span class="pw-praying-txt">' + countTxt + '</span></div>' +
-      '<button class="pw-pray-btn' + (iReacted ? " on" : "") + '" data-act="pray" data-id="' + p.id + '"><svg viewBox="0 0 24 24">' + HEART + '</svg>' + reactLabel + '</button></div>';
-    // comments (public), collapsed past 2
+    var type = isPrayer ? "prayer" : "praise";
+    var reactIcon = isPrayer ? PW_CANDLE : PW_SPARK;
+    // comments (public), collapsed past 2; the input stays hidden until "Comment" is tapped
     var encs = wallState.enc[p.id] || [], expanded = !!wallState.expanded[p.id];
+    var commentOpen = !!wallState.commentOpen[p.id];
     var shownEncs = (encs.length > 2 && !expanded) ? encs.slice(encs.length - 2) : encs;
     var moreLink = (encs.length > 2 && !expanded) ? '<button class="pw-c-more" data-act="expandComments" data-id="' + p.id + '">View all ' + encs.length + ' comments</button>' : "";
     var encItems = shownEncs.map(function (e) {
@@ -5339,15 +5354,22 @@
       var del = (e.from_id === myId()) ? '<button class="pw-c-del" data-act="delEnc" data-id="' + p.id + '" data-eid="' + e.id + '" aria-label="Delete comment">×</button>' : "";
       return '<div class="pw-enc-item">' + pwAvatar(who, e.url, "sm") + '<div class="pw-enc-txt"><div class="pw-enc-from">' + escapeHtml(who) + del + '</div><div class="pw-enc-body">' + escapeHtml(e.body) + '</div></div></div>';
     }).join("");
-    var encList = encs.length ? '<div class="pw-enc">' + moreLink + encItems + '</div>' : "";
-    var commentInput = '<div class="pw-enc-compose">' +
-      '<input type="text" class="pw-enc-input" data-id="' + p.id + '" placeholder="Comment…" maxlength="280" />' +
-      '<button class="pw-enc-send" data-act="sendEnc" data-id="' + p.id + '" aria-label="Send">' + PW_SEND + '</button></div>';
-    var tag = isPrayer ? '<span class="pw-tag">Prayer</span>' : "";
+    var encList = (encs.length && (commentOpen || encs.length)) ? '<div class="pw-enc">' + moreLink + encItems + '</div>' : "";
+    var commentInput = commentOpen ? '<div class="pw-enc-compose">' +
+      '<input type="text" class="pw-enc-input" data-id="' + p.id + '" placeholder="Write a comment…" maxlength="280" />' +
+      '<button class="pw-enc-send" data-act="sendEnc" data-id="' + p.id + '" aria-label="Send">' + PW_SEND + '</button></div>' : "";
+    // one clear action row at the bottom: react (+count +who) · comment
+    var commentLabel = encs.length ? "Comment · " + encs.length : "Comment";
+    var actions = '<div class="pw-actions">' +
+      '<button class="pw-react ' + type + (iReacted ? " on" : "") + '" data-act="pray" data-id="' + p.id + '"><svg viewBox="0 0 24 24">' + reactIcon + '</svg>' + reactLabel + (count ? " · " + count : "") + '</button>' +
+      (count ? '<div class="pw-stack">' + stack + '</div>' : "") +
+      '<button class="pw-comment-toggle' + (commentOpen ? " on" : "") + '" data-act="toggleComment" data-id="' + p.id + '"><svg viewBox="0 0 24 24">' + PW_CHAT + '</svg>' + commentLabel + '</button>' +
+      '</div>';
+    var badge = '<span class="pw-tag pw-tag-' + type + '"><svg viewBox="0 0 24 24">' + reactIcon + '</svg>' + (isPrayer ? "Prayer" : "Praise") + '</span>';
     var del = mine ? '<button class="pw-post-del" data-act="delPost" data-id="' + p.id + '" aria-label="Delete post">' + PW_TRASH + '</button>' : "";
-    return '<div class="pw-card">' +
-      '<div class="pw-head">' + pwAvatar(name, url, "lg") + '<div class="pw-who"><div class="pw-name">' + escapeHtml(name) + '</div><div class="pw-meta">' + (mine ? "you · " : "") + pwAgo(p.created_at) + '</div></div>' + tag + del + '</div>' +
-      '<div class="pw-body">' + escapeHtml(p.body) + '</div>' + foot + encList + commentInput + '</div>';
+    return '<div class="pw-card pw-' + type + '">' +
+      '<div class="pw-head">' + pwAvatar(name, url, "lg") + '<div class="pw-who"><div class="pw-name">' + escapeHtml(name) + '</div><div class="pw-meta">' + (mine ? "you · " : "") + pwAgo(p.created_at) + '</div></div>' + badge + del + '</div>' +
+      '<div class="pw-body">' + escapeHtml(p.body) + '</div>' + actions + encList + commentInput + '</div>';
   }
 
   function renderWall() {
@@ -5436,6 +5458,10 @@
     else if (act === "pray") doPrayWall(id);
     else if (act === "sendEnc") doSendEnc(id);
     else if (act === "expandComments") { wallState.expanded[id] = true; renderWall(); }
+    else if (act === "toggleComment") {
+      wallState.commentOpen[id] = !wallState.commentOpen[id]; renderWall(); fb("select");
+      if (wallState.commentOpen[id]) setTimeout(function () { var inp = $("circleBody").querySelector('.pw-enc-input[data-id="' + id + '"]'); if (inp) inp.focus(); }, 40);
+    }
     else if (act === "delEnc") doDelEnc(el.getAttribute("data-eid"));
     else if (act === "delPost") doDelPost(id);
     else if (act === "showMore") { wallState.shown += 10; renderWall(); }
@@ -7170,7 +7196,7 @@
     db.textSize = b.getAttribute("data-ts"); save(); applyTextSize(db.textSize); buzz(8);
   });
 
-  var APP_VERSION = "v42";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v43";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
