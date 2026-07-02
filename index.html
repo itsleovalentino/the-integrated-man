@@ -3259,8 +3259,8 @@
         <button class="modal-secondary" id="importBtn">Restore from a file</button>
         <input type="file" id="importFile" accept="application/json" hidden />
       </div>
-      <button class="modal-secondary" id="recoverBtn" style="width:100%;margin-top:8px;">Recover lost entries</button>
-      <p class="ob-reading-hint" style="margin-top:8px;text-align:left;">Your journal lives safely in the cloud and on this device, with an automatic on-device snapshot as a backstop. <b>Recover lost entries</b> safely pulls any notes, checks, or reflections from every backup and merges them back in — it never overwrites what you have. Download a file now and then for extra peace of mind.</p>
+      <button class="modal-secondary" id="recoverBtn" style="width:100%;margin-top:8px;">Verify my journal</button>
+      <p class="ob-reading-hint" style="margin-top:8px;text-align:left;">Your journal is kept in more than one place — on this device, in an automatic snapshot, and entry-by-entry in your account. <b>Verify my journal</b> checks them against each other and quietly fills in anything missing. Download a file now and then for extra peace of mind.</p>
       <div class="settings-msg" id="settingsMsg"></div>
 
       <button class="modal-primary" id="settingsSave">Save</button>
@@ -6113,7 +6113,7 @@
     if (kind === "note") {
       var th = null; for (var i = 0; i < db.thoughts.length; i++) if (db.thoughts[i].id === id) { th = db.thoughts[i]; break; }
       if (!th) return;
-      if (act === "star") { th.star = !th.star; save(); buzz(8); renderJournalPage(); journalPaneSync(); }
+      if (act === "star") { th.star = !th.star; th.edited = new Date().toISOString(); save(); syncEntry(th); buzz(8); renderJournalPage(); journalPaneSync(); }
       else if (act === "del") { softDeleteThought(id); buzz(10); renderJournalPage(); journalPaneSync(); showUndoToast("Note deleted.", function () { restoreThought(id); renderJournalPage(); journalPaneSync(); }); }
     } else if (act === "del") {
       confirmDialog("Remove this from your journal?", "Remove", function () {
@@ -6248,7 +6248,8 @@
         if (arr[i].id === writerEditId) {
           arr[i].text = combined; arr[i].title = title || null;
           arr[i].html = hasRich ? bodyHtml : null; arr[i].voice = writerVoice;
-          arr[i].edited = new Date().toISOString(); break;
+          arr[i].edited = new Date().toISOString();
+          syncEntry(arr[i]); break;
         }
       }
       save();
@@ -6510,8 +6511,8 @@
     removed._deletedAt = new Date().toISOString();
     db.noteTrash = db.noteTrash || [];
     db.noteTrash.push(removed);
-    if (db.noteTrash.length > 200) db.noteTrash = db.noteTrash.slice(-200);
     save();
+    syncEntry(removed, true);   // soft-delete travels as a flag on the row — the row itself stays forever
     return removed;
   }
   function restoreThought(id) {
@@ -6521,9 +6522,11 @@
     if (idx < 0) return;
     var t = db.noteTrash.splice(idx, 1)[0];
     delete t._deletedAt;
+    t.restoredAt = new Date().toISOString();   // newer than the delete → the revive wins everywhere
     db.thoughts.push(t);
     db.thoughts.sort(function (a, b) { return (a.ts || "") < (b.ts || "") ? -1 : 1; });
     save();
+    syncEntry(t, false);
   }
   function showUndoToast(text, undoFn) {
     var b = $("toastBody");
@@ -6539,13 +6542,15 @@
     return "#e0c074";                   // high — bright gold
   }
   function addThought(o) {
-    db.thoughts.push({
+    var t = {
       id: newId("t"), text: (o.text || "").trim(), voice: o.voice || null,
       title: o.title || null, html: o.html || null,
       mood: (typeof o.mood === "number") ? o.mood : null, star: false,
       ts: new Date().toISOString(), dateKey: todayKey
-    });
+    };
+    db.thoughts.push(t);
     save();
+    syncEntry(t);   // the entry gets its own cloud row the moment it exists
   }
   (function buildCaptureMood() {
     var h = "";
@@ -6632,8 +6637,10 @@
         var blob = new Blob(fabChunks, { type: (fabRec && fabRec.mimeType) || "audio/webm" });
         var rd = new FileReader();
         rd.onload = function () {
-          db.thoughts.push({ id: newId("t"), text: "", voice: rd.result, mood: null, star: false, ts: new Date().toISOString(), dateKey: todayKey });
+          var vt = { id: newId("t"), text: "", voice: rd.result, mood: null, star: false, ts: new Date().toISOString(), dateKey: todayKey };
+          db.thoughts.push(vt);
           save();                       // audio → IndexedDB, text → localStorage (never overflows)
+          syncEntry(vt);
           playPop(); celebrate($("fab"));
           if (!$("thoughtsPane").hidden) renderThoughts();
         };
@@ -6727,7 +6734,7 @@
     var id = item.getAttribute("data-id"), th = null;
     for (var i = 0; i < db.thoughts.length; i++) if (db.thoughts[i].id === id) { th = db.thoughts[i]; break; }
     if (!th) return;
-    if (btn.getAttribute("data-act") === "star") { th.star = !th.star; save(); renderThoughts(); }
+    if (btn.getAttribute("data-act") === "star") { th.star = !th.star; th.edited = new Date().toISOString(); save(); syncEntry(th); renderThoughts(); }
     else { softDeleteThought(id); renderThoughts(); showUndoToast("Note deleted.", function () { restoreThought(id); renderThoughts(); }); }
   });
 
@@ -7697,7 +7704,7 @@
   });
   if (window.matchMedia) { try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { if (db.theme === "auto") applyTheme("auto"); }); } catch (e) {} }
 
-  var APP_VERSION = "v55";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v56";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
@@ -7950,8 +7957,10 @@
     if (Array.isArray(src.thoughts)) {
       db.thoughts = db.thoughts || [];
       var have = {}; db.thoughts.forEach(function (t) { if (t && t.id) have[t.id] = t; });
+      var inTrash = {}; (db.noteTrash || []).forEach(function (t) { if (t && t.id) inTrash[t.id] = 1; });
       src.thoughts.forEach(function (t) {
         if (!t || !t.id) return;
+        if (inTrash[t.id]) return;   // deleted here — a stale copy elsewhere must not resurrect it
         if (!have[t.id]) { db.thoughts.push(t); have[t.id] = t; added++; }
         else { var cur = have[t.id];
           if ((t.text || "").length > (cur.text || "").length) { cur.text = t.text; cur.title = t.title || cur.title; cur.html = t.html || cur.html; added++; }
@@ -7999,9 +8008,10 @@
         try { if (typeof rerenderAll === "function") rerenderAll(); } catch (e) {}
         try { if (typeof renderJournalPage === "function") renderJournalPage(); } catch (e) {}
         try { if (typeof renderHabits === "function") renderHabits(); } catch (e) {}
-        msg.textContent = "Recovered " + total + " item" + (total === 1 ? "" : "s") + " and merged them in — nothing was overwritten.";
+        msg.textContent = "Filled in " + total + " item" + (total === 1 ? "" : "s") + " from your backups — nothing was overwritten.";
         if (typeof playChime === "function") playChime();
-      } else { msg.textContent = "No recoverable entries were found beyond what you already have."; }
+      } else { msg.textContent = "Verified — everything here matches your backups. All is well."; }
+      if (typeof reconcileEntries === "function") reconcileEntries();   // and settle the per-entry rows both ways
     }
     if (typeof sb !== "undefined" && sb && session) {
       sb.from("user_state").select("data").eq("user_id", session.user.id).maybeSingle()
@@ -8009,7 +8019,7 @@
     } else { finish(); }
   }
   $("recoverBtn").addEventListener("click", function () {
-    confirmDialog("Search your on-device snapshot and cloud backup for any entries missing here, and merge them back in? This only adds — it never removes or overwrites what you have.", "Recover", recoverEntries);
+    confirmDialog("Check this device against your snapshot and your account, and quietly fill in anything missing? This only adds — it never removes or overwrites what you have.", "Verify", recoverEntries);
   });
   // The on-device safety snapshot is a silent backstop: it is only ever read by
   // "Recover lost entries" (additive merge). The old wholesale "Restore snapshot"
@@ -8171,14 +8181,124 @@
     needsPush = true;
     clearTimeout(pushTimer); pushTimer = setTimeout(cloudPush, 1500);
   }
+
+  // ================= per-entry journal rails (how Day One never loses a note) =================
+  // Every journal entry is ALSO its own row in the cloud (journal_entries table), upserted by id
+  // the moment it changes. Rows are never bulk-replaced, so no sync race, quota failure, or lost
+  // device can erase an entry that ever reached the table. Deletes are a soft flag on the row.
+  // If the table isn't deployed yet (supabase/journal_entries.sql), this quietly stands down and
+  // the blob sync above still carries everything.
+  var ENTRIES_ON = true;
+  var entryRetryQ = {}, entryRetryTimer = null;
+  function entriesTableMissing(err) {
+    if (!err) return false;
+    if ((err.code || "") === "PGRST205") return true;
+    return /could not find the table|does not exist|relation .* not/i.test(err.message || "");
+  }
+  function entryRow(t, deleted) {
+    var c = {}; for (var k in t) if (t.hasOwnProperty(k)) c[k] = t[k];
+    if (isDataUrl(c.voice)) c.voice = AUD + "t:" + c.id;   // audio stays in the vault; the row carries the ref
+    return { id: t.id, user_id: session.user.id, data: c, deleted: !!deleted, updated_at: new Date().toISOString() };
+  }
+  function syncEntry(t, deleted) {
+    if (!ENTRIES_ON || !sb || !session || !t || !t.id) return;
+    sendEntryRow(entryRow(t, deleted));
+  }
+  function sendEntryRow(row) {
+    sb.from("journal_entries").upsert(row).then(function (res) {
+      if (res && res.error) {
+        if (entriesTableMissing(res.error)) { ENTRIES_ON = false; return; }
+        entryRetryQ[row.id] = row;
+        clearTimeout(entryRetryTimer); entryRetryTimer = setTimeout(flushEntryQueue, 8000);
+      } else delete entryRetryQ[row.id];
+    }, function () {
+      entryRetryQ[row.id] = row;
+      clearTimeout(entryRetryTimer); entryRetryTimer = setTimeout(flushEntryQueue, 8000);
+    });
+  }
+  function flushEntryQueue() { for (var id in entryRetryQ) sendEntryRow(entryRetryQ[id]); }
+  function findEntryById(arr, id) { if (!Array.isArray(arr)) return null; for (var i = 0; i < arr.length; i++) if (arr[i] && arr[i].id === id) return arr[i]; return null; }
+  function removeEntryById(arr, id) { if (!Array.isArray(arr)) return; for (var i = arr.length - 1; i >= 0; i--) if (arr[i] && arr[i].id === id) arr.splice(i, 1); }
+  // Two-way, per-row catch-up on every sign-in/open: rows this device is missing come down
+  // (newest copy wins PER ENTRY, never wholesale); entries the table is missing go up.
+  function reconcileEntries() {
+    if (!ENTRIES_ON || !sb || !session) return;
+    sb.from("journal_entries").select("id,data,deleted,updated_at").eq("user_id", session.user.id)
+      .then(function (res) {
+        if (res && res.error) { if (entriesTableMissing(res.error)) ENTRIES_ON = false; return; }
+        var rows = (res && res.data) || [], byId = {}, changed = 0;
+        db.thoughts = db.thoughts || []; db.noteTrash = db.noteTrash || [];
+        rows.forEach(function (r) { if (r && r.id) byId[r.id] = r; });
+        rows.forEach(function (r) {
+          var t = r.data || {}; if (!t.id) t.id = r.id;
+          var inStream = findEntryById(db.thoughts, r.id), inTrash = findEntryById(db.noteTrash, r.id);
+          var local = inStream || inTrash;
+          if (!local) {
+            if (r.deleted) { t._deletedAt = t._deletedAt || r.updated_at; db.noteTrash.push(t); }
+            else db.thoughts.push(t);
+            changed++; return;
+          }
+          var localTs = local.edited || local.restoredAt || local._deletedAt || local.ts || "";
+          if (String(r.updated_at || "") <= String(localTs)) return;   // this device has the newest copy
+          for (var k in t) if (t.hasOwnProperty(k) && k !== "voice") local[k] = t[k];
+          if (t.voice && !isDataUrl(local.voice)) local.voice = t.voice;
+          if (r.deleted && inStream) { removeEntryById(db.thoughts, r.id); local._deletedAt = r.updated_at; db.noteTrash.push(local); }
+          else if (!r.deleted && inTrash) { removeEntryById(db.noteTrash, r.id); delete local._deletedAt; db.thoughts.push(local); }
+          changed++;
+        });
+        // backfill: everything local that the table lacks (or has an older copy of) goes up, in chunks
+        var up = [];
+        db.thoughts.forEach(function (t) { if (!t || !t.id) return; var r = byId[t.id];
+          if (!r || r.deleted || String(r.updated_at || "") < String(t.edited || t.restoredAt || t.ts || "")) up.push(entryRow(t, false)); });
+        db.noteTrash.forEach(function (t) { if (!t || !t.id) return; var r = byId[t.id];
+          if (!r || (!r.deleted && String(r.updated_at || "") < String(t._deletedAt || ""))) up.push(entryRow(t, true)); });
+        for (var i = 0; i < up.length; i += 50) {
+          (function (chunk) {
+            sb.from("journal_entries").upsert(chunk).then(function (r2) {
+              if (r2 && r2.error && entriesTableMissing(r2.error)) ENTRIES_ON = false;
+            }, function () {});
+          })(up.slice(i, i + 50));
+        }
+        if (changed) {
+          db.thoughts.sort(function (a, b) { return (a.ts || "") < (b.ts || "") ? -1 : 1; });
+          save(); rehydrateAudio();
+          try { rerenderAll(); } catch (e) {}
+          try { if (typeof renderJournalPage === "function") renderJournalPage(); } catch (e) {}
+        }
+      }, function () {});
+  }
   function rerenderAll() {
     dailyRefresh();
     if (typeof renderPrayerSummary === "function") renderPrayerSummary();
     if (typeof updateTrashCount === "function") updateTrashCount();
     if (!$("journalDrawer").hidden) renderJournal();
   }
+  // ---- content vs. settings: the line that makes sync safe ----
+  // Content (a man's words, checks, prayers) is UNION-MERGED by id/key: a pull can
+  // ADD content to this device but can never erase it. Only settings/preferences
+  // below may be replaced by a newer cloud copy. This is the fix for the July 2 2026
+  // loss: the old applyCloud replaced whole arrays, so one stale-but-recently-active
+  // device could wipe another device's unsynced entries.
+  var CONTENT_KEYS = { thoughts: 1, noteTrash: 1, prayers: 1, anchors: 1, morning: 1, journal: 1,
+    evening: 1, gratitude: 1, reflections: 1, ratings: 1, habitLog: 1, readLog: 1, pillarSkip: 1,
+    scriptureNotes: 1, scriptureNoteLog: 1, pinned: 1, trash: 1, voice: 1, openLog: 1 };
+  // a soft-delete made elsewhere moves the entry to THIS device's trash too (recoverable,
+  // never gone) — unless this device edited or restored it after the delete happened.
+  function applyCloudDeletes(data) {
+    if (!Array.isArray(data.noteTrash) || !Array.isArray(db.thoughts)) return;
+    var trashed = {}; data.noteTrash.forEach(function (t) { if (t && t.id) trashed[t.id] = t._deletedAt || "0"; });
+    for (var i = db.thoughts.length - 1; i >= 0; i--) {
+      var t = db.thoughts[i]; if (!t || !trashed[t.id]) continue;
+      var localTs = t.restoredAt || t.edited || "";
+      if (localTs && localTs > trashed[t.id]) continue;   // this device revived/edited it later — keep it
+      db.thoughts.splice(i, 1); t._deletedAt = trashed[t.id];
+      db.noteTrash = db.noteTrash || []; if (!db.noteTrash.some(function (x) { return x && x.id === t.id; })) db.noteTrash.push(t);
+    }
+  }
+  function mergeCloudContent(data) { mergeRecover(data); applyCloudDeletes(data); }
   function applyCloud(data) {
-    for (var k in data) { if (data.hasOwnProperty(k) && !SYNC_SKIP[k]) db[k] = data[k]; }
+    mergeCloudContent(data);     // content: union only — never replaced
+    for (var k in data) { if (data.hasOwnProperty(k) && !SYNC_SKIP[k] && !CONTENT_KEYS[k]) db[k] = data[k]; }
     db.voice = db.voice || { journal: {}, evening: {} };
     db.bibleCache = db.bibleCache || {};
     persistClean(db);            // durable, audio-safe write
@@ -8195,12 +8315,16 @@
         var localHasProfile = !!(db.profile && db.profile.onboarded);
         if (cloudHasProfile) {
           // cloud wins when this device has no profile (just signed in / was wiped);
-          // if BOTH have a profile, the newer timestamp wins (protects un-pushed local edits)
+          // if BOTH have a profile, the newer timestamp wins for SETTINGS — content
+          // is always union-merged in both cases, so entries survive either way
           if (!localHasProfile || (+cloud.updatedAt || 0) >= (+db.updatedAt || 0)) applyCloud(cloud);
+          else { mergeCloudContent(cloud); persistClean(db); rehydrateAudio(); rerenderAll(); }
         }
         pulled = true;
         routeAfterAuth();
+        if (cloudHasProfile && localHasProfile) cloudPushSoon();  // push the union back up
         if (!cloudHasProfile && localHasProfile) cloudPush(); // brand-new account → seed the cloud from local
+        reconcileEntries();      // per-entry rails: row-by-row two-way catch-up
       }, function () {
         // offline / fetch failed: fall back to local ONLY if it has a real profile; otherwise stay gated (don't risk a clobber)
         if (db.profile && db.profile.onboarded) { pulled = true; routeAfterAuth(); }
@@ -8475,6 +8599,10 @@
   });
 
   // ================= init + auto-renew =================
+  // ask the browser to mark our storage persistent — protects the journal from
+  // the OS evicting site data under disk pressure (iOS/Android honor this for
+  // installed home-screen apps)
+  try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) {}
   applyLayout();
   dailyRefresh();
   rehydrateAudio();   // pull voice memos back from IndexedDB after a reload, then re-render

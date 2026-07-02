@@ -68,7 +68,20 @@ Every mutation calls `save()`, the single write path:
 
 **Sync safety (hard-won — a bug once wiped an account):** `cloudPull()` runs FIRST on sign-in and all
 pushes are gated on `pulled === true` and `db.profile.onboarded`. Cloud wins when local has no
-profile; otherwise newer `updatedAt` wins. Never reorder or bypass these guards.
+profile; otherwise newer `updatedAt` wins **for settings only**. Never reorder or bypass these guards.
+
+**Content is NEVER replaced by sync (v56):** `applyCloud` union-merges everything in `CONTENT_KEYS`
+(entries, prayers, day-keyed maps…) — a pull can add content but can never erase it. Deletes travel
+as soft tombstones via `noteTrash` (`applyCloudDeletes`; `restoredAt`/`edited` newer than
+`_deletedAt` wins). Settings/preferences outside `CONTENT_KEYS` still replace wholesale.
+
+**Per-entry cloud rails (v56, Day One-grade):** every journal entry is also its own row in the
+Supabase `journal_entries` table (`supabase/journal_entries.sql`), upserted by id via `syncEntry()`
+at every mutation point (add/edit/star/delete/restore — new mutation points MUST call it).
+`reconcileEntries()` runs on sign-in: rows come down (newest copy wins per entry), missing local
+entries go up. Deletes are a `deleted` flag on the row — rows are never removed. If the table
+isn't deployed the client stands down gracefully (`ENTRIES_ON`). `navigator.storage.persist()`
+is requested on init to resist OS storage eviction.
 
 ## How deletes work
 
@@ -96,6 +109,10 @@ There is no hard delete of user content anywhere, and it must stay that way:
 - **July 2 2026:** base64 voice memos blew the ~5MB localStorage quota; `save()` failed silently
   for a whole morning of entries → audio vault in IndexedDB, loud failure banner, visible save
   status, additive recovery. Compounded by a GitHub Pages incident that delayed the fix.
+- **July 2 2026 (second finding):** old `applyCloud` replaced whole arrays, so a stale device's
+  later push could erase another device's unsynced entries on the next pull → content is now
+  union-merged, never replaced, plus per-entry cloud rows. Entries lost that morning were
+  unrecoverable — they never reached any durable copy.
 
 ## Design system
 
