@@ -296,13 +296,6 @@
   .health-rings { display: flex; gap: 10px; justify-content: center; }
   .health-ring { flex: 1 1 0; min-width: 0; max-width: 116px; text-align: center; }
   .hr-wrap { position: relative; width: 100%; max-width: 96px; aspect-ratio: 1 / 1; margin: 0 auto; }
-  /* glassy disc behind each ring */
-  .hr-wrap::before {
-    content: ""; position: absolute; inset: 11%; border-radius: 50%;
-    background: radial-gradient(circle at 50% 34%, rgba(255,255,255,0.05), transparent 68%);
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.07);
-  }
-  :root[data-theme="light"] .hr-wrap::before { background: radial-gradient(circle at 50% 34%, rgba(255,255,255,0.6), transparent 72%); box-shadow: inset 0 1px 0 rgba(255,255,255,0.7); }
   .hr-svg { position: relative; width: 100%; height: 100%; transform: rotate(-90deg); }
   .hr-track { fill: none; stroke: rgba(255,255,255,0.09); stroke-width: 6.5; }
   :root[data-theme="light"] .hr-track { stroke: rgba(0,0,0,0.07); }
@@ -2113,6 +2106,13 @@
   .jp-add { background: var(--accent); border: none; color: var(--bg); border-radius: 999px; padding: 10px 22px; font-family: inherit; font-size: 14px; font-weight: 500; cursor: pointer; transition: opacity 0.2s ease; }
   .jp-add:active { opacity: 0.7; }
   .jp-empty { color: var(--ink-faint); font-style: italic; font-size: 14px; padding: 30px 10px; text-align: center; line-height: 1.6; }
+  .notes-trash-toggle { display: block; width: 100%; margin-top: 20px; background: none; border: none; color: var(--ink-faint); font-family: inherit; font-size: 12.5px; cursor: pointer; padding: 8px; text-align: center; }
+  .notes-trash-toggle:hover { color: var(--ink-soft); }
+  .notes-trash { margin-top: 4px; border-top: 1px solid var(--field-edge); padding-top: 8px; }
+  .nt-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 9px 2px; }
+  .nt-ttl { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; color: var(--ink-soft); }
+  .nt-restore { flex: 0 0 auto; background: none; border: 1px solid var(--field-edge); color: var(--accent); border-radius: 999px; padding: 5px 13px; font-family: inherit; font-size: 12.5px; cursor: pointer; }
+  .nt-restore:hover { border-color: var(--accent); }
   /* entry cards — uniform height, date chip, clamped preview */
   .jp-entry { display: flex; gap: 14px; background: var(--panel); border: 1px solid var(--panel-edge); border-radius: 14px; padding: 14px 15px; margin-bottom: 10px; cursor: pointer; }
   .jp-date { flex: 0 0 auto; width: 44px; text-align: center; padding-top: 2px; }
@@ -3489,6 +3489,7 @@
   db.trash = db.trash || {};              // dateKey -> snapshot of a deleted day's entry
   db.voice = db.voice || { journal: {}, evening: {} }; // section -> dateKey -> audio data URL (voice memo)
   db.thoughts = db.thoughts || []; // [{id, text, voice, tag, star, ts, dateKey}] — quick captures through the day
+  db.noteTrash = db.noteTrash || []; // soft-deleted notes — recoverable, never hard-deleted
   if (typeof db.notifyOn !== "boolean") db.notifyOn = false;
   if (typeof db.notifyHours !== "number") db.notifyHours = 3;
   if (typeof db.soundOn !== "boolean") db.soundOn = true;
@@ -5762,11 +5763,12 @@
       return { kind: "note", id: t.id, text: t.text || "", voice: t.voice || null, star: !!t.star, ts: t.ts, dateKey: t.dateKey };
     }).sort(function (a, b) { return a.ts < b.ts ? 1 : -1; });
   }
+  var notesTrashOpen = false;
   function renderJournalPage() {
     var el = $("journalStream"); if (!el) return;
     var list = jpEntries();
-    if (!list.length) { el.innerHTML = '<div class="jp-empty">Your journal is a blank page.<br>Tap <b>Write a note</b> to capture your first thought.</div>'; return; }
-    el.innerHTML = list.map(function (e) {
+    var html = !list.length ? '<div class="jp-empty">Your journal is a blank page.<br>Tap <b>Write a note</b> to capture your first thought.</div>' :
+      list.map(function (e) {
       var dp = jpDateParts(e.dateKey);
       var lines = (e.text || "").split("\n");
       var title = (lines[0] || "").trim();
@@ -5785,6 +5787,18 @@
         '<div class="jp-e-meta"><span class="jp-e-kind">' + lead + '</span>' + star + del + '</div>' +
         '</div></div>';
     }).join("");
+    var trash = db.noteTrash || [];
+    if (trash.length) {
+      html += '<button class="notes-trash-toggle" data-act="trashToggle">' + (notesTrashOpen ? "Hide recently deleted" : "Recently deleted (" + trash.length + ")") + '</button>';
+      if (notesTrashOpen) {
+        html += '<div class="notes-trash">' + trash.slice().reverse().map(function (t) {
+          var lines = (t.text || "").split("\n");
+          var ttl = (t.title && t.title.trim()) || (lines[0] || "").trim() || "Voice note";
+          return '<div class="nt-row"><span class="nt-ttl">' + escapeHtml(ttl) + '</span><button class="nt-restore" data-act="restoreNote" data-id="' + t.id + '">Restore</button></div>';
+        }).join("") + '</div>';
+      }
+    }
+    el.innerHTML = html;
   }
   // Days = your compiled daily records (prompts + gratitude + the Seven Pillars + everything you saved that day)
   function renderJournalDays() {
@@ -5835,6 +5849,10 @@
     fb("success"); showToastMsg("Added to your journal.");
   });
   $("journalStream").addEventListener("click", function (e) {
+    var trashBtn = e.target.closest('[data-act="trashToggle"]');
+    if (trashBtn) { notesTrashOpen = !notesTrashOpen; renderJournalPage(); return; }
+    var restoreBtn = e.target.closest('[data-act="restoreNote"]');
+    if (restoreBtn) { restoreThought(restoreBtn.getAttribute("data-id")); buzz(10); fb("select"); renderJournalPage(); journalPaneSync(); return; }
     var entry = e.target.closest(".jp-entry"); if (!entry) return;
     if (e.target.closest("audio")) return;
     var id = entry.getAttribute("data-id"), kind = entry.getAttribute("data-kind");
@@ -5845,7 +5863,7 @@
       var th = null; for (var i = 0; i < db.thoughts.length; i++) if (db.thoughts[i].id === id) { th = db.thoughts[i]; break; }
       if (!th) return;
       if (act === "star") { th.star = !th.star; save(); buzz(8); renderJournalPage(); journalPaneSync(); }
-      else if (act === "del") { confirmDialog("Delete this entry?", "Delete", function () { db.thoughts = db.thoughts.filter(function (x) { return x.id !== id; }); save(); buzz(10); renderJournalPage(); journalPaneSync(); }); }
+      else if (act === "del") { softDeleteThought(id); buzz(10); renderJournalPage(); journalPaneSync(); showUndoToast("Note deleted.", function () { restoreThought(id); renderJournalPage(); journalPaneSync(); }); }
     } else if (act === "del") {
       confirmDialog("Remove this from your journal?", "Remove", function () {
         var k = id.slice(2);
@@ -6185,7 +6203,39 @@
     "What’s one honest thought?", "What just moved you?"
   ];
   var captureMood = null, toastTimer = null;
-  function newId(pre) { return pre + Date.now().toString(36) + Math.floor(Math.random() * 1e4).toString(36); }
+  var _idCounter = 0;
+  function newId(pre) { return pre + Date.now().toString(36) + (_idCounter++).toString(36) + Math.floor(Math.random() * 1e9).toString(36); }
+  // ---- notes are NEVER hard-deleted: soft-delete → recoverable trash + undo ----
+  function softDeleteThought(id) {
+    var idx = -1;
+    for (var i = 0; i < db.thoughts.length; i++) { if (db.thoughts[i].id === id) { idx = i; break; } }  // first match only
+    if (idx < 0) return null;
+    var removed = db.thoughts.splice(idx, 1)[0];
+    removed._deletedAt = new Date().toISOString();
+    db.noteTrash = db.noteTrash || [];
+    db.noteTrash.push(removed);
+    if (db.noteTrash.length > 200) db.noteTrash = db.noteTrash.slice(-200);
+    save();
+    return removed;
+  }
+  function restoreThought(id) {
+    db.noteTrash = db.noteTrash || [];
+    var idx = -1;
+    for (var i = 0; i < db.noteTrash.length; i++) { if (db.noteTrash[i].id === id) { idx = i; break; } }
+    if (idx < 0) return;
+    var t = db.noteTrash.splice(idx, 1)[0];
+    delete t._deletedAt;
+    db.thoughts.push(t);
+    db.thoughts.sort(function (a, b) { return (a.ts || "") < (b.ts || "") ? -1 : 1; });
+    save();
+  }
+  function showUndoToast(text, undoFn) {
+    var b = $("toastBody");
+    b.innerHTML = '<div class="toast-text">' + escapeHtml(text) + '</div><div class="toast-kicker" style="margin-top:5px;color:var(--accent)">Tap to undo</div>';
+    b._action = function () { $("toast").hidden = true; if (undoFn) undoFn(); };
+    $("toast").hidden = false;
+    clearTimeout(toastTimer); toastTimer = setTimeout(function () { $("toast").hidden = true; }, 8000);
+  }
   function moodColor(m) {
     if (m <= 3) return "#7c8a99";       // low — cool slate
     if (m <= 5) return "#9a8c6a";       // neutral
@@ -6382,10 +6432,7 @@
     for (var i = 0; i < db.thoughts.length; i++) if (db.thoughts[i].id === id) { th = db.thoughts[i]; break; }
     if (!th) return;
     if (btn.getAttribute("data-act") === "star") { th.star = !th.star; save(); renderThoughts(); }
-    else confirmDialog("Delete this thought?", "Delete", function () {
-      db.thoughts = db.thoughts.filter(function (x) { return x.id !== id; });
-      save(); renderThoughts();
-    });
+    else { softDeleteThought(id); renderThoughts(); showUndoToast("Note deleted.", function () { restoreThought(id); renderThoughts(); }); }
   });
 
   // ----- week in review -----
@@ -7347,7 +7394,7 @@
   });
   if (window.matchMedia) { try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { if (db.theme === "auto") applyTheme("auto"); }); } catch (e) {} }
 
-  var APP_VERSION = "v47";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v48";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
