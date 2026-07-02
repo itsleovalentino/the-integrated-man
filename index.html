@@ -1183,6 +1183,10 @@
   .vm-del { background: none; border: none; color: var(--ink-faint); cursor: pointer; font-size: 16px; padding: 2px 6px; flex-shrink: 0; }
   .vm-del:hover { color: #c8654f; }
   .voice-msg { font-size: 12px; color: var(--ink-faint); font-style: italic; margin-top: 8px; }
+  /* loud, sticky warning if this device can't persist locally — never fail silently again */
+  .storage-warn { position: fixed; left: 0; right: 0; bottom: 0; z-index: 9999; background: #7c2d12; color: #fff;
+    font-size: 13px; line-height: 1.45; padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px)); text-align: center; box-shadow: 0 -6px 20px rgba(0,0,0,0.3); }
+  .storage-warn[hidden] { display: none; }
 
   /* ---- floating thought capture ---- */
   .fab {
@@ -3251,7 +3255,8 @@
         <input type="file" id="importFile" accept="application/json" hidden />
       </div>
       <button class="modal-secondary" id="restoreSnapBtn" style="width:100%;margin-top:8px;" hidden></button>
-      <p class="ob-reading-hint" style="margin-top:8px;text-align:left;">Your journal lives safely in the cloud and on this device, with an automatic on-device snapshot as a backstop. Download a file now and then for extra peace of mind.</p>
+      <button class="modal-secondary" id="recoverBtn" style="width:100%;margin-top:8px;">Recover lost entries</button>
+      <p class="ob-reading-hint" style="margin-top:8px;text-align:left;">Your journal lives safely in the cloud and on this device, with an automatic on-device snapshot as a backstop. <b>Recover lost entries</b> safely pulls any notes, checks, or reflections from every backup and merges them back in — it never overwrites what you have. Download a file now and then for extra peace of mind.</p>
       <div class="settings-msg" id="settingsMsg"></div>
 
       <button class="modal-primary" id="settingsSave">Save</button>
@@ -3503,19 +3508,129 @@
     try { return JSON.parse(localStorage.getItem(KEY)) || {}; }
     catch (e) { return {}; }
   }
+
+  // ================= audio vault — why this exists =================
+  // A voice memo is base64 audio (~1MB/min). It used to be stored INSIDE the main
+  // journal blob, which shares the browser's tiny ~5MB localStorage quota with all your
+  // text. A few memos could push it over the limit, and every save would then FAIL
+  // SILENTLY — so a whole morning of notes/checks lived only in memory and vanished on
+  // refresh. Now audio lives in IndexedDB (effectively unlimited) and the journal blob
+  // keeps only tiny "aud:*" references. Your words can never be crowded out again.
+  var AUD = "aud:";
+  function isDataUrl(v) { return typeof v === "string" && v.indexOf("data:") === 0; }
+  function isAudRef(v)  { return typeof v === "string" && v.indexOf(AUD) === 0; }
+  function vsrc(v) { return isDataUrl(v) ? v : ""; }   // safe <audio src>: only real audio, never a bare ref
+  var _idb = null;
+  function idb() {
+    if (_idb) return _idb;
+    _idb = new Promise(function (resolve) {
+      try {
+        var rq = indexedDB.open("tim_media", 1);
+        rq.onupgradeneeded = function () { try { rq.result.createObjectStore("audio"); } catch (e) {} };
+        rq.onsuccess = function () { resolve(rq.result); };
+        rq.onerror = function () { resolve(null); };
+      } catch (e) { resolve(null); }
+    });
+    return _idb;
+  }
+  function idbPut(key, val) {
+    return idb().then(function (d) { if (!d) return false; return new Promise(function (res) {
+      try { var tx = d.transaction("audio", "readwrite"); tx.objectStore("audio").put(val, key);
+        tx.oncomplete = function () { res(true); }; tx.onerror = function () { res(false); }; }
+      catch (e) { res(false); }
+    }); });
+  }
+  function idbGet(key) {
+    return idb().then(function (d) { if (!d) return null; return new Promise(function (res) {
+      try { var tx = d.transaction("audio", "readonly"); var rq = tx.objectStore("audio").get(key);
+        rq.onsuccess = function () { res(rq.result || null); }; rq.onerror = function () { res(null); }; }
+      catch (e) { res(null); }
+    }); });
+  }
+  var _stored = {}; // ref -> byte length already written to IndexedDB this session (skip rewrites)
+  // Build a persistence-safe copy of db: inline audio → tiny "aud:*" refs; bytes collected
+  // for IndexedDB. db itself is never mutated, so on-screen playback keeps working.
+  function splitAudio(src) {
+    var blobs = {};
+    function ref(key, val) { if (isDataUrl(val)) { blobs[key] = val; return key; } return val; }
+    var clean = {};
+    for (var k in src) if (src.hasOwnProperty(k)) clean[k] = src[k];
+    if (Array.isArray(src.thoughts)) {
+      clean.thoughts = src.thoughts.map(function (t) {
+        if (t && isDataUrl(t.voice)) { var c = {}; for (var p in t) c[p] = t[p]; c.voice = ref(AUD + "t:" + t.id, t.voice); return c; }
+        return t;
+      });
+    }
+    if (src.voice && typeof src.voice === "object") {
+      var v = {};
+      for (var sec in src.voice) { v[sec] = {};
+        for (var dk in src.voice[sec]) { var val = src.voice[sec][dk];
+          v[sec][dk] = isDataUrl(val) ? ref(AUD + "v:" + sec + ":" + dk, val) : val; } }
+      clean.voice = v;
+    }
+    return { clean: clean, blobs: blobs };
+  }
+  function stashAudio(blobs) {
+    for (var key in blobs) {
+      if (_stored[key] === blobs[key].length) continue;   // unchanged, already saved
+      (function (k, len) { idbPut(k, blobs[k]).then(function (ok) { if (ok) _stored[k] = len; }); })(key, blobs[key].length);
+    }
+  }
+  // THE single durable write. Text always fits (audio stripped out), so it can't fail on quota.
+  function writeLocal() {
+    var sp = splitAudio(db);
+    var ok = false;
+    try { localStorage.setItem(KEY, JSON.stringify(sp.clean)); ok = true; } catch (e) { ok = false; }
+    stashAudio(sp.blobs);
+    return { ok: ok, clean: sp.clean };
+  }
+  // After a reload the in-memory db holds "aud:*" refs; pull the real audio back from
+  // IndexedDB so memos play, then re-render whatever showed a memo.
+  function rehydrateAudio() {
+    var jobs = [], touched = false;
+    function pull(refKey, assign) {
+      jobs.push(idbGet(refKey).then(function (u) { if (u) { assign(u); _stored[refKey] = u.length; touched = true; } }));
+    }
+    if (Array.isArray(db.thoughts)) db.thoughts.forEach(function (t) {
+      if (t && isAudRef(t.voice)) (function (th) { pull(th.voice, function (u) { th.voice = u; }); })(t);
+    });
+    if (db.voice) for (var sec in db.voice) for (var dk in db.voice[sec]) {
+      var val = db.voice[sec][dk];
+      if (isAudRef(val)) (function (s, k, r) { pull(r, function (u) { db.voice[s][k] = u; }); })(sec, dk, val);
+    }
+    if (!jobs.length) return;
+    Promise.all(jobs).then(function () {
+      if (!touched) return;
+      try { if (typeof renderMemo === "function") { renderMemo("journal"); renderMemo("evening"); } } catch (e) {}
+      try { if (typeof renderJournalPage === "function") renderJournalPage(); } catch (e) {}
+      try { if (typeof rerenderAll === "function") rerenderAll(); } catch (e) {}
+    });
+  }
+  // Loud, sticky warning if a durable write EVER fails (storage off / private mode) — never silent again.
+  var _storageWarned = false;
+  function storageBlocked() {
+    if (typeof cloudPush === "function") { try { needsPush = true; cloudPush(); } catch (e) {} } // rush it to the cloud
+    if (_storageWarned) return; _storageWarned = true;
+    var b = document.getElementById("storageWarn");
+    if (!b) { b = document.createElement("div"); b.id = "storageWarn"; b.className = "storage-warn"; document.body.appendChild(b); }
+    b.textContent = "⚠️ This device can’t save locally right now — your entries are syncing to your account instead. Free up space or check private-mode settings, then reload.";
+    b.hidden = false;
+  }
+  function storageOk() { if (!_storageWarned) return; _storageWarned = false; var b = document.getElementById("storageWarn"); if (b) b.hidden = true; }
+
   var lastSnapAt = 0;
-  function snapshotSafe() {
+  function snapshotSafe(clean) {
     if (!(db.profile && db.profile.onboarded)) return; // never snapshot an empty/half state
     var now = Date.now();
     if (now - lastSnapAt < 90000) return;              // at most ~every 90s
     lastSnapAt = now;
-    try { localStorage.setItem(SAFE_KEY, JSON.stringify({ t: now, data: db })); } catch (e) {}
+    try { localStorage.setItem(SAFE_KEY, JSON.stringify({ t: now, data: clean || splitAudio(db).clean })); } catch (e) {}
   }
   function save() {
     db.updatedAt = Date.now(); // freshness stamp so cloud sync never overwrites newer local data
-    try { localStorage.setItem(KEY, JSON.stringify(db)); }
-    catch (e) { /* storage blocked (sandbox / private mode) — keep running in-memory */ }
-    snapshotSafe();                                          // keep a local safety copy
+    var w = writeLocal();                                   // durable, audio-free, quota-proof write
+    snapshotSafe(w.clean);                                  // keep a local safety copy (text only)
+    if (w.ok) storageOk(); else storageBlocked();           // never fail silently
     if (typeof cloudPushSoon === "function") cloudPushSoon(); // mirror to the cloud if signed in
   }
   var db = load();
@@ -6078,10 +6193,11 @@
   function renderWriterMemo() {
     var el = $("writerMemo"); if (!el) return;
     if (!writerVoice) { el.hidden = true; el.innerHTML = ""; return; }
+    if (isAudRef(writerVoice)) { idbGet(writerVoice).then(function (u) { if (u && isAudRef(writerVoice)) { writerVoice = u; renderWriterMemo(); } }); } // resolve after reload
     el.hidden = false;
     el.innerHTML = '<div class="writer-memo-card">' +
       '<svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><line x1="12" y1="18" x2="12" y2="22"/></svg>' +
-      '<audio controls src="' + writerVoice + '"></audio>' +
+      (vsrc(writerVoice) ? '<audio controls src="' + writerVoice + '"></audio>' : '<span class="voice-msg" style="flex:1">Voice memo attached</span>') +
       '<button class="writer-memo-x" id="writerMemoX" type="button" aria-label="Remove voice memo">&times;</button></div>' +
       '<div class="writer-memo-hint">Voice memo attached — it saves with this note.</div>';
     var x = $("writerMemoX"); if (x) x.addEventListener("click", function () { writerVoice = null; renderWriterMemo(); buzz(8); });
@@ -6217,7 +6333,8 @@
       var body = lines.slice(1).join("\n").replace(/^\n+|\n+$/g, "");
       if (body) html += '<div class="paper-text">' + escapeHtml(body) + '</div>';
     }
-    if (t.voice) html += '<div class="paper-section"><audio controls src="' + t.voice + '" style="width:100%;"></audio></div>';
+    if (vsrc(t.voice)) html += '<div class="paper-section"><audio controls src="' + t.voice + '" style="width:100%;"></audio></div>';
+    else if (t.voice) html += '<div class="paper-section voice-msg">Voice memo — recorded on another device.</div>';
     if (!html) html = '<div class="paper-empty">An empty note.</div>';
     $("paperBody").innerHTML = html;
     $("pagePrev").style.display = "none"; $("pageNext").style.display = "none";
@@ -6298,11 +6415,8 @@
         var reader = new FileReader();
         reader.onload = function () {
           db.voice[target][todayKey] = reader.result;
-          var ok = true;
-          try { localStorage.setItem(KEY, JSON.stringify(db)); } catch (e2) { ok = false; }
+          save();                       // audio → IndexedDB, text → localStorage (never overflows)
           renderMemo(target);
-          if (!ok) $("memo-" + target).insertAdjacentHTML("beforeend",
-            '<div class="voice-msg">Playable now, but too large to store locally — keep memos short.</div>');
         };
         reader.readAsDataURL(blob);
         mediaRec = null; recBtn = null; recTarget = null;
@@ -6313,8 +6427,10 @@
   }
 
   function renderMemo(target) {
-    var wrap = $("memo-" + target), url = db.voice[target] && db.voice[target][todayKey];
+    var wrap = $("memo-" + target); if (!wrap) return;
+    var url = db.voice[target] && db.voice[target][todayKey];
     if (!url) { wrap.innerHTML = ""; return; }
+    if (!vsrc(url)) { wrap.innerHTML = '<div class="voice-msg">Voice memo saved.</div>'; return; } // ref not yet resolved / other device
     wrap.innerHTML = '<div class="vm-row"><audio controls src="' + url + '"></audio>' +
       '<button class="vm-del" data-del="' + target + '" aria-label="Delete memo">×</button></div>';
   }
@@ -6426,7 +6542,7 @@
     }).catch(function () { $("captureMemo").innerHTML = '<div class="voice-msg">Microphone unavailable (allow access; use https or localhost).</div>'; });
   }
   function renderCaptureMemo() {
-    if (!pendingVoice) { $("captureMemo").innerHTML = ""; return; }
+    if (!vsrc(pendingVoice)) { $("captureMemo").innerHTML = ""; return; }
     $("captureMemo").innerHTML = '<div class="vm-row"><audio controls src="' + pendingVoice + '"></audio>' +
       '<button class="vm-del" id="capMemoDel" aria-label="Remove">×</button></div>';
   }
@@ -6483,7 +6599,7 @@
         var rd = new FileReader();
         rd.onload = function () {
           db.thoughts.push({ id: newId("t"), text: "", voice: rd.result, mood: null, star: false, ts: new Date().toISOString(), dateKey: todayKey });
-          try { localStorage.setItem(KEY, JSON.stringify(db)); } catch (e2) {}
+          save();                       // audio → IndexedDB, text → localStorage (never overflows)
           playPop(); celebrate($("fab"));
           if (!$("thoughtsPane").hidden) renderThoughts();
         };
@@ -6550,7 +6666,7 @@
           '<button class="th-del" data-act="del">×</button>' +
         '</div>' +
         (t.text ? '<div class="th-text">' + escapeHtml(t.text) + "</div>" : "") +
-        (t.voice ? '<audio controls src="' + t.voice + '"></audio>' : "") +
+        (vsrc(t.voice) ? '<audio controls src="' + t.voice + '"></audio>' : (t.voice ? '<span class="voice-msg">Voice memo — recorded on another device.</span>' : "")) +
       "</div>";
     });
     $("thoughtsBody").innerHTML = html;
@@ -7461,8 +7577,9 @@
     // voice memos
     ["journal", "evening"].forEach(function (sec) {
       var url = db.voice[sec] && db.voice[sec][k];
-      if (url) html += '<div class="paper-section"><div class="paper-h">Voice memo · ' +
+      if (vsrc(url)) html += '<div class="paper-section"><div class="paper-h">Voice memo · ' +
         (sec === "journal" ? "Journaling" : "End of day") + '</div><audio controls src="' + url + '" style="width:100%;"></audio></div>';
+      else if (url) html += '<div class="paper-section voice-msg">Voice memo · ' + (sec === "journal" ? "Journaling" : "End of day") + ' — recorded on another device.</div>';
     });
     var r = db.reflections[k];
     if (r) {
@@ -7546,7 +7663,7 @@
   });
   if (window.matchMedia) { try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { if (db.theme === "auto") applyTheme("auto"); }); } catch (e) {} }
 
-  var APP_VERSION = "v53";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v54";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
@@ -7786,6 +7903,68 @@
   $("exportBtn").addEventListener("click", function () {
     $("settingsMsg").textContent = downloadBackup() ? "Backup downloaded." : "Couldn’t export in this context.";
   });
+  // write an arbitrary saved state durably (strips audio so it can't overflow), for restore/import
+  function persistClean(dataObj) {
+    var sp = splitAudio(dataObj || {});
+    stashAudio(sp.blobs);
+    try { localStorage.setItem(KEY, JSON.stringify(sp.clean)); return true; } catch (e) { return false; }
+  }
+  // ----- non-destructive recovery: merge any entries from a backup that aren't here now -----
+  // Only ever ADDS. Never removes or overwrites. This is how we get lost notes/checks back.
+  function mergeRecover(src) {
+    if (!src || typeof src !== "object") return 0;
+    var added = 0;
+    if (Array.isArray(src.thoughts)) {
+      db.thoughts = db.thoughts || [];
+      var have = {}; db.thoughts.forEach(function (t) { if (t && t.id) have[t.id] = t; });
+      src.thoughts.forEach(function (t) {
+        if (!t || !t.id) return;
+        if (!have[t.id]) { db.thoughts.push(t); have[t.id] = t; added++; }
+        else { var cur = have[t.id];
+          if ((t.text || "").length > (cur.text || "").length) { cur.text = t.text; cur.title = t.title || cur.title; cur.html = t.html || cur.html; added++; }
+          if (t.voice && !cur.voice) { cur.voice = t.voice; added++; } }
+      });
+    }
+    ["morning", "journal"].forEach(function (m) { var s = src[m]; if (!s) return; db[m] = db[m] || {};
+      for (var k in s) { if (s[k] && !(db[m][k] && String(db[m][k]).trim())) { db[m][k] = s[k]; added++; } } });
+    ["habitLog", "readLog", "pillarSkip"].forEach(function (m) { var s = src[m]; if (!s) return; db[m] = db[m] || {};
+      for (var day in s) {
+        if (m === "pillarSkip") { if (s[day] && !db[m][day]) { db[m][day] = s[day]; added++; } continue; }
+        db[m][day] = db[m][day] || {}; var inner = s[day] || {};
+        for (var id in inner) { if (inner[id] && !db[m][day][id]) { db[m][day][id] = inner[id]; added++; } } } });
+    ["gratitude", "reflections", "ratings"].forEach(function (m) { var s = src[m]; if (!s) return; db[m] = db[m] || {};
+      for (var k in s) { if (s[k] != null && db[m][k] == null) { db[m][k] = s[k]; added++; } } });
+    if (Array.isArray(src.prayers)) { db.prayers = db.prayers || [];
+      var ph = {}; db.prayers.forEach(function (p) { if (p && p.id) ph[p.id] = 1; });
+      src.prayers.forEach(function (p) { if (p && p.id && !ph[p.id]) { db.prayers.push(p); ph[p.id] = 1; added++; } }); }
+    if (src.voice) { db.voice = db.voice || { journal: {}, evening: {} };
+      for (var sec in src.voice) { db.voice[sec] = db.voice[sec] || {};
+        for (var dk in src.voice[sec]) { if (src.voice[sec][dk] && !db.voice[sec][dk]) db.voice[sec][dk] = src.voice[sec][dk]; } } }
+    return added;
+  }
+  function recoverEntries() {
+    var msg = $("settingsMsg"); msg.textContent = "Searching every backup…";
+    var total = 0;
+    var snap = readSnapshot(); if (snap && snap.data) total += mergeRecover(snap.data);
+    function finish() {
+      if (total > 0) {
+        save();
+        try { rehydrateAudio(); } catch (e) {}
+        try { if (typeof rerenderAll === "function") rerenderAll(); } catch (e) {}
+        try { if (typeof renderJournalPage === "function") renderJournalPage(); } catch (e) {}
+        try { if (typeof renderHabits === "function") renderHabits(); } catch (e) {}
+        msg.textContent = "Recovered " + total + " item" + (total === 1 ? "" : "s") + " and merged them in — nothing was overwritten.";
+        if (typeof playChime === "function") playChime();
+      } else { msg.textContent = "No recoverable entries were found beyond what you already have."; }
+    }
+    if (typeof sb !== "undefined" && sb && session) {
+      sb.from("user_state").select("data").eq("user_id", session.user.id).maybeSingle()
+        .then(function (res) { var cloud = res && res.data && res.data.data; if (cloud) total += mergeRecover(cloud); finish(); }, finish);
+    } else { finish(); }
+  }
+  $("recoverBtn").addEventListener("click", function () {
+    confirmDialog("Search your on-device snapshot and cloud backup for any entries missing here, and merge them back in? This only adds — it never removes or overwrites what you have.", "Recover", recoverEntries);
+  });
   // ----- restore the on-device safety snapshot -----
   function readSnapshot() { try { return JSON.parse(localStorage.getItem(SAFE_KEY)); } catch (e) { return null; } }
   function renderSnapButton() {
@@ -7800,7 +7979,7 @@
   $("restoreSnapBtn").addEventListener("click", function () {
     var snap = readSnapshot(); if (!snap || !snap.data) return;
     confirmDialog("Restore your last on-device snapshot? This replaces what's here now.", "Restore", function () {
-      try { localStorage.setItem(KEY, JSON.stringify(snap.data)); } catch (e) {}
+      persistClean(snap.data);
       $("settingsMsg").textContent = "Restored. Reloading…";
       setTimeout(function () { location.reload(); }, 500);
     });
@@ -7814,7 +7993,7 @@
       try {
         var data = JSON.parse(reader.result);
         if (!data || typeof data !== "object") throw 0;
-        localStorage.setItem(KEY, JSON.stringify(data));
+        persistClean(data);
         $("settingsMsg").textContent = "Restored. Reloading…";
         setTimeout(function () { location.reload(); }, 600);
       } catch (e) { $("settingsMsg").textContent = "That file didn’t look right."; }
@@ -7930,9 +8109,14 @@
   var session = null, authMode = "signup", pushTimer = null;
   var syncState = "synced", needsPush = false, pushRetry = null, lastSyncedAt = 0; // reliable sync: keep trying until the cloud confirms
   function setSync(s) { syncState = s; if (typeof renderAccount === "function") renderAccount(); }
-  // heavy / device-local data we don't sync into the JSON blob (kept local)
-  var SYNC_SKIP = { voice: 1, bibleCache: 1 };
-  function syncableData() { var o = {}; for (var k in db) { if (db.hasOwnProperty(k) && !SYNC_SKIP[k]) o[k] = db[k]; } return o; }
+  // heavy / device-local data we don't sync into the JSON blob (kept local).
+  // Audio is stripped to tiny refs by splitAudio; bibleCache is a big re-fetchable cache.
+  var SYNC_SKIP = { bibleCache: 1 };
+  function syncableData() {
+    var clean = splitAudio(db).clean;   // audio → refs, so the cloud blob stays small too
+    var o = {}; for (var k in clean) { if (clean.hasOwnProperty(k) && !SYNC_SKIP[k]) o[k] = clean[k]; }
+    return o;
+  }
   var pulled = false; // true once we've read the cloud (or confirmed it's empty) this session — GUARDS all pushes
   function cloudPush() {
     if (!sb || !session || !pulled) return;             // never push before we've pulled the cloud
@@ -7965,7 +8149,8 @@
     for (var k in data) { if (data.hasOwnProperty(k) && !SYNC_SKIP[k]) db[k] = data[k]; }
     db.voice = db.voice || { journal: {}, evening: {} };
     db.bibleCache = db.bibleCache || {};
-    try { localStorage.setItem(KEY, JSON.stringify(db)); } catch (e) {}
+    persistClean(db);            // durable, audio-safe write
+    rehydrateAudio();            // pull any voice memos this device already has for the synced refs
     rerenderAll();
   }
   // PULL FIRST, then route. The cloud is authoritative on sign-in; we never onboard or push until we've seen it.
@@ -8260,6 +8445,9 @@
   // ================= init + auto-renew =================
   applyLayout();
   dailyRefresh();
+  rehydrateAudio();   // pull voice memos back from IndexedDB after a reload, then re-render
+  // one-time migration for existing journals: shrink any inline audio out of the main blob
+  (function () { try { var big = false; (db.thoughts || []).forEach(function (t) { if (t && isDataUrl(t.voice)) big = true; }); if (db.voice) for (var s in db.voice) for (var k in db.voice[s]) if (isDataUrl(db.voice[s][k])) big = true; if (big) writeLocal(); } catch (e) {} })();
 
   // journal: dock on wide screens, overlay on narrow
   applyJournalMode();
