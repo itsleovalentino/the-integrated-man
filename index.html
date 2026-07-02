@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <title>The Integrated Man · Daily</title>
 <!-- installable as a home-screen app -->
-<meta name="theme-color" content="#000000" />
+<meta name="theme-color" content="#0a0a0b" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black" />
@@ -66,14 +66,14 @@
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..600;1,9..144,300..500&family=Cormorant+Garamond:ital,wght@0,500;1,500&family=Spline+Sans+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root {
-    /* The Integrated Man — true-black brand field */
-    --bg: #000000;
-    --panel: #0c0c0d;
-    --panel-edge: #232325;
-    --ink-high: #f6f4ee;
-    --ink: #f3f1ea;
-    --ink-soft: #a4a29b;
-    --ink-faint: #82807a;
+    /* The Integrated Man — near-black brand field (a hair off pure #000 to cut night-time halation) */
+    --bg: #0a0a0b;
+    --panel: #121214;
+    --panel-edge: #242426;
+    --ink-high: #f1efe9;
+    --ink: #eae8e1;
+    --ink-soft: #a2a099;
+    --ink-faint: #807e78;
     --accent: #cbb27e;
     --accent-hover: #d8c290;
     --accent-soft: rgba(203, 178, 126, 0.12);
@@ -2605,6 +2605,7 @@
   }
   .vm-btn + .vm-btn { border-top: 1px solid var(--panel-edge); }
   .vm-btn:hover { background: var(--accent-soft); }
+  .vm-ext { margin-left: auto; opacity: 0.45; font-size: 13px; }
   .vm-btn svg { width: 18px; height: 18px; stroke: var(--accent); stroke-width: 1.6; fill: none; flex-shrink: 0; }
   .vn-text {
     font-size: 17px; line-height: 1.55; color: var(--ink-soft); font-style: italic;
@@ -3442,6 +3443,7 @@
     <button class="vm-btn" id="vmHighlight"><svg viewBox="0 0 24 24"><rect x="3" y="13" width="18" height="6" rx="1.5" fill="currentColor" stroke="none"/><line x1="6" y1="8" x2="18" y2="8"/></svg> <span id="vmHlLabel">Highlight</span></button>
     <button class="vm-btn" id="vmNote"><svg viewBox="0 0 24 24"><path d="M4 20l4-1 9-9-3-3-9 9-1 4z"/><line x1="14" y1="6" x2="17" y2="9"/></svg> Write a note</button>
     <button class="vm-btn" id="vmCopy"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M6 15H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v1"/></svg> Copy verse</button>
+    <button class="vm-btn" id="vmCommentary"><svg viewBox="0 0 24 24"><path d="M5 4a2 2 0 0 1 2-2h11v18H7a2 2 0 0 0-2 2z"/><path d="M5 20a2 2 0 0 1 2-2h11"/><line x1="9" y1="7" x2="14" y2="7"/></svg> Commentary <span class="vm-ext">↗</span></button>
     <button class="vm-btn" id="vmPlayFrom" hidden><svg viewBox="0 0 24 24"><path d="M6 4l14 8-14 8z" fill="currentColor" stroke="none"/></svg> Read from here</button>
   </div>
 
@@ -4819,6 +4821,18 @@
     catch (e) { showToastMsg("Couldn't copy here."); }
     closeVerseMenu();
   });
+  $("vmCommentary").addEventListener("click", function () {
+    var ref = vmRef || db.lastPassage || "";
+    var m = ref.match(/^(.*?)\s+(\d+)/);
+    var book = m ? m[1].trim() : ref, chap = m ? m[2] : "1";
+    var slug = book.toLowerCase().replace(/\s+/g, "-");
+    var overrides = { "psalms": "psalm", "song-of-solomon": "song-of-songs" };   // Enduring Word slug quirks
+    slug = overrides[slug] || slug;
+    var url = "https://enduringword.com/bible-commentary/" + slug + "-" + chap + "/";
+    closeVerseMenu();
+    buzz(8);
+    try { window.open(url, "_blank", "noopener"); } catch (e) { window.location.href = url; }
+  });
   $("vmPlayFrom").addEventListener("click", function () {
     var el = vmEl; closeVerseMenu();
     if (el) playFromVerse(el);
@@ -5215,11 +5229,11 @@
       '<div class="steps-bar"><div class="steps-fill" style="width:' + pct + '%"></div></div>' +
       '<div class="steps-sub' + (hit ? " steps-hit" : "") + '">' + (hit ? "Goal reached — strong." : fmtNum(goal - cal) + " kcal to go · " + pct + "% there") + '</div></div>';
   }
-  function stressStat(stress) {
-    if (!stress || !stress.length) {
-      return '<div class="hm-stress"><div class="hm-stress-l">〰&nbsp; Stress today</div>' +
-        '<div class="hm-stress-s" style="margin-top:6px">No stress data coming through yet — the Oura function needs to include <b>daily_stress</b> (redeploy it), then give Oura an hour to sync.</div></div>';
-    }
+  function stressStat(d) {
+    var hint = function (t) { return '<div class="hm-stress"><div class="hm-stress-l">〰&nbsp; Stress today</div><div class="hm-stress-s" style="margin-top:6px">' + t + '</div></div>'; };
+    if (!d || !("stress" in d)) return hint("The Oura function isn’t returning stress yet — redeploy it (it must fetch <b>daily_stress</b>).");
+    var stress = d.stress;
+    if (!stress || !stress.length) return hint("No stress logged for today yet — Oura fills this in as your ring syncs through the day.");
     var rec = stress.filter(function (a) { return a.day === todayKey; })[0] || latestDay(stress);
     var secs = rec && isNum(rec.stress_high) ? rec.stress_high : 0;
     var h = Math.floor(secs / 3600), mn = Math.round((secs % 3600) / 60);
@@ -5251,7 +5265,7 @@
     if (m.readiness || m.sleep) html += '<div class="health-note">' + escapeHtml(healthNote(rScore, sScore)) + '</div>';
     if (m.steps) html += stepsBar(d && d.activity);
     if (m.calories) html += caloriesBar(d && d.activity);
-    if (m.stress) html += stressStat(d && d.stress);
+    if (m.stress) html += stressStat(d);
     p.innerHTML = html || '<div class="health-connect">No metrics selected — open Customize to add some.</div>';
     // celebrate the first time today's steps cross the goal
     var actToday = (d && d.activity || []).filter(function (a) { return a.day === todayKey; })[0];
@@ -5496,15 +5510,11 @@
       (count ? '<div class="pw-stack">' + stack + '</div>' : "") +
       '<button class="pw-comment-toggle' + (commentOpen ? " on" : "") + '" data-act="toggleComment" data-id="' + p.id + '"><svg viewBox="0 0 24 24">' + PW_CHAT + '</svg>' + commentLabel + '</button>' +
       '</div>';
-    // prayer requests can be carried into your own prayer-list widget
-    var onList = (db.prayers || []).some(function (x) { return x.srcId === p.id; });
-    var toList = isPrayer ? '<button class="pw-tolist' + (onList ? " added" : "") + '" data-act="toList" data-id="' + p.id + '"' + (onList ? " disabled" : "") + '>' +
-      '<svg viewBox="0 0 24 24">' + (onList ? PW_CHECK : PW_BOOKMARK) + '</svg>' + (onList ? "On your prayer list" : "Add to my prayer list") + '</button>' : "";
     var badge = '<span class="pw-tag pw-tag-' + type + '"><svg viewBox="0 0 24 24">' + reactIcon + '</svg>' + (isPrayer ? "Prayer" : "Praise") + '</span>';
     var del = mine ? '<button class="pw-post-del" data-act="delPost" data-id="' + p.id + '" aria-label="Delete post">' + PW_TRASH + '</button>' : "";
     return '<div class="pw-card pw-' + type + '">' +
       '<div class="pw-head">' + pwAvatar(name, url, "lg") + '<div class="pw-who"><div class="pw-name">' + escapeHtml(name) + '</div><div class="pw-meta">' + (mine ? "you · " : "") + pwAgo(p.created_at) + '</div></div>' + badge + del + '</div>' +
-      '<div class="pw-body">' + escapeHtml(p.body) + '</div>' + actions + toList + encList + commentInput + '</div>';
+      '<div class="pw-body">' + escapeHtml(p.body) + '</div>' + actions + encList + commentInput + '</div>';
   }
 
   function renderWall() {
@@ -5603,7 +5613,6 @@
     }
     else if (act === "delEnc") doDelEnc(el.getAttribute("data-eid"));
     else if (act === "delPost") doDelPost(id);
-    else if (act === "toList") doAddToPrayerList(id);
     else if (act === "showMore") { wallState.shown += 10; renderWall(); }
   });
 
@@ -5715,7 +5724,10 @@
   }
   $("nav_home").addEventListener("click", function () { setView("home"); buzz(8); });
   // Journal bubble → straight into a blank note, ready to type
-  $("journalBubble").addEventListener("click", function () { openWriter(); });
+  $("journalBubble").addEventListener("click", function () {
+    if (journalWide()) { journalTab = "notes"; setView("journal"); buzz(8); }  // wide: open the split view
+    else openWriter();                                                          // mobile: full-screen quick capture
+  });
   $("nav_bible").addEventListener("click", function () { if (currentView !== "bible") openBible(db.lastPassage || "John 1"); buzz(8); });
   $("nav_fellowship").addEventListener("click", function () { setView("fellowship"); buzz(8); });
 
@@ -5869,7 +5881,7 @@
       return '<div class="note-row' + sel + '" data-id="' + e.id + '" data-kind="note">' +
         '<div class="note-row-body">' +
           '<div class="note-row-title">' + (e.star ? '<span class="nr-star">★</span>' : '') + escapeHtml(title) + '</div>' +
-          '<div class="note-row-sub">' + (preview ? escapeHtml(preview) : '<span class="nr-empty">No additional text</span>') + (e.voice ? ' <span class="nr-voice">· voice</span>' : '') + '</div>' +
+          ((preview || e.voice) ? '<div class="note-row-sub">' + escapeHtml(preview) + (e.voice ? ' <span class="nr-voice">· voice</span>' : '') + '</div>' : '') +
         '</div>' +
         '<div class="note-row-meta"><span class="nr-date">' + dp.dow + ' ' + dp.day + '</span><span class="nr-time">' + timeLabel(e.ts) + '</span></div>' +
         '<div class="note-row-acts"><button class="jp-e-star' + (e.star ? " on" : "") + '" data-act="star" aria-label="Star">' + starSvg(e.star) + '</button>' +
@@ -5958,7 +5970,7 @@
     var btn = e.target.closest("[data-act]");
     if (!btn) {   // tap a note → open it directly, already editable (reading = editing)
       var nt = null; for (var j = 0; j < db.thoughts.length; j++) if (db.thoughts[j].id === id) { nt = db.thoughts[j]; break; }
-      if (nt) { openWriterEdit(nt); renderJournalPage(); }   // re-render so the open note highlights (two-pane)
+      if (nt) { commitWriter(); openWriterEdit(nt); renderJournalPage(); }   // save the current note first, then open + highlight
       return;
     }
     var act = btn.getAttribute("data-act");
@@ -6081,11 +6093,12 @@
     $("writerView").hidden = true;
     journalTab = "notes"; setView("journal");
   }
-  function saveWriter() {
+  // save the open note in place, no navigation — used by autosave + before switching notes (never lose edits)
+  function commitWriter() {
+    if ($("writerView").hidden) return false;
     var title = titlePlain();
     var bodyText = writerTextValue().replace(/\n{3,}/g, "\n\n").trim();
-    // nothing written → just return to the notes, no entry created
-    if (!title && !bodyText && !writerVoice) { writerToNotes(); return; }
+    if (!title && !bodyText && !writerVoice) return false;
     var combined = title + (title && bodyText ? "\n" : "") + bodyText;
     var bodyHtml = sanitizeNoteHtml($("writerText").innerHTML);
     var hasRich = /<(b|strong|i|em|u)\b/i.test(bodyHtml);
@@ -6095,25 +6108,34 @@
         if (arr[i].id === writerEditId) {
           arr[i].text = combined; arr[i].title = title || null;
           arr[i].html = hasRich ? bodyHtml : null; arr[i].voice = writerVoice;
-          arr[i].edited = new Date().toISOString();
-          break;
+          arr[i].edited = new Date().toISOString(); break;
         }
       }
       save();
     } else {
       addThought({ text: combined, title: title || null, html: hasRich ? bodyHtml : null, voice: writerVoice });
-      writerEditId = db.thoughts.length ? db.thoughts[db.thoughts.length - 1].id : null;   // keep editing the same note (no duplicate on re-save)
+      writerEditId = db.thoughts.length ? db.thoughts[db.thoughts.length - 1].id : null;   // keep editing the same note
     }
-    writerVoice = null;
-    fb("success");
-    writerToNotes();
-    showToastMsg("Saved to your journal.", 2200);
+    return true;
   }
-  $("notesNew").addEventListener("click", function () { openWriter(); renderJournalPage(); });
+  var writerAutosaveTimer = null;
+  function scheduleWriterAutosave() { clearTimeout(writerAutosaveTimer); writerAutosaveTimer = setTimeout(function () { if (commitWriter()) renderJournalPage(); }, 900); }
+  // "Done" → save the note and go back Home (a clear finish + the way out of the split)
+  function saveWriter() {
+    var had = commitWriter();
+    clearTimeout(writerAutosaveTimer);
+    writerVoice = null; writerEditId = null; stopWriterRec();
+    $("writerView").hidden = true;
+    document.body.classList.remove("j-notes-wide");
+    fb("success");
+    setView("home");
+    if (had) showToastMsg("Saved to your journal.", 2000);
+  }
+  $("notesNew").addEventListener("click", function () { commitWriter(); openWriter(); renderJournalPage(); });
   $("writerClose").addEventListener("click", writerToNotes);
   $("writerSave").addEventListener("click", saveWriter);
-  $("writerTitle").addEventListener("input", syncWriterEmpty);
-  $("writerText").addEventListener("input", syncWriterEmpty);
+  $("writerTitle").addEventListener("input", function () { syncWriterEmpty(); scheduleWriterAutosave(); });
+  $("writerText").addEventListener("input", function () { syncWriterEmpty(); scheduleWriterAutosave(); });
   ["writerTitle", "writerText"].forEach(function (idn) {
     $(idn).addEventListener("focus", function () { setTimeout(positionWriterTools, 60); setTimeout(positionWriterTools, 340); });
   });
@@ -7492,7 +7514,7 @@
     root.setAttribute("data-theme", actual);
     // keep the phone's status-bar tint in step with the theme (no more mismatched band up top)
     var tc = document.querySelector('meta[name="theme-color"]');
-    if (tc) tc.setAttribute("content", actual === "light" ? "#f4f2ec" : "#000000");
+    if (tc) tc.setAttribute("content", actual === "light" ? "#f4f2ec" : "#0a0a0b");
     var seg = $("themeSeg"); if (seg) Array.prototype.forEach.call(seg.children, function (b) { b.classList.toggle("sel", b.getAttribute("data-theme") === pref); });
   }
   if (["light", "dark", "auto"].indexOf(db.theme) < 0) db.theme = "dark";
@@ -7503,7 +7525,7 @@
   });
   if (window.matchMedia) { try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { if (db.theme === "auto") applyTheme("auto"); }); } catch (e) {} }
 
-  var APP_VERSION = "v51";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v52";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
