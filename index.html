@@ -1103,6 +1103,17 @@
   }
   .habit-icon svg { width: 16px; height: 16px; stroke: currentColor; stroke-width: 1.8; fill: none; stroke-linecap: round; stroke-linejoin: round; }
   .habit-name { flex: 1; min-width: 0; font-size: 15px; }
+  /* streak flame — heats up as the streak grows */
+  .hab-flame { display: inline-flex; align-items: center; gap: 3px; margin-left: 8px; font-size: 11px; font-weight: 600; padding: 2px 8px 2px 6px; border-radius: 999px; vertical-align: 2px; font-variant-numeric: tabular-nums; transition: all 0.3s ease; }
+  .hab-flame svg { width: 11px; height: 11px; }
+  .hab-flame.heat-0 { color: var(--ink-faint); background: rgba(255,255,255,0.06); }
+  .hab-flame.heat-1 { color: #d3b06a; background: rgba(211,176,106,0.15); }
+  .hab-flame.heat-2 { color: #e2a05f; background: rgba(226,160,95,0.17); box-shadow: 0 0 9px -3px rgba(226,160,95,0.5); }
+  .hab-flame.heat-3 { color: #ec8a52; background: rgba(236,138,82,0.2); box-shadow: 0 0 13px -3px rgba(236,138,82,0.6); }
+  .hab-flame.heat-4 { color: #f5683f; background: rgba(245,104,63,0.22); box-shadow: 0 0 16px -3px rgba(245,104,63,0.7); animation: flameGlow 2.2s ease-in-out infinite; }
+  :root[data-theme="light"] .hab-flame.heat-0 { background: rgba(0,0,0,0.05); }
+  @keyframes flameGlow { 0%, 100% { box-shadow: 0 0 16px -3px rgba(245,104,63,0.7); } 50% { box-shadow: 0 0 22px -2px rgba(245,104,63,0.95); } }
+  @media (prefers-reduced-motion: reduce) { .hab-flame.heat-4 { animation: none; } }
   .habit-streak {
     flex-shrink: 0;
     font-size: 11.5px; letter-spacing: 0.1em; text-transform: uppercase;
@@ -2094,6 +2105,8 @@
   .writer-body b, .writer-body strong { font-weight: 700; }
   .writer-body i, .writer-body em { font-style: italic; }
   .writer-tools { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 22px calc(14px + env(safe-area-inset-bottom)); border-top: 1px solid var(--field-edge); background: var(--bg); position: relative; z-index: 2; will-change: transform; transition: transform 0.18s ease; }
+  /* fill everything below the toolbar with the page bg so nothing bleeds through between it and the keyboard */
+  .writer-tools::after { content: ""; position: absolute; top: 100%; left: 0; right: 0; height: 120vh; background: var(--bg); }
   .writer-fmt { display: flex; gap: 8px; }
   .fmt-btn { width: 42px; height: 40px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; background: var(--field); border: 1px solid var(--field-edge); color: var(--ink-soft); cursor: pointer; font-size: 17px; transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease; }
   .fmt-btn .fmt-b { font-weight: 700; }
@@ -3018,8 +3031,8 @@
       <button class="writer-save" id="writerSave">Done</button>
     </div>
     <div class="writer-scroll">
-      <div class="writer-title is-empty" id="writerTitle" contenteditable="true" data-ph="Title" autocapitalize="sentences" spellcheck="true"></div>
-      <div class="writer-body is-empty" id="writerText" contenteditable="true" data-ph="Start writing…" autocapitalize="sentences" spellcheck="true"></div>
+      <div class="writer-title is-empty" id="writerTitle" contenteditable="true" data-ph="What’s on your mind?" autocapitalize="sentences" spellcheck="true"></div>
+      <div class="writer-body is-empty" id="writerText" contenteditable="true" data-ph="" autocapitalize="sentences" spellcheck="true"></div>
       <div class="writer-memo" id="writerMemo" hidden></div>
     </div>
     <div class="writer-tools" id="writerTools">
@@ -6032,9 +6045,11 @@
     })(tmp);
     return tmp.innerHTML;
   }
+  var WRITER_PROMPTS = ["What’s on your mind?", "What are you grateful for?", "What’s God teaching you?", "How do you feel?", "What happened today?", "What’s stirring in you?", "Start writing…"];
   function openWriter() {
     writerVoice = null; writerEditId = null;
     $("writerTitle").innerHTML = ""; $("writerText").innerHTML = "";
+    $("writerTitle").setAttribute("data-ph", WRITER_PROMPTS[Math.floor(Math.random() * WRITER_PROMPTS.length)]);   // a broad, inviting prompt — never a blank "Title"
     syncWriterEmpty();
     $("fmtBold").classList.remove("active"); $("fmtItalic").classList.remove("active");
     $("writerRec").classList.remove("recording");
@@ -6948,6 +6963,12 @@
     return false;
   }
   function cadenceLabel(c) { return c === "weekdays" ? "Weekdays" : c === "everyOther" ? "Every other day" : c === "weekly" ? "Weekly" : "Daily"; }
+  var FLAME_SVG = '<svg viewBox="0 0 24 24"><path d="M12 2c1.2 3.2 4.2 4.4 4.2 8.2a4.2 4.2 0 0 1-8.4 0c0-2 1-3.2 2.2-4.2 0 2 2 2 2 0 0-1.4 0-2.6 0-4z" fill="currentColor" stroke="none"/></svg>';
+  function streakHeat(s) { return s >= 30 ? 4 : s >= 14 ? 3 : s >= 7 ? 2 : s >= 3 ? 1 : 0; }
+  function streakPill(s, unit) {
+    if (s <= 0) return "";
+    return '<span class="hab-flame heat-' + streakHeat(s) + '" title="' + s + (unit === "w" ? " week" : " day") + " streak\">" + FLAME_SVG + s + '</span>';
+  }
   function habitStreak(h) {
     var c = h.cadence || "daily", n = 0, d = new Date(), guard = 0;
     if (c === "weekly") {
@@ -6993,8 +7014,8 @@
       var unit = c === "weekly" ? "w" : "d";
       return '<div class="habit' + (!expected && !done ? " dim" : "") + '" data-id="' + h.id + '">' +
         '<span class="habit-icon"><svg viewBox="0 0 24 24">' + icon + '</svg></span>' +
-        '<span class="habit-main"><span class="habit-name">' + escapeHtml(h.name) + '</span>' +
-          '<span class="habit-cad">' + cadenceLabel(c) + (s > 0 ? ' · ' + s + unit + ' streak' : '') + '</span></span>' +
+        '<span class="habit-main"><span class="habit-name">' + escapeHtml(h.name) + streakPill(s, unit) + '</span>' +
+          '<span class="habit-cad">' + cadenceLabel(c) + '</span></span>' +
         '<button class="hab-check' + (done ? ' checked' : '') + '" data-act="check" aria-label="Mark done">' +
           '<svg viewBox="0 0 24 24"><polyline points="5 12 10 17 19 7"/></svg></button>' +
         '<button class="habit-edit" data-act="edit" aria-label="Edit">' +
@@ -7525,7 +7546,7 @@
   });
   if (window.matchMedia) { try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { if (db.theme === "auto") applyTheme("auto"); }); } catch (e) {} }
 
-  var APP_VERSION = "v52";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v53";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
