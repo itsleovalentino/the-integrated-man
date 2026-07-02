@@ -1125,6 +1125,21 @@
   .flame-fly svg { width: 100%; height: 100%; }
   .flame-fly.dive { transition: transform 0.18s cubic-bezier(0.55,0,0.85,0.36); }
   .hab-flame.slammed { animation: flameSlam 0.55s cubic-bezier(0.2,0.8,0.3,1.35); }
+  .flame-big { position: fixed; z-index: 321; width: 64px; height: 64px; color: #f5683f; pointer-events: none;
+    animation: bigFlare 1.3s cubic-bezier(0.2,0.7,0.3,1) forwards; }
+  .flame-big svg { width: 100%; height: 100%; position: relative; z-index: 1; }
+  /* halo is a pre-blurred gradient scaling with the flame — animated drop-shadow filters
+     repaint every frame and stutter on mid-tier phones, killing the moment */
+  .flame-big::before { content: ""; position: absolute; inset: -30px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(245,104,63,0.55) 0%, rgba(203,178,126,0.3) 40%, rgba(203,178,126,0) 70%); }
+  @keyframes bigFlare {
+    0% { transform: scale(0.35); opacity: 0; }
+    18% { opacity: 1; }
+    55% { transform: scale(1.45); opacity: 1; }
+    100% { transform: scale(1.15) translateY(-10px); opacity: 0; }
+  }
+  .gather-squash { animation: gatherSquash 0.2s ease; }
+  @keyframes gatherSquash { 40% { transform: scaleY(0.955) scaleX(1.008); } }
   @keyframes flameSlam {
     0% { transform: scale(1.5); box-shadow: 0 0 26px 2px rgba(245,104,63,0.95); }
     45% { transform: scale(0.88); }
@@ -3289,17 +3304,6 @@
         <p class="ob-reading-hint" style="text-align:left;margin-top:6px;">Tap <a href="https://cloud.ouraring.com/personal-access-tokens" target="_blank" rel="noopener" class="oura-link">Get your Oura token&nbsp;↗</a>, create one, copy it, and paste it above. It's stored privately in your own account.</p>
       </div>
 
-      <label class="field-label">Audio Bible</label>
-      <div class="oura-connect" id="fcbhConnect">
-        <input type="password" id="fcbhKeyInput" placeholder="Bible Brain API key" autocomplete="off" />
-        <div class="oura-row">
-          <button class="modal-secondary" id="fcbhSave" style="flex:1;">Connect</button>
-          <button class="modal-secondary" id="fcbhDisconnect" style="flex:1;" hidden>Disconnect</button>
-        </div>
-        <div class="oura-msg" id="fcbhMsg"></div>
-        <p class="ob-reading-hint" style="text-align:left;margin-top:6px;">Unlocks the full dramatized audio Bible — Old and New Testament — with word-for-word verse following. Tap <a href="https://www.faithcomesbyhearing.com/audio-bible-resources/bible-brain" target="_blank" rel="noopener" class="oura-link">Get a free Bible Brain key&nbsp;↗</a>, request a key, copy it, and paste it above. Without it, audio covers the New Testament only.</p>
-      </div>
-
       <label class="field-label">Your data</label>
       <div class="settings-data">
         <button class="modal-secondary" id="exportBtn">Back up my data</button>
@@ -4061,7 +4065,9 @@
   // ---------- reward moments (habit flame slam + Bible close) ----------
   // These play for everyone: they're brief, user-initiated rewards, not ambient motion.
   // (iOS "Reduce Motion" is ON for many users and was silently eating them entirely.)
-  // a flame lifts off the check, hangs, then slams onto the streak pill — impact runs onImpact()
+  // a flame lifts off the check, hangs, then slams onto the streak pill — impact runs onImpact().
+  // Timers only, NO requestAnimationFrame: rAF freezes in hidden/backgrounded tabs and the
+  // whole chain (including the all-done celebration) silently died with it.
   function flameSlam(row, btn, onImpact) {
     var start = btn.getBoundingClientRect();
     var pill = row.querySelector(".hab-flame");
@@ -4075,14 +4081,69 @@
     // land on the pill's center; if the streak is just being born, land where the pill will appear
     var xT = (pill ? end.left + end.width / 2 : Math.min(end.right + 20, window.innerWidth - 24)) - 11 - x0;
     var yT = end.top + end.height / 2 - 11 - y0;
-    requestAnimationFrame(function () {
-      f.style.transform = "translate(" + (xT * 0.3).toFixed(1) + "px, -36px) scale(1.5)";   // rise
-      setTimeout(function () {
-        f.classList.add("dive");
-        f.style.transform = "translate(" + xT.toFixed(1) + "px, " + yT.toFixed(1) + "px) scale(0.75)";  // slam
-      }, 330);
-      setTimeout(function () { f.remove(); onImpact(); }, 520);
+    void f.offsetWidth;   // flush styles so the transition actually runs
+    f.style.transform = "translate(" + (xT * 0.3).toFixed(1) + "px, -36px) scale(1.5)";   // rise
+    setTimeout(function () {
+      f.classList.add("dive");
+      f.style.transform = "translate(" + xT.toFixed(1) + "px, " + yT.toFixed(1) + "px) scale(0.75)";  // slam
+    }, 330);
+    setTimeout(function () { f.remove(); onImpact(); }, 520);
+  }
+  // every anchor done: a flame lifts from EACH habit, they converge in the middle,
+  // and merge into one great flame that flares gold — the day's fire, gathered.
+  // Choreography (design-reviewed): staggered launches but SIMULTANEOUS landing
+  // (one flame made of many, and one exact beat to hang the sound on), 90ms
+  // anticipation hop, gravity-like ease-IN, a slight arc (fire never travels
+  // straight), flames absorbed into a flare that starts growing just before they land.
+  function flameGather(listEl, onMerge) {
+    var rows = Array.prototype.slice.call(listEl.querySelectorAll(".habit"));
+    if (!rows.length) { if (onMerge) onMerge(); return; }
+    var card = listEl.closest(".card") || listEl;
+    var cr = card.getBoundingClientRect();
+    var cx = cr.left + cr.width / 2, cy = cr.top + cr.height / 2;
+    var LAND = 90 + 30 + (rows.length - 1) * 70 + 280;   // anticipation + last launch + shortest flight
+    rows.forEach(function (row, i) {
+      var from = (row.querySelector(".hab-flame") || row.querySelector(".hab-check") || row).getBoundingClientRect();
+      var f = document.createElement("div");
+      f.className = "flame-fly"; f.innerHTML = FLAME_SVG;
+      var x0 = from.left + from.width / 2 - 11, y0 = from.top + from.height / 2 - 11;
+      f.style.left = x0 + "px"; f.style.top = y0 + "px";
+      document.body.appendChild(f);
+      var launch = 30 + i * 70;
+      var flight = Math.max(280, LAND - launch - 90);    // later launches fly faster → all land together
+      var dx = cx - 11 - x0, dy = cy - 11 - y0;
+      var away = 4 / (Math.hypot(dx, dy) || 1);
+      // slight perpendicular arc, alternating side per flame
+      var arc = (i % 2 ? 1 : -1) * (8 + Math.random() * 4), alen = Math.hypot(dx, dy) || 1;
+      var px = -dy / alen * arc, py = dx / alen * arc;
+      setTimeout(function () {                            // anticipation: a 4px breath away from center
+        f.style.transition = "transform 0.09s ease-out";
+        f.style.transform = "translate(" + (-dx * away).toFixed(1) + "px, " + (-dy * away).toFixed(1) + "px) scale(1.18)";
+      }, launch);
+      setTimeout(function () {                            // first leg: accelerate through the arc point
+        f.style.transition = "transform " + Math.round(flight * 0.55) + "ms cubic-bezier(0.55, -0.05, 0.85, 0.5)";
+        f.style.transform = "translate(" + (dx * 0.55 + px).toFixed(1) + "px, " + (dy * 0.55 + py).toFixed(1) + "px) scale(0.95)";
+      }, launch + 90);
+      setTimeout(function () {                            // second leg: dive home, absorbed as it arrives
+        f.style.transition = "transform " + Math.round(flight * 0.45) + "ms cubic-bezier(0.4, 0, 0.9, 0.6), opacity 0.12s ease " + Math.round(flight * 0.45 - 110) + "ms";
+        f.style.transform = "translate(" + dx.toFixed(1) + "px, " + dy.toFixed(1) + "px) scale(0.65)";
+        f.style.opacity = "0";
+      }, launch + 90 + Math.round(flight * 0.55));
+      setTimeout(function () { f.remove(); }, LAND + 160);
     });
+    // the flare starts growing a beat BEFORE the flames land — they feed it, no dead frame
+    setTimeout(function () {
+      var big = document.createElement("div");
+      big.className = "flame-big"; big.innerHTML = FLAME_SVG;
+      big.style.left = (cx - 32) + "px"; big.style.top = (cy - 36) + "px";
+      document.body.appendChild(big);
+      setTimeout(function () { big.remove(); }, 1400);
+    }, LAND - 80);
+    setTimeout(function () {                              // impact: the card takes the hit, the sound lands
+      card.classList.add("gather-squash");
+      setTimeout(function () { card.classList.remove("gather-squash"); }, 220);
+      if (onMerge) onMerge();
+    }, LAND);
   }
   // an open Bible pops above the check and closes its cover — today's reading, done
   function bookPop(btn) {
@@ -4122,21 +4183,91 @@
     tone(659.25, 0.13, "triangle", 0.05);
     tone(1318.5, 0.05, "sine", 0.014); // faint sparkle on top
   }
-  function playEmber() { // a low thump + a breath of crackle — the fire taking the win
+  // stereo helper: pan a source ±1 (falls back to mono where unsupported)
+  function panTo(ac, p) {
+    if (ac.createStereoPanner) { var pn = ac.createStereoPanner(); pn.pan.value = p; pn.connect(ac.destination); return pn; }
+    return ac.destination;
+  }
+  // one crackle: a tiny noise-free chirp that falls in pitch — a spark, not a Geiger tick
+  function sparkPop(ac, at, f0, gain, pan) {
+    var o = ac.createOscillator(), g = ac.createGain();
+    o.type = "sine"; o.frequency.setValueAtTime(f0, at); o.frequency.exponentialRampToValueAtTime(f0 * 0.55, at + 0.025);
+    g.gain.setValueAtTime(0.0001, at);
+    g.gain.exponentialRampToValueAtTime(gain, at + 0.004);
+    g.gain.setTargetAtTime(0.0001, at + 0.006, 0.02 + Math.random() * 0.02);
+    o.connect(g); g.connect(panTo(ac, pan)); o.start(at); o.stop(at + 0.15);
+  }
+  // Ember sound, designed with (and reviewed by) a sound-design pass:
+  // ember character lives at 400-1200Hz and BLOOMS (no fast broadband onset = no slap);
+  // pitch rises (ignition), 7Hz flutter (fire's flicker), sparse falling-chirp sparks in
+  // stereo, and a slow gold shimmer at ~1.5kHz — the part that tingles.
+  function playEmber() {
     var ac = audio(); if (!ac) return;
     var t = ac.currentTime;
-    // the thump: a sine dropping fast, felt more than heard
-    var o = ac.createOscillator(), g = ac.createGain();
-    o.type = "sine"; o.frequency.setValueAtTime(130, t); o.frequency.exponentialRampToValueAtTime(46, t + 0.16);
-    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.1, t + 0.012); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.22);
-    o.connect(g); g.connect(ac.destination); o.start(t); o.stop(t + 0.26);
-    // the crackle: a short burst of sparse noise through a bandpass, dying quickly
-    var len = Math.floor(ac.sampleRate * 0.22), buf = ac.createBuffer(1, len, ac.sampleRate), d = buf.getChannelData(0);
-    for (var i = 0; i < len; i++) { var env = 1 - i / len; d[i] = (Math.random() * 2 - 1) * env * env * (Math.random() < 0.12 ? 1 : 0.22); }
-    var src = ac.createBufferSource(); src.buffer = buf;
-    var bp = ac.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.value = 2500; bp.Q.value = 0.7;
-    var g2 = ac.createGain(); g2.gain.setValueAtTime(0.055, t);
-    src.connect(bp); bp.connect(g2); g2.connect(ac.destination); src.start(t + 0.015);
+    // breath of air over coals: two decorrelated noise beds, bandpassed, blooming in over 140ms
+    [-0.2, 0.2].forEach(function (pan) {
+      var len = Math.floor(ac.sampleRate * 0.7), buf = ac.createBuffer(1, len, ac.sampleRate), d = buf.getChannelData(0);
+      for (var i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+      var src = ac.createBufferSource(); src.buffer = buf;
+      var bp = ac.createBiquadFilter(); bp.type = "bandpass"; bp.Q.value = 0.8;
+      bp.frequency.setValueAtTime(850, t); bp.frequency.exponentialRampToValueAtTime(380, t + 0.55);
+      var g = ac.createGain();
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.setTargetAtTime(0.025, t, 0.045);            // ~140ms bloom, no transient
+      g.gain.setTargetAtTime(0.0001, t + 0.22, 0.18);     // cooling, not cut
+      src.connect(bp); bp.connect(g); g.connect(panTo(ac, pan)); src.start(t); src.stop(t + 0.75);
+    });
+    // ignition: a rising warmth with a 7Hz flicker (phone speakers actually reproduce this range)
+    var o = ac.createOscillator(), og = ac.createGain(), fl = ac.createOscillator(), fg = ac.createGain();
+    o.type = "sine"; o.frequency.setValueAtTime(165, t); o.frequency.exponentialRampToValueAtTime(220, t + 0.35);
+    og.gain.setValueAtTime(0.0001, t); og.gain.setTargetAtTime(0.038, t, 0.05); og.gain.setTargetAtTime(0.0001, t + 0.24, 0.12);
+    fl.type = "sine"; fl.frequency.value = 7; fg.gain.value = 0.012;   // ±30% flutter on the warmth
+    fl.connect(fg); fg.connect(og.gain);
+    o.connect(og); og.connect(ac.destination); o.start(t); o.stop(t + 0.6); fl.start(t); fl.stop(t + 0.6);
+    // sparks: 4-5 falling chirps, clustered at the flare then thinning, spread in stereo
+    var pops = 4 + Math.floor(Math.random() * 2);
+    for (var p = 0; p < pops; p++) {
+      var frac = Math.pow(Math.random(), 2);   // log-weighted toward the start
+      sparkPop(ac, t + 0.05 + frac * 0.32, 1900 + Math.random() * 2600, 0.012 + Math.random() * 0.016, (Math.random() * 2 - 1) * 0.35);
+    }
+    // the tingle: two gold partials a hair apart, beating slowly as they bloom and fade
+    [1568, 1571.6].forEach(function (f) {
+      var so = ac.createOscillator(), sg = ac.createGain();
+      so.type = "sine"; so.frequency.value = f;
+      sg.gain.setValueAtTime(0.0001, t + 0.08);
+      sg.gain.setTargetAtTime(0.006, t + 0.08, 0.09);
+      sg.gain.setTargetAtTime(0.0001, t + 0.35, 0.25);
+      so.connect(sg); sg.connect(ac.destination); so.start(t + 0.08); so.stop(t + 1.2);
+    });
+  }
+  function playBlaze() { // every anchor done: heat rising, a hard flare that settles, and a chapel fifth
+    var ac = audio(); if (!ac) return;
+    var t = ac.currentTime;
+    // the fire's body: a low fifth swelling in an S-curve (heat rising, no corner)
+    [[98, 0.085], [147, 0.05]].forEach(function (v) {
+      var o = ac.createOscillator(), g = ac.createGain();
+      o.type = "sine"; o.frequency.setValueAtTime(v[0], t);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.linearRampToValueAtTime(v[1] * 0.6, t + 0.15); g.gain.linearRampToValueAtTime(v[1], t + 0.3);
+      g.gain.setTargetAtTime(0.0001, t + 0.5, 0.45);       // long warm tail — weightier than the ember
+      o.connect(g); g.connect(ac.destination); o.start(t); o.stop(t + 2.0);
+    });
+    // the flare: crackles hard at ignition, then settles (front-loaded, decaying, stereo)
+    for (var p = 0; p < 9; p++) {
+      var frac = p / 9;
+      sparkPop(ac, t + 0.05 + Math.pow(frac, 1.6) * 0.5, 1600 + Math.random() * 3000,
+               (0.026 - frac * 0.014) * (0.7 + Math.random() * 0.5), (Math.random() * 2 - 1) * 0.35);
+    }
+    // the bell: C4 then G4 — an open fifth blooming slowly, a chapel, not a casino
+    [[261.63, 0.0], [392.0, 0.25]].forEach(function (n) {
+      var bt = t + 0.3 + n[1];
+      var o = ac.createOscillator(), g = ac.createGain();
+      o.type = "sine"; o.frequency.setValueAtTime(n[0], bt);
+      g.gain.setValueAtTime(0.0001, bt);
+      g.gain.setTargetAtTime(0.045, bt, 0.028);            // 80ms bloom
+      g.gain.setTargetAtTime(0.0001, bt + 0.15, 0.4);      // 1.2s+ release
+      o.connect(g); g.connect(ac.destination); o.start(bt); o.stop(bt + 1.8);
+    });
   }
   function playChime() { // deep, resonant — a low fifth that blooms (warm, restrained)
     tone(130.81, 1.3, "sine", 0.085);
@@ -5619,38 +5750,9 @@
     var m = $("ouraMsg"); m.className = "oura-msg"; m.textContent = "Disconnected.";
   });
 
-  // Settings: connect / disconnect Bible Brain (FCBH) — full OT+NT dramatized audio
-  function renderFcbhSettings() {
-    var connected = !!db.fcbhKey;
-    $("fcbhKeyInput").value = "";
-    $("fcbhKeyInput").placeholder = connected ? "Connected — paste a new key to replace" : "Bible Brain API key";
-    $("fcbhDisconnect").hidden = !connected;
-    $("fcbhSave").textContent = connected ? "Update" : "Connect";
-    var m = $("fcbhMsg"); m.className = "oura-msg"; m.textContent = connected ? "Connected — full audio Bible unlocked." : "";
-  }
-  $("fcbhSave").addEventListener("click", function () {
-    var k = $("fcbhKeyInput").value.trim();
-    var msg = $("fcbhMsg");
-    if (!k) { msg.className = "oura-msg err"; msg.textContent = "Paste your Bible Brain key first."; return; }
-    msg.className = "oura-msg"; msg.textContent = "Checking your key…";
-    fetch("https://4.dbt.io/api/bibles?v=4&key=" + encodeURIComponent(k) + "&language_code=eng&media=audio_drama&limit=1")
-      .then(function (r) { return r.json(); })
-      .then(function (j) {
-        if (j && j.data && j.data.length) {
-          db.fcbhKey = k; fcbhSets = null; save();
-          msg.className = "oura-msg"; msg.textContent = "Connected — the full dramatized Bible is ready.";
-          renderFcbhSettings();
-          if (typeof updateAudioBtn === "function" && db.lastPassage) updateAudioBtn(db.lastPassage);
-        } else { msg.className = "oura-msg err"; msg.textContent = "That key didn’t work — check it and try again."; }
-      })
-      .catch(function () { msg.className = "oura-msg err"; msg.textContent = "Couldn’t reach Bible Brain — check your connection."; });
-  });
-  $("fcbhDisconnect").addEventListener("click", function () {
-    db.fcbhKey = null; fcbhSets = null; save();
-    renderFcbhSettings();
-    if (typeof updateAudioBtn === "function" && db.lastPassage) updateAudioBtn(db.lastPassage);
-    var m = $("fcbhMsg"); m.className = "oura-msg"; m.textContent = "Disconnected — audio falls back to the New Testament.";
-  });
+  // Bible Brain (FCBH) audio: db.fcbhKey powers dramatized OT+NT + exact timecodes.
+  // Leo-only for now — no Settings UI by his call; the key gets set for his account
+  // directly when he receives it (ask Leo / see CLAUDE.md).
 
   // ----- Local Weather (Open-Meteo — free, browser-friendly, no key) -----
   var weatherCache = null;
@@ -7397,8 +7499,14 @@
             setTimeout(function () { fresh.classList.remove("slammed"); }, 600);
           }
           if (allDone) {
-            playEmber(); playFanfare(); buzzPattern([0, 40, 70, 40, 70, 130]);
-            showToastMsg("Every anchor, complete. Well done.", 3200);
+            playEmber(); buzzPattern([0, 15, 55]);
+            // one breath of stillness, then every flame gathers into one
+            setTimeout(function () {
+              flameGather($("habitList"), function () {
+                playBlaze(); buzzPattern([0, 40, 70, 40, 70, 130]);
+                showToastMsg("Every anchor, complete. Well done.", 3200);
+              });
+            }, 170);
           } else { playEmber(); buzzPattern([0, 15, 55]); }
         });
       }
@@ -7898,7 +8006,7 @@
   });
   if (window.matchMedia) { try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { if (db.theme === "auto") applyTheme("auto"); }); } catch (e) {} }
 
-  var APP_VERSION = "v58";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v59";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
@@ -8069,7 +8177,6 @@
     renderNotifyToggle();
     if (typeof renderAccount === "function") renderAccount();
     if (typeof renderOuraSettings === "function") renderOuraSettings();
-    if (typeof renderFcbhSettings === "function") renderFcbhSettings();
     $("settingsMsg").textContent = "";
     $("lockCoach").hidden = true; $("lockToggle").classList.remove("coach-target"); // clear any coach mark
     $("settings").hidden = false;
