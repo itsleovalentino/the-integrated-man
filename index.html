@@ -2028,6 +2028,14 @@
   /* Journal destination */
   .journal-page { max-width: 620px; margin: 0 auto; padding: 4px 18px 120px; }
   .jt-seg { margin-bottom: 20px; }
+  /* wide screens: Notes becomes a Day One-style two-pane (list left, editor docked right) */
+  @media (min-width: 1000px) {
+    body.j-notes-wide #journalView { right: auto; width: 380px; border-right: 1px solid var(--field-edge); }
+    body.j-notes-wide #journalView .journal-page { max-width: none; padding: 4px 16px 40px; }
+    body.j-notes-wide #writerView { left: 380px; }
+    body.j-notes-wide #writerView .writer-close { display: none; }
+    body.j-notes-wide .journal-bubble { display: none; }
+  }
   /* "Write a note" launcher in the Notes list */
   .notes-new {
     display: flex; align-items: center; gap: 14px; width: 100%; text-align: left;
@@ -2126,6 +2134,29 @@
   .nt-ttl { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; color: var(--ink-soft); }
   .nt-restore { flex: 0 0 auto; background: none; border: 1px solid var(--field-edge); color: var(--accent); border-radius: 999px; padding: 5px 13px; font-family: inherit; font-size: 12.5px; cursor: pointer; }
   .nt-restore:hover { border-color: var(--accent); }
+  /* refreshed note rows — clean, uniform, Day One-like */
+  .note-row { display: flex; align-items: center; gap: 12px; padding: 14px 6px; border-bottom: 1px solid var(--field-edge); cursor: pointer; transition: background 0.15s ease; }
+  .note-row:first-child { border-top: 1px solid var(--field-edge); }
+  .note-row:hover { background: rgba(255,255,255,0.03); }
+  :root[data-theme="light"] .note-row:hover { background: rgba(0,0,0,0.02); }
+  .note-row.sel { background: var(--accent-soft); }
+  .note-row-body { flex: 1; min-width: 0; }
+  .note-row-title { font-size: 16px; color: var(--ink); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .nr-star { color: var(--accent); margin-right: 4px; font-size: 13px; }
+  .note-row-sub { font-size: 13.5px; color: var(--ink-faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 3px; }
+  .nr-empty { font-style: italic; opacity: 0.7; }
+  .nr-voice { color: var(--accent); }
+  .note-row-meta { flex: 0 0 auto; text-align: right; display: flex; flex-direction: column; gap: 2px; }
+  .nr-date { font-size: 12px; color: var(--ink-soft); }
+  .nr-time { font-size: 11px; color: var(--ink-faint); }
+  .note-row-acts { flex: 0 0 auto; display: flex; align-items: center; gap: 2px; opacity: 0; transition: opacity 0.15s ease; }
+  .note-row:hover .note-row-acts { opacity: 1; }
+  @media (hover: none) { .note-row-acts { opacity: 0.5; } }
+  .note-row-acts .jp-e-star, .note-row-acts .jp-e-del { background: none; border: none; cursor: pointer; padding: 6px; color: var(--ink-faint); display: inline-flex; }
+  .note-row-acts .jp-e-star svg { width: 16px; height: 16px; }
+  .note-row-acts .jp-e-star.on { color: var(--accent); }
+  .note-row-acts .jp-e-del { font-size: 18px; line-height: 1; }
+  .note-row-acts .jp-e-del:hover { color: #d08a72; }
   /* entry cards — uniform height, date chip, clamped preview */
   .jp-entry { display: flex; gap: 14px; background: var(--panel); border: 1px solid var(--panel-edge); border-radius: 14px; padding: 14px 15px; margin-bottom: 10px; cursor: pointer; }
   .jp-date { flex: 0 0 auto; width: 44px; text-align: center; padding-top: 2px; }
@@ -5660,6 +5691,7 @@
     currentView = name;
     var wrap = document.querySelector(".wrap"); if (wrap) wrap.hidden = (name !== "home");
     $("journalView").hidden = (name !== "journal");
+    if (name !== "journal") { document.body.classList.remove("j-notes-wide"); if (journalWide() && !$("writerView").hidden) $("writerView").hidden = true; }
     $("bibleView").hidden = (name !== "bible");
     $("fellowshipView").hidden = (name !== "fellowship");
     ["home", "journal", "bible", "fellowship"].forEach(function (v) { var b = $("nav_" + v); if (b) b.classList.toggle("active", v === name); });
@@ -5826,21 +5858,19 @@
       list.map(function (e) {
       var dp = jpDateParts(e.dateKey);
       var lines = (e.text || "").split("\n");
-      var title = (lines[0] || "").trim();
-      var bodyText = lines.slice(1).join("\n").replace(/^\n+|\n+$/g, "");
-      var kindLabel = e.kind === "prompt" ? "Prompt" : (e.kind === "evening" ? "Reflection" : "");
-      var promptLine = (e.kind !== "note" && e.prompt) ? '<div class="jp-e-prompt">“' + escapeHtml(e.prompt) + '”</div>' : "";
-      var star = e.kind === "note" ? '<button class="jp-e-star' + (e.star ? " on" : "") + '" data-act="star">' + starSvg(e.star) + '</button>' : "";
-      var del = '<button class="jp-e-del" data-act="del" aria-label="Delete">×</button>';
-      var lead = e.kind === "note" ? timeLabel(e.ts) : kindLabel;
-      return '<div class="jp-entry clamp" data-id="' + e.id + '" data-kind="' + e.kind + '">' +
-        '<div class="jp-date"><div class="jp-date-dow">' + dp.dow + '</div><div class="jp-date-day">' + dp.day + '</div></div>' +
-        '<div class="jp-main">' + promptLine +
-        (title ? '<div class="jp-e-title">' + escapeHtml(title) + '</div>' : '') +
-        (bodyText ? '<div class="jp-e-body">' + escapeHtml(bodyText) + '</div>' : '') +
-        (e.voice ? '<audio controls src="' + e.voice + '"></audio>' : '') +
-        '<div class="jp-e-meta"><span class="jp-e-kind">' + lead + '</span>' + star + del + '</div>' +
-        '</div></div>';
+      var title = (e.title && e.title.trim()) || (lines[0] || "").trim() || "Untitled note";
+      var previewSrc = e.html ? e.html.replace(/<[^>]+>/g, " ") : lines.slice(1).join(" ");
+      var preview = (previewSrc || "").replace(/\s+/g, " ").trim();
+      var sel = (writerEditId && writerEditId === e.id) ? " sel" : "";
+      return '<div class="note-row' + sel + '" data-id="' + e.id + '" data-kind="note">' +
+        '<div class="note-row-body">' +
+          '<div class="note-row-title">' + (e.star ? '<span class="nr-star">★</span>' : '') + escapeHtml(title) + '</div>' +
+          '<div class="note-row-sub">' + (preview ? escapeHtml(preview) : '<span class="nr-empty">No additional text</span>') + (e.voice ? ' <span class="nr-voice">· voice</span>' : '') + '</div>' +
+        '</div>' +
+        '<div class="note-row-meta"><span class="nr-date">' + dp.dow + ' ' + dp.day + '</span><span class="nr-time">' + timeLabel(e.ts) + '</span></div>' +
+        '<div class="note-row-acts"><button class="jp-e-star' + (e.star ? " on" : "") + '" data-act="star" aria-label="Star">' + starSvg(e.star) + '</button>' +
+          '<button class="jp-e-del" data-act="del" aria-label="Delete">×</button></div>' +
+        '</div>';
     }).join("");
     var trash = db.noteTrash || [];
     if (trash.length) {
@@ -5890,7 +5920,17 @@
       b.classList.toggle("active", b.getAttribute("data-jt") === journalTab);
     });
     if (days) renderJournalDays(); else renderJournalPage();
+    syncJournalLayout();
   }
+  // on wide screens the Notes tab becomes a two-pane: list (left) + editor (right, docked)
+  function journalWide() { return window.matchMedia("(min-width: 1000px)").matches; }
+  function syncJournalLayout() {
+    var wide = journalWide() && currentView === "journal" && journalTab === "notes";
+    document.body.classList.toggle("j-notes-wide", wide);
+    if (wide) { if ($("writerView").hidden) openWriter(); }         // keep an editor docked on the right
+    else if (journalWide() && !$("writerView").hidden) { $("writerView").hidden = true; }  // left the two-pane on a wide screen
+  }
+  window.addEventListener("resize", function () { if (currentView === "journal") syncJournalLayout(); });
   $("journalSeg").addEventListener("click", function (e) {
     var b = e.target.closest("[data-jt]"); if (!b) return;
     journalTab = b.getAttribute("data-jt"); renderJournalTab(); buzz(8);
@@ -5908,11 +5948,15 @@
     if (trashBtn) { notesTrashOpen = !notesTrashOpen; renderJournalPage(); return; }
     var restoreBtn = e.target.closest('[data-act="restoreNote"]');
     if (restoreBtn) { restoreThought(restoreBtn.getAttribute("data-id")); buzz(10); fb("select"); renderJournalPage(); journalPaneSync(); return; }
-    var entry = e.target.closest(".jp-entry"); if (!entry) return;
+    var entry = e.target.closest(".note-row"); if (!entry) return;
     if (e.target.closest("audio")) return;
     var id = entry.getAttribute("data-id"), kind = entry.getAttribute("data-kind");
     var btn = e.target.closest("[data-act]");
-    if (!btn) { openNotePage(id); return; }   // tap a note → open it full-page to read
+    if (!btn) {   // tap a note → open it directly, already editable (reading = editing)
+      var nt = null; for (var j = 0; j < db.thoughts.length; j++) if (db.thoughts[j].id === id) { nt = db.thoughts[j]; break; }
+      if (nt) { openWriterEdit(nt); renderJournalPage(); }   // re-render so the open note highlights (two-pane)
+      return;
+    }
     var act = btn.getAttribute("data-act");
     if (kind === "note") {
       var th = null; for (var i = 0; i < db.thoughts.length; i++) if (db.thoughts[i].id === id) { th = db.thoughts[i]; break; }
@@ -6025,7 +6069,12 @@
   }
   function writerToNotes() {
     var tools = $("writerTools"); if (tools) tools.style.transform = "";
-    $("writerView").hidden = true; stopWriterRec();
+    stopWriterRec();
+    if (journalWide() && currentView === "journal" && journalTab === "notes") {
+      renderJournalPage();   // two-pane: keep the editor docked, just refresh the list on the left
+      return;
+    }
+    $("writerView").hidden = true;
     journalTab = "notes"; setView("journal");
   }
   function saveWriter() {
@@ -6049,13 +6098,14 @@
       save();
     } else {
       addThought({ text: combined, title: title || null, html: hasRich ? bodyHtml : null, voice: writerVoice });
+      writerEditId = db.thoughts.length ? db.thoughts[db.thoughts.length - 1].id : null;   // keep editing the same note (no duplicate on re-save)
     }
-    writerEditId = null; writerVoice = null;
+    writerVoice = null;
     fb("success");
     writerToNotes();
     showToastMsg("Saved to your journal.", 2200);
   }
-  $("notesNew").addEventListener("click", openWriter);
+  $("notesNew").addEventListener("click", function () { openWriter(); renderJournalPage(); });
   $("writerClose").addEventListener("click", writerToNotes);
   $("writerSave").addEventListener("click", saveWriter);
   $("writerTitle").addEventListener("input", syncWriterEmpty);
@@ -7449,7 +7499,7 @@
   });
   if (window.matchMedia) { try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { if (db.theme === "auto") applyTheme("auto"); }); } catch (e) {} }
 
-  var APP_VERSION = "v49";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v50";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
