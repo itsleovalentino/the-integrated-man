@@ -1310,10 +1310,16 @@
   }
   :root[data-theme="light"] .congrats-card { background: #fff; border-color: var(--accent); }
   @keyframes congratsPop { from { opacity: 0; transform: scale(0.8) translateY(10px); } to { opacity: 1; transform: none; } }
-  .congrats-emoji { font-size: 46px; line-height: 1; margin-bottom: 12px; animation: congratsEmoji 0.7s ease 0.1s both; }
+  .congrats-kicker { font-size: 10.5px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--accent); margin-bottom: 16px; }
+  .congrats-emoji { font-size: 54px; line-height: 1; margin-bottom: 14px; animation: congratsEmoji 0.7s ease 0.1s both; }
   @keyframes congratsEmoji { 0% { transform: scale(0.4) rotate(-12deg); } 60% { transform: scale(1.25) rotate(6deg); } 100% { transform: scale(1) rotate(0); } }
-  .congrats-title { font-size: 25px; color: var(--ink); margin-bottom: 6px; }
+  .congrats-title { font-size: 27px; color: var(--ink); margin-bottom: 6px; }
   .congrats-sub { font-size: 14.5px; color: var(--ink-soft); line-height: 1.45; }
+  .congrats-actions { display: flex; gap: 10px; margin-top: 24px; }
+  .congrats-share, .congrats-done { flex: 1; border-radius: 999px; padding: 12px 18px; font-family: inherit; font-size: 14.5px; font-weight: 600; letter-spacing: 0.02em; cursor: pointer; transition: transform 0.15s ease, opacity 0.2s ease; }
+  .congrats-share { background: var(--accent); color: #14110a; border: none; }
+  .congrats-done { background: none; color: var(--ink-soft); border: 1px solid var(--field-edge); }
+  .congrats-share:active, .congrats-done:active { transform: scale(0.96); }
   @media (prefers-reduced-motion: reduce) {
     .congrats, .congrats-card, .congrats-emoji { animation: none; }
   }
@@ -2042,7 +2048,7 @@
   .writer-body.is-empty::before { content: attr(data-ph); color: var(--ink-faint); font-style: italic; pointer-events: none; }
   .writer-body b, .writer-body strong { font-weight: 700; }
   .writer-body i, .writer-body em { font-style: italic; }
-  .writer-tools { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 22px calc(14px + env(safe-area-inset-bottom)); border-top: 1px solid var(--field-edge); }
+  .writer-tools { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 22px calc(14px + env(safe-area-inset-bottom)); border-top: 1px solid var(--field-edge); background: var(--bg); position: relative; z-index: 2; will-change: transform; transition: transform 0.18s ease; }
   .writer-fmt { display: flex; gap: 8px; }
   .fmt-btn { width: 42px; height: 40px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; background: var(--field); border: 1px solid var(--field-edge); color: var(--ink-soft); cursor: pointer; font-size: 17px; transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease; }
   .fmt-btn .fmt-b { font-weight: 700; }
@@ -2844,9 +2850,14 @@
   <!-- Congrats popup (steps goal, etc.) -->
   <div class="congrats" id="congrats" hidden>
     <div class="congrats-card">
+      <div class="congrats-kicker">The Integrated Man</div>
       <div class="congrats-emoji" id="congratsEmoji">🎉</div>
       <div class="congrats-title serif" id="congratsTitle">Goal reached</div>
       <div class="congrats-sub" id="congratsSub"></div>
+      <div class="congrats-actions">
+        <button class="congrats-share" id="congratsShare">Share</button>
+        <button class="congrats-done" id="congratsDone">Done</button>
+      </div>
     </div>
   </div>
 
@@ -2925,7 +2936,7 @@
       <div class="writer-title is-empty" id="writerTitle" contenteditable="true" data-ph="Title" autocapitalize="sentences" spellcheck="true"></div>
       <div class="writer-body is-empty" id="writerText" contenteditable="true" data-ph="Start writing…" autocapitalize="sentences" spellcheck="true"></div>
     </div>
-    <div class="writer-tools">
+    <div class="writer-tools" id="writerTools">
       <div class="writer-fmt">
         <button class="fmt-btn" id="fmtBold" type="button" aria-label="Bold"><span class="fmt-b">B</span></button>
         <button class="fmt-btn" id="fmtItalic" type="button" aria-label="Italic"><span class="fmt-i">I</span></button>
@@ -5898,7 +5909,20 @@
     setTimeout(function () { $("writerTitle").focus(); }, 90);
   }
   function stopWriterRec() { if (writerRec && writerRec.state !== "inactive") { try { writerRec.stop(); } catch (e) {} } }
+  // lift the format toolbar above the on-screen keyboard (iOS covers fixed bottom bars)
+  function positionWriterTools() {
+    var tools = $("writerTools"); if (!tools) return;
+    var vv = window.visualViewport;
+    if (!vv || $("writerView").hidden) { tools.style.transform = ""; return; }
+    var kb = Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop));
+    tools.style.transform = kb > 1 ? "translateY(-" + kb + "px)" : "";
+  }
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener("resize", positionWriterTools);
+    window.visualViewport.addEventListener("scroll", positionWriterTools);
+  }
   function writerToNotes() {
+    var tools = $("writerTools"); if (tools) tools.style.transform = "";
     $("writerView").hidden = true; stopWriterRec();
     journalTab = "notes"; setView("journal");
   }
@@ -5921,6 +5945,9 @@
   $("writerSave").addEventListener("click", saveWriter);
   $("writerTitle").addEventListener("input", syncWriterEmpty);
   $("writerText").addEventListener("input", syncWriterEmpty);
+  ["writerTitle", "writerText"].forEach(function (idn) {
+    $(idn).addEventListener("focus", function () { setTimeout(positionWriterTools, 60); setTimeout(positionWriterTools, 340); });
+  });
   $("writerTitle").addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); $("writerText").focus(); } });
   $("writerText").addEventListener("keydown", function (e) { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); saveWriter(); } });
   function applyFmt(cmd) {
@@ -6350,19 +6377,31 @@
     $("toast").hidden = false;
     clearTimeout(toastTimer); toastTimer = setTimeout(function () { $("toast").hidden = true; }, ms || 6000);
   }
-  // a signature "you did it" moment — celebratory popup + haptic + chime + sparks
-  var congratsTimer = null;
+  // a signature "you did it" moment — it stays until you dismiss it, so you can sit with it / screenshot / share
+  var congratsShareText = "";
   function showCongrats(title, sub, emoji) {
     $("congratsEmoji").textContent = emoji || "🎉";
     $("congratsTitle").textContent = title || "Well done";
     $("congratsSub").textContent = sub || "";
+    congratsShareText = (emoji ? emoji + " " : "") + (title || "Well done") + (sub ? " — " + sub : "") + "\n\nThe Integrated Man";
     var pop = $("congrats"); pop.hidden = false;
     if (typeof playFanfare === "function") playFanfare();
     buzzPattern([0, 22, 45, 22, 45, 55]);
     setTimeout(function () { celebrate($("congratsTitle"), true); }, 120);
-    clearTimeout(congratsTimer); congratsTimer = setTimeout(function () { pop.hidden = true; }, 3200);
+    setTimeout(function () { celebrate($("congratsEmoji"), true); }, 620);   // a second burst — let it breathe
   }
-  $("congrats").addEventListener("click", function () { this.hidden = true; clearTimeout(congratsTimer); });
+  function closeCongrats() { $("congrats").hidden = true; }
+  // only the backdrop dismisses on tap — taps inside the card (buttons) don't
+  $("congrats").addEventListener("click", function (e) { if (e.target === this) closeCongrats(); });
+  $("congratsDone").addEventListener("click", closeCongrats);
+  $("congratsShare").addEventListener("click", function () {
+    if (navigator.share) {
+      navigator.share({ title: "The Integrated Man", text: congratsShareText }).catch(function () {});
+    } else if (navigator.clipboard) {
+      navigator.clipboard.writeText(congratsShareText).then(function () { showToastMsg("Copied — paste it anywhere."); }).catch(function () {});
+    } else { showToastMsg("Screenshot this to share it."); }
+    fb("select");
+  });
   function showToastRetry(text, retryFn) {
     var b = $("toastBody");
     b.innerHTML = '<div class="toast-text">' + escapeHtml(text) + '</div><div class="toast-kicker" style="margin-top:5px;color:var(--accent)">Tap to try again</div>';
@@ -7230,7 +7269,7 @@
     db.textSize = b.getAttribute("data-ts"); save(); applyTextSize(db.textSize); buzz(8);
   });
 
-  var APP_VERSION = "v39";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v40";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
