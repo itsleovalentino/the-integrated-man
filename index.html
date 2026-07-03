@@ -2663,6 +2663,31 @@
   .welcome-list li { font-size: 14.5px; line-height: 1.5; color: var(--ink-soft); padding-left: 16px; position: relative; }
   .welcome-list li::before { content: ""; position: absolute; left: 0; top: 8px; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
   .welcome-list li b { color: var(--ink); font-weight: 500; }
+  /* ---- new-day streak celebration ---- */
+  .streak-cel { position: fixed; inset: 0; z-index: 280; display: flex; align-items: center; justify-content: center;
+    background: radial-gradient(circle at 50% 40%, rgba(42,29,13,0.95), rgba(0,0,0,0.985) 60%);
+    animation: scelIn 0.4s ease; overflow: hidden; -webkit-tap-highlight-color: transparent; }
+  .streak-cel[hidden] { display: none; }
+  .streak-cel.scel-closing { animation: scelOut 0.32s ease forwards; }
+  .scel-canvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+  .scel-inner { position: relative; z-index: 1; text-align: center; padding: 24px; animation: scelPop 0.6s cubic-bezier(.2,.8,.2,1); }
+  .scel-eyebrow { font-size: 11.5px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--accent); margin-bottom: 16px; }
+  .scel-flame { width: 62px; height: 62px; margin: 0 auto 4px; color: #f5a04a; filter: drop-shadow(0 0 22px rgba(245,120,50,0.75)); animation: scelFlicker 1.4s ease-in-out infinite; }
+  .scel-flame svg { width: 100%; height: 100%; }
+  .scel-num { font-size: 112px; line-height: 1; font-weight: 300; letter-spacing: -0.03em; color: var(--ink); text-shadow: 0 0 44px rgba(245,150,80,0.4); font-variant-numeric: tabular-nums; }
+  .scel-cap { margin-top: 6px; font-size: 11px; letter-spacing: 0.28em; text-transform: uppercase; color: var(--ink-faint); }
+  .scel-sub { margin-top: 22px; font-size: 19px; color: var(--ink-soft); line-height: 1.45; max-width: 300px; margin-left: auto; margin-right: auto; }
+  .scel-btn { margin-top: 30px; background: var(--accent); color: var(--bg); border: none; border-radius: 999px; padding: 13px 42px;
+    font-family: inherit; font-size: 13px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer;
+    box-shadow: 0 12px 34px -8px rgba(245,150,80,0.55); transition: transform 0.1s ease; }
+  .scel-btn:active { transform: scale(0.97); }
+  .streak.streak-hit { animation: streakHit 0.6s cubic-bezier(.2,.8,.2,1); }
+  @keyframes scelIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes scelOut { to { opacity: 0; } }
+  @keyframes scelPop { from { opacity: 0; transform: translateY(20px) scale(0.93); } to { opacity: 1; transform: none; } }
+  @keyframes scelFlicker { 0%,100% { transform: scale(1) rotate(-1.5deg); filter: drop-shadow(0 0 22px rgba(245,120,50,0.75)); } 50% { transform: scale(1.07) rotate(1.5deg); filter: drop-shadow(0 0 32px rgba(245,145,65,0.98)); } }
+  @keyframes streakHit { 0% { transform: scale(1); } 32% { transform: scale(1.32); box-shadow: 0 0 0 5px var(--accent-soft); } 100% { transform: scale(1); } }
+  @media (prefers-reduced-motion: reduce) { .scel-flame, .scel-inner, .streak-cel { animation: none; } }
   /* ===== Welcome / landing (the one screen styled in the brand design system) ===== */
   .welcome-overlay { background: #0a0908; backdrop-filter: none; z-index: 90; }
   .welcome-card {
@@ -3558,6 +3583,19 @@
         <li><b>Fellowship</b> — your circle, and the covenant you keep together.</li>
       </ul>
       <button class="modal-primary" id="welcomeBegin">Begin</button>
+    </div>
+  </div>
+
+  <!-- New-day streak celebration -->
+  <div class="streak-cel" id="streakCel" hidden>
+    <canvas class="scel-canvas" id="scelCanvas"></canvas>
+    <div class="scel-inner">
+      <div class="scel-eyebrow" id="scelEyebrow">Welcome back</div>
+      <div class="scel-flame" id="scelFlame"></div>
+      <div class="scel-num serif" id="scelNum">0</div>
+      <div class="scel-cap">Day streak</div>
+      <div class="scel-sub serif" id="scelSub"></div>
+      <button class="scel-btn" id="scelBtn">Continue</button>
     </div>
   </div>
 
@@ -9389,7 +9427,7 @@
   });
   if (window.matchMedia) { try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { if (db.theme === "auto") applyTheme("auto"); }); } catch (e) {} }
 
-  var APP_VERSION = "v61.32-dev";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v61.33-dev";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
@@ -9781,6 +9819,111 @@
     reader.readAsText(f);
   });
 
+  // ================= new-day streak celebration =================
+  var scelRAF = 0;
+  function streakLine(n) {
+    if (n >= 100) return "One hundred days. A man being remade.";
+    if (n >= 50) return "Fifty days of showing up — that's rare air.";
+    if (n >= 30) return "A full month. This is who you are now.";
+    if (n >= 21) return "Three weeks — it's a habit now, not a hope.";
+    if (n >= 14) return "Two weeks straight. The rhythm is yours.";
+    if (n >= 7) return "A week kept. The fire is catching.";
+    if (n >= 3) return "Three days running. Momentum.";
+    return "You came back. That's the whole thing.";
+  }
+  function countUp(el, from, to, dur) {
+    var t0 = null;
+    (function step(ts) {
+      ts = ts || (window.performance && performance.now ? performance.now() : 0);
+      if (t0 === null) t0 = ts;
+      var p = Math.min(1, (ts - t0) / dur), e = 1 - Math.pow(1 - p, 3);
+      el.textContent = Math.round(from + (to - from) * e);
+      if (p < 1) requestAnimationFrame(step); else el.textContent = to;
+    })();
+  }
+  function startScelFx(mode) {
+    cancelAnimationFrame(scelRAF);
+    var cv = $("scelCanvas"); if (!cv || REDUCED) return;
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    cv.width = Math.round(cv.clientWidth * dpr); cv.height = Math.round(cv.clientHeight * dpr);
+    var g = cv.getContext("2d"); g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    var W = cv.clientWidth, H = cv.clientHeight, cx = W / 2, cy = H * 0.4;
+    var parts = [], GOLD = ["#f5a04a", "#f5c064", "#e0c074", "#ffd98a", "#f0b64c"];
+    function rc(a) { return a[Math.floor(Math.random() * a.length)]; }
+    function seedBurst(n) { for (var i = 0; i < n; i++) { var a = Math.random() * Math.PI * 2, sp = 2 + Math.random() * 6; parts.push({ x: cx, y: cy, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: 1, sz: 2 + Math.random() * 3, c: rc(GOLD), g: 0.03 }); } }
+    if (mode === "burst") seedBurst(48);
+    function frame(ts) {
+      g.clearRect(0, 0, W, H);
+      if (mode === "embers" && parts.length < 95 && Math.random() < 0.85) parts.push({ x: Math.random() * W, y: H + 8, vx: (Math.random() - 0.5) * 0.6, vy: -(0.6 + Math.random() * 1.5), life: 1, sz: 1.5 + Math.random() * 2.4, c: rc(GOLD), g: -0.002, fl: Math.random() * 6 });
+      else if (mode === "confetti" && parts.length < 85 && Math.random() < 0.75) parts.push({ x: Math.random() * W, y: -8, vx: (Math.random() - 0.5) * 1.2, vy: 1 + Math.random() * 2, life: 1, sz: 3 + Math.random() * 3, c: rc(GOLD), g: 0.01, rot: Math.random() * 6, vr: (Math.random() - 0.5) * 0.3, conf: true });
+      else if (mode === "burst" && !parts.length) seedBurst(48);
+      if (mode === "rings") { var tt = ts / 1000; for (var r = 0; r < 3; r++) { var pr = ((tt * 0.5 + r / 3) % 1), rad = pr * Math.max(W, H) * 0.55; g.beginPath(); g.arc(cx, cy, rad, 0, Math.PI * 2); g.strokeStyle = "rgba(245,160,74," + (0.5 * (1 - pr)) + ")"; g.lineWidth = 2.5; g.stroke(); } }
+      if (mode === "rays") { g.save(); g.translate(cx, cy); g.rotate(ts / 2600); for (var i2 = 0, N = 14; i2 < N; i2++) { g.rotate(Math.PI * 2 / N); var grd = g.createLinearGradient(0, 0, 0, -H * 0.62); grd.addColorStop(0, "rgba(245,170,80,0.16)"); grd.addColorStop(1, "rgba(245,170,80,0)"); g.beginPath(); g.moveTo(0, 0); g.lineTo(0, -Math.max(W, H)); g.strokeStyle = grd; g.lineWidth = 14; g.stroke(); } g.restore(); }
+      for (var i = parts.length - 1; i >= 0; i--) { var p = parts[i]; p.vy += p.g; p.x += p.vx; p.y += p.vy; if (p.vr) p.rot += p.vr; p.life -= (mode === "burst" ? 0.012 : 0.006);
+        if (p.life <= 0 || p.y > H + 20 || p.y < -30) { parts.splice(i, 1); continue; }
+        g.globalAlpha = Math.max(0, Math.min(1, p.life)) * (mode === "embers" ? (0.55 + 0.45 * Math.sin(ts / 120 + (p.fl || 0))) : 1);
+        g.fillStyle = p.c;
+        if (p.conf) { g.save(); g.translate(p.x, p.y); g.rotate(p.rot || 0); g.fillRect(-p.sz / 2, -p.sz, p.sz, p.sz * 2); g.restore(); }
+        else { g.beginPath(); g.arc(p.x, p.y, p.sz, 0, Math.PI * 2); g.fill(); }
+      }
+      g.globalAlpha = 1;
+      scelRAF = requestAnimationFrame(frame);
+    }
+    scelRAF = requestAnimationFrame(frame);
+  }
+  function showStreakCelebration(from, to) {
+    from = from || 0; to = to || 1;
+    var reset = to <= from;
+    $("scelFlame").innerHTML = FLAME_SVG;
+    var name = (db.profile && db.profile.name) ? db.profile.name.trim().split(" ")[0] : "";
+    $("scelEyebrow").textContent = name ? ("Welcome back, " + name) : "Welcome back";
+    $("scelSub").textContent = reset ? "A new fire begins. Day one." : streakLine(to);
+    $("scelNum").textContent = reset ? to : from;
+    $("streakCel").hidden = false;
+    document.body.classList.add("rw-open");
+    startScelFx(["embers", "rays", "confetti", "rings", "burst"][((to % 5) + 5) % 5]);
+    if (!reset) countUp($("scelNum"), from, to, 1150);
+    setTimeout(function () { if (typeof playFanfare === "function") playFanfare(); }, 200);
+    buzzPattern([0, 20, 50, 20, 40, 90]);
+  }
+  function streakSlam() {
+    var numEl = $("scelNum"), pill = $("streak");
+    if (!numEl || !pill) return;
+    var start = numEl.getBoundingClientRect(), end = pill.getBoundingClientRect();
+    var f = document.createElement("div"); f.className = "flame-fly"; f.innerHTML = FLAME_SVG;
+    var x0 = start.left + start.width / 2 - 11, y0 = start.top + start.height / 2 - 11;
+    f.style.left = x0 + "px"; f.style.top = y0 + "px"; document.body.appendChild(f);
+    var xT = end.left + end.width / 2 - 11 - x0, yT = end.top + end.height / 2 - 11 - y0;
+    void f.offsetWidth;
+    f.style.transform = "translate(" + (xT * 0.25).toFixed(1) + "px, -34px) scale(1.7)";
+    setTimeout(function () { f.classList.add("dive"); f.style.transform = "translate(" + xT.toFixed(1) + "px," + yT.toFixed(1) + "px) scale(0.7)"; }, 300);
+    setTimeout(function () {
+      f.remove();
+      pill.classList.add("streak-hit"); setTimeout(function () { pill.classList.remove("streak-hit"); }, 620);
+      if (typeof celebrate === "function") { try { celebrate(pill); } catch (e) {} }
+      if (typeof playChime === "function") playChime();
+      buzzPattern([0, 45, 60, 30, 120]);
+    }, 480);
+  }
+  function dismissStreakCelebration() {
+    var cel = $("streakCel"); if (!cel || cel.hidden) return;
+    streakSlam();
+    cancelAnimationFrame(scelRAF);
+    cel.classList.add("scel-closing");
+    setTimeout(function () { cel.hidden = true; cel.classList.remove("scel-closing"); document.body.classList.remove("rw-open"); }, 320);
+  }
+  function maybeShowStreakCelebration() {
+    var s = db.streakToCelebrate;
+    if (!s || s.day !== todayKey) return;
+    if (document.hidden) return;
+    if (typeof appGated === "function" && appGated()) return;
+    if (!$("streakCel").hidden) return;
+    delete db.streakToCelebrate; save();
+    showStreakCelebration(s.from, s.to);
+  }
+  $("scelBtn").addEventListener("click", dismissStreakCelebration);
+  $("streakCel").addEventListener("click", function (e) { if (e.target === this) dismissStreakCelebration(); });
+
   // ================= the daily render (re-runnable at midnight) =================
   function dailyRefresh() {
     var now = new Date();
@@ -9806,7 +9949,10 @@
 
     // rollover: streak + (for each sequential plan) advance the reading position
     if (db.lastOpen !== todayKey) {
+      var _prevStreak = db.streak || 0;
       db.streak = (db.lastOpen === yKey) ? (db.streak || 0) + 1 : 1;
+      // queue the new-day celebration for the first time they're actually looking (not a background midnight roll)
+      if (db.lastOpen) db.streakToCelebrate = { from: _prevStreak, to: db.streak, day: todayKey };
       if (db.lastOpen) {
         plans.forEach(function (plan) {
           if (plan.key === "proverbs") return;
@@ -9830,6 +9976,7 @@
     if (typeof currentView !== "undefined" && currentView === "fellowship" && typeof loadCircle === "function") {
       loadCircle(function () { if (typeof renderCircle === "function") renderCircle(); });
     }
+    setTimeout(maybeShowStreakCelebration, 350);   // celebrate the new day once the home is laid out
   }
 
   // load the day-scoped field VALUES (called on init and after each rollover)
@@ -10401,8 +10548,9 @@
 
   // also catch the day change when the tab is reopened/refocused (covers laptop sleep)
   document.addEventListener("visibilitychange", function () {
-    if (document.hidden) { if (pushTimer) { clearTimeout(pushTimer); pushTimer = null; cloudPush(); } } // flush before backgrounding
-    else if (keyOf(new Date()) !== todayKey) dailyRefresh();
+    if (document.hidden) { if (pushTimer) { clearTimeout(pushTimer); pushTimer = null; cloudPush(); } return; } // flush before backgrounding
+    if (keyOf(new Date()) !== todayKey) dailyRefresh();          // new day → dailyRefresh shows the celebration
+    else setTimeout(maybeShowStreakCelebration, 120);            // same day but a celebration may be queued
   });
   // last-ditch flush so a quick capture-then-close still reaches the cloud
   window.addEventListener("pagehide", function () { if (pushTimer) { clearTimeout(pushTimer); pushTimer = null; cloudPush(); } });
@@ -10417,6 +10565,7 @@
   window.addEventListener("offline", function () { if (needsPush) setSync("offline"); });
   window.addEventListener("focus", function () {
     if (keyOf(new Date()) !== todayKey) dailyRefresh();
+    else setTimeout(maybeShowStreakCelebration, 120);
   });
 
 })();
