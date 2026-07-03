@@ -6554,6 +6554,10 @@
     var c = circleState.circle, day = todayLocal();
     if (circleState.sentBack[toUid + ":" + kind]) return;
     circleState.sentBack[toUid + ":" + kind] = true;
+    // sender feedback — 🔥 celebrate gets the warm ember sound + a lively buzz;
+    // 🤝 got-your-back gets a warm pluck + a solid, reassuring tap
+    if (kind === "fire") { if (typeof playEmber === "function") playEmber(); buzzPattern([0, 18, 45, 28]); }
+    else { if (typeof playTick === "function") playTick(); buzzPattern([0, 22, 60]); }
     if (kind === "fire") circleState.fireCounts[toUid] = (circleState.fireCounts[toUid] || 0) + 1;
     if (sb) sb.from("nudges").insert({ circle_id: c.id, from_id: myId(), to_id: toUid, day: day, kind: kind })
       .then(function (res) { if (res && res.error && res.error.code !== "23505") console.error("nudge failed:", res.error); });
@@ -6694,8 +6698,8 @@
     else if (act === "openCeremony") { cerDismissed = false; openCeremony("first"); }
     else if (act === "markToday") { setCheck(true, el); }        // instant — tap fills the circle, tap again to undo
     else if (act === "unmarkToday") { setCheck(false, el); }
-    else if (act === "gotBack") { sendNudge(uid, "back"); showToastMsg("He’ll know you’re with him."); buzz(10); }
-    else if (act === "fire") { sendNudge(uid, "fire"); buzz(10); }
+    else if (act === "gotBack") { sendNudge(uid, "back"); showToastMsg("He’ll know you’re with him."); }
+    else if (act === "fire") { sendNudge(uid, "fire"); showToastMsg("You celebrated him. 🔥"); }
     else if (act === "renewContinue") { var pc = circleState.covenants[myId()]; if (pc) { doSign(pc.body, "continue", pc.freq); } }
     else if (act === "renewNew") { openCeremony("new"); }
     else if (act === "editFocus") { openFocusEdit(); }
@@ -8691,7 +8695,7 @@
   });
   if (window.matchMedia) { try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { if (db.theme === "auto") applyTheme("auto"); }); } catch (e) {} }
 
-  var APP_VERSION = "v61.15-dev";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v61.16-dev";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
