@@ -1470,7 +1470,9 @@
   .day-oura-steps { text-align: center; font-size: 13px; color: var(--ink-soft); margin-top: 12px; }
   .day-steps { margin-top: 16px; }
   .day-steps-pct { font-size: 12px; color: var(--ink-faint); letter-spacing: 0.02em; }
+  .day-subhead { font-size: 10.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 5px; }
   .day-list-line { display: flex; gap: 9px; padding: 5px 0; font-size: 14.5px; line-height: 1.5; color: var(--ink); }
+  .day-list-line b { color: var(--ink); font-weight: 500; }
   .day-list-line.answered { color: var(--ink-soft); }
   .day-list-line .dll-mk { flex: 0 0 auto; color: var(--accent); }
   .day-list-line .dll-tag { color: var(--accent); font-size: 12px; letter-spacing: 0.02em; }
@@ -2634,6 +2636,7 @@
     overflow-y: auto;
   }
   .modal-overlay[hidden] { display: none; }
+  #confirmModal { z-index: 310; }   /* confirm must sit ABOVE every overlay it can be triggered from (Days z-72, popups, etc.) */
   /* the verse-note editor opens from within the Bible page (z 70) — keep it on top */
   #verseNoteModal { z-index: 110; }
   .modal {
@@ -2660,6 +2663,31 @@
   .welcome-list li { font-size: 14.5px; line-height: 1.5; color: var(--ink-soft); padding-left: 16px; position: relative; }
   .welcome-list li::before { content: ""; position: absolute; left: 0; top: 8px; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
   .welcome-list li b { color: var(--ink); font-weight: 500; }
+  /* ---- new-day streak celebration ---- */
+  .streak-cel { position: fixed; inset: 0; z-index: 280; display: flex; align-items: center; justify-content: center;
+    background: radial-gradient(circle at 50% 40%, rgba(42,29,13,0.95), rgba(0,0,0,0.985) 60%);
+    animation: scelIn 0.4s ease; overflow: hidden; -webkit-tap-highlight-color: transparent; }
+  .streak-cel[hidden] { display: none; }
+  .streak-cel.scel-closing { animation: scelOut 0.32s ease forwards; }
+  .scel-canvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+  .scel-inner { position: relative; z-index: 1; text-align: center; padding: 24px; animation: scelPop 0.6s cubic-bezier(.2,.8,.2,1); }
+  .scel-eyebrow { font-size: 11.5px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--accent); margin-bottom: 16px; }
+  .scel-flame { width: 62px; height: 62px; margin: 0 auto 4px; color: #f5a04a; filter: drop-shadow(0 0 22px rgba(245,120,50,0.75)); animation: scelFlicker 1.4s ease-in-out infinite; }
+  .scel-flame svg { width: 100%; height: 100%; }
+  .scel-num { font-size: 112px; line-height: 1; font-weight: 300; letter-spacing: -0.03em; color: var(--ink); text-shadow: 0 0 44px rgba(245,150,80,0.4); font-variant-numeric: tabular-nums; }
+  .scel-cap { margin-top: 6px; font-size: 11px; letter-spacing: 0.28em; text-transform: uppercase; color: var(--ink-faint); }
+  .scel-sub { margin-top: 22px; font-size: 19px; color: var(--ink-soft); line-height: 1.45; max-width: 300px; margin-left: auto; margin-right: auto; }
+  .scel-btn { margin-top: 30px; background: var(--accent); color: var(--bg); border: none; border-radius: 999px; padding: 13px 42px;
+    font-family: inherit; font-size: 13px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer;
+    box-shadow: 0 12px 34px -8px rgba(245,150,80,0.55); transition: transform 0.1s ease; }
+  .scel-btn:active { transform: scale(0.97); }
+  .streak.streak-hit { animation: streakHit 0.6s cubic-bezier(.2,.8,.2,1); }
+  @keyframes scelIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes scelOut { to { opacity: 0; } }
+  @keyframes scelPop { from { opacity: 0; transform: translateY(20px) scale(0.93); } to { opacity: 1; transform: none; } }
+  @keyframes scelFlicker { 0%,100% { transform: scale(1) rotate(-1.5deg); filter: drop-shadow(0 0 22px rgba(245,120,50,0.75)); } 50% { transform: scale(1.07) rotate(1.5deg); filter: drop-shadow(0 0 32px rgba(245,145,65,0.98)); } }
+  @keyframes streakHit { 0% { transform: scale(1); } 32% { transform: scale(1.32); box-shadow: 0 0 0 5px var(--accent-soft); } 100% { transform: scale(1); } }
+  @media (prefers-reduced-motion: reduce) { .scel-flame, .scel-inner, .streak-cel { animation: none; } }
   /* ===== Welcome / landing (the one screen styled in the brand design system) ===== */
   .welcome-overlay { background: #0a0908; backdrop-filter: none; z-index: 90; }
   .welcome-card {
@@ -3525,7 +3553,7 @@
         <button class="ob-avatar" id="obPhotoBtn" type="button" aria-label="Add a photo">
           <svg viewBox="0 0 24 24" id="obAvatarIcon"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"/><path d="M4 20c0-3.3 3.6-5 8-5s8 1.7 8 5"/></svg>
         </button>
-        <div class="ob-photo-meta"><span id="obPhotoLabel">A face makes your circle personal.</span></div>
+        <div class="ob-photo-meta"><span id="obPhotoLabel">Find your best smile.</span></div>
         <input type="file" id="obPhotoFile" accept="image/*" hidden />
       </div>
 
@@ -3555,6 +3583,19 @@
         <li><b>Fellowship</b> — your circle, and the covenant you keep together.</li>
       </ul>
       <button class="modal-primary" id="welcomeBegin">Begin</button>
+    </div>
+  </div>
+
+  <!-- New-day streak celebration -->
+  <div class="streak-cel" id="streakCel" hidden>
+    <canvas class="scel-canvas" id="scelCanvas"></canvas>
+    <div class="scel-inner">
+      <div class="scel-eyebrow" id="scelEyebrow">Welcome back</div>
+      <div class="scel-flame" id="scelFlame"></div>
+      <div class="scel-num serif" id="scelNum">0</div>
+      <div class="scel-cap">Day streak</div>
+      <div class="scel-sub serif" id="scelSub"></div>
+      <button class="scel-btn" id="scelBtn">Continue</button>
     </div>
   </div>
 
@@ -3611,24 +3652,6 @@
         <span class="toggle-switch" id="hapticsSwitch"></span>
       </button>
 
-      <label class="field-label">Thought reminders</label>
-      <button class="toggle-row" id="notifyToggle" type="button">
-        <span id="notifyLabel">Off</span>
-        <span class="toggle-switch" id="notifySwitch"></span>
-      </button>
-      <div class="lock-opts" id="notifyOpts" hidden>
-        <div class="ob-perday" style="margin-top:12px;">
-          <span>Remind every</span>
-          <select class="ob-book" id="notifyHours" style="width:auto;">
-            <option value="2">2 hours</option>
-            <option value="3">3 hours</option>
-            <option value="4">4 hours</option>
-            <option value="6">6 hours</option>
-          </select>
-        </div>
-        <div class="voice-msg">Reminders fire while the app is open in a tab. Full background reminders come once it’s installed as an app.</div>
-      </div>
-
       <div id="lockSection">
         <label class="field-label">Passcode lock</label>
         <div class="coach-tip" id="lockCoach" hidden>Turn this on to set a 4-digit code that locks your journal. <b>Tap the switch below to begin.</b></div>
@@ -3662,25 +3685,14 @@
         <p class="ob-reading-hint" style="text-align:left;margin-top:6px;">Tap <a href="https://cloud.ouraring.com/personal-access-tokens" target="_blank" rel="noopener" class="oura-link">Get your Oura token&nbsp;↗</a>, create one, copy it, and paste it above. It's stored privately in your own account.</p>
       </div>
 
-      <label class="field-label">Audio Bible (Bible Brain)</label>
-      <div class="oura-connect" id="fcbhConnect">
-        <input type="password" id="fcbhKey" placeholder="Bible Brain API key" autocomplete="off" />
-        <div class="oura-row">
-          <button class="modal-secondary" id="fcbhSave" style="flex:1;">Connect</button>
-          <button class="modal-secondary" id="fcbhDisconnect" style="flex:1;" hidden>Disconnect</button>
-        </div>
-        <div class="oura-msg" id="fcbhMsg"></div>
-        <p class="ob-reading-hint" style="text-align:left;margin-top:6px;">Unlocks dramatized <b>Old + New Testament</b> audio in more versions, with <b>exact verse-by-verse karaoke</b> (real per-verse timecodes). Get a free key at <a href="https://www.faithcomesbyhearing.com/audio-bible-resources/bible-brain" target="_blank" rel="noopener" class="oura-link">Bible Brain&nbsp;↗</a> and paste it above. Stored privately in your account.</p>
-      </div>
-
       <label class="field-label">Your data</label>
       <div class="settings-data">
         <button class="modal-secondary" id="exportBtn">Back up my data</button>
         <button class="modal-secondary" id="importBtn">Restore from a file</button>
         <input type="file" id="importFile" accept="application/json" hidden />
       </div>
-      <button class="modal-secondary" id="recoverBtn" style="width:100%;margin-top:8px;">Verify my journal</button>
-      <p class="ob-reading-hint" style="margin-top:8px;text-align:left;">Your journal is kept in more than one place — on this device, in an automatic snapshot, and entry-by-entry in your account. <b>Verify my journal</b> checks them against each other and quietly fills in anything missing. Download a file now and then for extra peace of mind.</p>
+      <button class="modal-secondary" id="recoverBtn" style="width:100%;margin-top:8px;">Check my journal is safe</button>
+      <p class="ob-reading-hint" style="margin-top:8px;text-align:left;">Your words are safe. Every entry is kept in more than one place — on this device, in an automatic backup, and one-by-one in your account — and they stay in sync on their own. This just gives you a way to double-check whenever you like; it only ever <b>adds anything missing</b>, and never removes or overwrites a thing. Saving a backup file now and then is a nice bit of extra peace of mind.</p>
       <div class="settings-msg" id="settingsMsg"></div>
       </div>
       <div class="settings-foot">
@@ -4141,8 +4153,6 @@
   db.noteTrash = db.noteTrash || []; // soft-deleted notes — recoverable, never hard-deleted
   db.covenants = db.covenants || []; // durable append-only mirror of my covenant signings (never edited/deleted)
   db.covChecks = db.covChecks || {}; // day -> {done, circleId, ts} — my own covenant-check record
-  if (typeof db.notifyOn !== "boolean") db.notifyOn = false;
-  if (typeof db.notifyHours !== "number") db.notifyHours = 3;
   if (typeof db.soundOn !== "boolean") db.soundOn = true;
   if (typeof db.hapticsOn !== "boolean") db.hapticsOn = true;
   if (typeof db.lockEnabled !== "boolean") db.lockEnabled = false;
@@ -4264,7 +4274,20 @@
     "What would you do differently today if you knew God had already gone before you?",
     "Who in your life only sees the polished version of you — and what would it cost to be known?",
     "What is the next right step of obedience, even if you can't see the whole staircase?",
-    "Where is God growing you through something you would never have chosen?"
+    "Where is God growing you through something you would never have chosen?",
+    "If today were a chapter in your story, what would you title it?",
+    "What's one small win today that deserves a quiet celebration?",
+    "What would the boldest version of you do this week that you keep putting off?",
+    "What are you better at than you give yourself credit for?",
+    "If tomorrow were completely free, what would you actually do — and what does that tell you?",
+    "What are you curious about right now that's worth chasing?",
+    "When did you last laugh hard — and what would more of that look like?",
+    "If you got 10% better at one skill this month, which one would change the most?",
+    "Who could you encourage today with a single text, and what would you say?",
+    "What would make tomorrow a small adventure instead of just a to-do list?",
+    "If your 80-year-old self could whisper one thing to you today, what would it be?",
+    "What's something you've been meaning to try? What's the smallest first step?",
+    "Where did you feel most alive lately, and how do you get more of it?"
   ];
 
   // Evening reflection prompts — review the day, grow, prepare for tomorrow.
@@ -5983,12 +6006,37 @@
     var c = rwCard;
     db[c.data][todayKey] = $("rwBody").value;     // final write-through (input already persisted along the way)
     save();
+    syncReflectionNote(c);                         // mirror the reflection into Notes as its own note
     $("reflectWriter").hidden = true;
     document.body.classList.remove("rw-open");
     jcardLoad(c);                                  // sync + collapse the compact home card to its saved state
     if (typeof journalVisible === "function" && journalVisible()) renderJournal();
     if (committed) { playTick(); buzz(12); } else { buzz(6); }
     rwCard = null;
+  }
+  // ----- a reflection lives in Notes as its own note (linked back to its day via refDay/refCard) -----
+  function reflectionNote(cardData, day) {
+    var arr = db.thoughts || [];
+    for (var i = 0; i < arr.length; i++) { var t = arr[i]; if (t.refCard === cardData && t.refDay === day && !t._deletedAt) return t; }
+    return null;
+  }
+  function syncReflectionNote(c) {
+    var answer = (db[c.data][todayKey] || "").trim();
+    var prompt = c.prompts[jcardIdx(c)];
+    var note = reflectionNote(c.data, todayKey);
+    if (!answer) return;                            // nothing written → don't create an empty note
+    var combined = prompt + "\n" + answer;          // title line = the prompt, body = the answer
+    if (note) {
+      note.text = combined; note.title = prompt; note.edited = new Date().toISOString();
+      save(); if (typeof syncEntry === "function") syncEntry(note);
+    } else {
+      addThought({ text: combined, title: prompt, refDay: todayKey, refCard: c.data });
+    }
+  }
+  function openReflectionNote(note) {
+    if (typeof commitWriter === "function") commitWriter();   // save any note already open first
+    journalTab = "notes"; setView("journal"); if (typeof renderJournalTab === "function") renderJournalTab();
+    openWriterEdit(note);
   }
   function jcardAnother(c) {
     jcardSwitch(c); // move to a fresh prompt
@@ -6004,7 +6052,12 @@
     // tapping the compact field opens the full-screen writer; focus transfers so the keyboard stays up
     $(c.textId).addEventListener("focus", function () { openReflectWriter(c); });
     $(c.textId).addEventListener("input", function () { jcardSyncCollapseBtn(c); });
-    $(c.collapsedId).addEventListener("click", function (e) { if (!e.target.closest("#" + c.anotherId)) jcardReopen(c); });
+    $(c.collapsedId).addEventListener("click", function (e) {
+      if (e.target.closest("#" + c.anotherId)) return;
+      var note = reflectionNote(c.data, todayKey);      // a completed reflection lives in Notes → open it there
+      if (note) { openReflectionNote(note); return; }
+      jcardReopen(c);                                    // (fallback, e.g. legacy day with no linked note)
+    });
     $(c.anotherId).addEventListener("click", function (e) { e.stopPropagation(); jcardAnother(c); });
   });
 
@@ -6337,34 +6390,9 @@
     var m = $("ouraMsg"); m.className = "oura-msg"; m.textContent = "Disconnected.";
   });
 
-  // Bible Brain (FCBH) — unlocks dramatized OT+NT + exact per-verse karaoke once a key is set.
-  function renderFcbhSettings() {
-    var el = $("fcbhKey"); if (!el) return;
-    var connected = !!db.fcbhKey;
-    el.value = "";
-    el.placeholder = connected ? "Connected — paste a new key to replace" : "Bible Brain API key";
-    $("fcbhDisconnect").hidden = !connected;
-    $("fcbhSave").textContent = connected ? "Update" : "Connect";
-    var m = $("fcbhMsg"); m.className = "oura-msg"; m.textContent = connected ? "Connected — dramatized OT + NT with exact karaoke." : "";
-  }
-  var _fcbhSave = $("fcbhSave"); if (_fcbhSave) _fcbhSave.addEventListener("click", function () {
-    var t = $("fcbhKey").value.trim(), m = $("fcbhMsg");
-    if (!t) { m.className = "oura-msg err"; m.textContent = "Paste your Bible Brain key first."; return; }
-    db.fcbhKey = t; fcbhSets = null; save();
-    renderFcbhSettings();
-    m.className = "oura-msg"; m.textContent = "Connected — reopen a chapter to hear it.";
-    if (typeof updateAudioBtn === "function" && db.lastPassage) updateAudioBtn(db.lastPassage);
-  });
-  var _fcbhDisc = $("fcbhDisconnect"); if (_fcbhDisc) _fcbhDisc.addEventListener("click", function () {
-    db.fcbhKey = null; fcbhSets = null; save();
-    renderFcbhSettings();
-    var m = $("fcbhMsg"); m.className = "oura-msg"; m.textContent = "Disconnected — using the default audio.";
-    if (typeof updateAudioBtn === "function" && db.lastPassage) updateAudioBtn(db.lastPassage);
-  });
-
   // Bible Brain (FCBH) audio: db.fcbhKey powers dramatized OT+NT + exact timecodes.
-  // Leo-only for now — no Settings UI by his call; the key gets set for his account
-  // directly when he receives it (ask Leo / see CLAUDE.md).
+  // No Settings UI (removed by Leo's call — unnecessary). The plumbing below stays
+  // dormant unless a key is ever set on db.fcbhKey directly for an account.
 
   // ----- Local Weather (Open-Meteo — free, browser-friendly, no key) -----
   var weatherCache = null;
@@ -7678,6 +7706,7 @@
   function writerToNotes() {
     var tools = $("writerTools"); if (tools) tools.style.transform = "";
     stopWriterRec();
+    commitWriter();   // commit the open note before leaving (never lose the last edit; also syncs a reflection back)
     if (journalWide() && currentView === "journal" && journalTab === "notes") {
       renderJournalPage();   // two-pane: keep the editor docked, just refresh the list on the left
       return;
@@ -7701,6 +7730,13 @@
           arr[i].text = combined; arr[i].title = title || null;
           arr[i].html = hasRich ? bodyHtml : null; arr[i].voice = writerVoice;
           arr[i].edited = new Date().toISOString();
+          // if this note is a linked reflection, mirror the edit back to db.journal/db.evening
+          // so the home card + Days view stay in sync (body = everything after the prompt/title line)
+          if (arr[i].refCard && arr[i].refDay && db[arr[i].refCard]) {
+            var rb = arr[i].text || "", nl = rb.indexOf("\n");
+            db[arr[i].refCard][arr[i].refDay] = (nl >= 0 ? rb.slice(nl + 1) : rb).trim();
+            if (arr[i].refDay === todayKey && typeof JCARDS !== "undefined" && JCARDS[arr[i].refCard]) { try { jcardLoad(JCARDS[arr[i].refCard]); } catch (e) {} }
+          }
           syncEntry(arr[i]); break;
         }
       }
@@ -8049,11 +8085,13 @@
       id: newId("t"), text: (o.text || "").trim(), voice: o.voice || null,
       title: o.title || null, html: o.html || null,
       mood: (typeof o.mood === "number") ? o.mood : null, star: false,
-      ts: new Date().toISOString(), dateKey: todayKey
+      refDay: o.refDay || null, refCard: o.refCard || null,   // links a reflection note back to its day/card
+      ts: new Date().toISOString(), dateKey: o.dateKey || todayKey
     };
     db.thoughts.push(t);
     save();
     syncEntry(t);   // the entry gets its own cloud row the moment it exists
+    return t;
   }
   // (thought-capture sheet removed — the quick-note + 1–10 mood feature was retired)
 
@@ -8233,33 +8271,6 @@
     if (mem) showToast("memory", mem);   // gently resurface a past reflection ("a week ago…") — no capture nudge
   }
 
-  // ----- thought reminders (notifications) -----
-  var notifyTimer = null;
-  var canNotify = ("Notification" in window);
-  function scheduleNotify() {
-    clearInterval(notifyTimer);
-    if (db.notifyOn && canNotify && Notification.permission === "granted") {
-      notifyTimer = setInterval(function () {
-        try { new Notification("The Integrated Man", { body: "A quiet moment to reflect — open your journal." }); } catch (e) {}
-      }, db.notifyHours * 3600000);
-    }
-  }
-  function renderNotifyToggle() {
-    $("notifyToggle").classList.toggle("on", db.notifyOn);
-    $("notifyLabel").textContent = db.notifyOn ? "On" : "Off";
-    $("notifyOpts").hidden = !db.notifyOn;
-    $("notifyHours").value = String(db.notifyHours);
-  }
-  $("notifyToggle").addEventListener("click", function () {
-    if (db.notifyOn) { db.notifyOn = false; save(); renderNotifyToggle(); scheduleNotify(); return; }
-    if (!canNotify) { $("settingsMsg").textContent = "Notifications aren’t supported in this browser."; return; }
-    Notification.requestPermission().then(function (p) {
-      if (p === "granted") { db.notifyOn = true; save(); renderNotifyToggle(); scheduleNotify(); }
-      else { $("settingsMsg").textContent = "Allow notifications in your browser to turn this on."; }
-    });
-  });
-  $("notifyHours").addEventListener("change", function () { db.notifyHours = +this.value; save(); scheduleNotify(); });
-  if (!canNotify) $("notifyToggle").hidden = true;
 
   // Pillar interactions
   pillars.forEach(function (p) {
@@ -9038,26 +9049,23 @@
         (rings ? '<div class="day-oura-rings">' + rings + '</div>' : '') + dayStepsHtml(steps));
     }
 
-    // The Seven Pillars — looking back you can rate/fix a day, or mark it "not tracked"
+    // The Seven Pillars — READ-ONLY lookback. Past scores can't be changed; the only correction
+    // allowed is marking a whole day "not tracked" (in case it was logged by mistake).
     if (db.pillarSkip[k]) {
       body += dayCard("The Seven Pillars",
         '<div class="day-reflect-a" style="color:var(--ink-faint)">Not tracked — a resting day.</div>' +
         '<div class="day-pillar-actions"><button class="pillar-foot-link" data-daytrack data-day="' + k + '">Track this day</button></div>');
-    } else {
-      var rt = db.ratings[k] || {}, integ = entryIntegration(k), ph = "", anyRated = false;
+    } else if (db.ratings[k]) {
+      var rt = db.ratings[k], integ = entryIntegration(k), ph = "";
       if (integ) ph += '<div class="day-integ"><b class="day-integ-val">' + integ + '</b><span>Integration / 10</span></div>';
       pillars.forEach(function (pl) {
-        var v = rt[pl.key], rated = !!(v && v.rated !== false && isNum(v.score)), sc = rated ? v.score : 5;
-        if (rated) anyRated = true;
-        // rated rows always show; unrated rows appear only in Edit mode (so you can rate them too)
-        ph += '<div class="day-pillar' + (rated ? '' : ' day-pillar-unrated') + '"><span class="day-pillar-dot" style="background:' + pl.color + ';color:' + pl.color + '"></span>' +
-          '<span class="day-pillar-name">' + pl.name + '</span><span class="day-pillar-score" id="dscore-' + pl.key + '">' + (rated ? (v.score + '/10') : '—') + '</span></div>' +
-          '<input type="range" class="day-pillar-edit" min="0" max="10" step="1" value="' + sc + '" data-editkey="' + pl.key + '" data-editday="' + k + '" aria-label="Rate ' + escapeHtml(pl.name) + '">';
-        if (rated && v.why && v.why.trim()) ph += '<div class="day-pillar-why">' + escapeHtml(v.why) + '</div>';
+        var v = rt[pl.key]; if (!v || v.rated === false || !isNum(v.score)) return;
+        ph += '<div class="day-pillar"><span class="day-pillar-dot" style="background:' + pl.color + ';color:' + pl.color + '"></span>' +
+          '<span class="day-pillar-name">' + pl.name + '</span><span class="day-pillar-score">' + v.score + '/10</span></div>';
+        if (v.why && v.why.trim()) ph += '<div class="day-pillar-why">' + escapeHtml(v.why) + '</div>';
       });
-      if (!anyRated) ph = '<div class="day-reflect-a day-pillar-empty" style="color:var(--ink-faint)">Not rated this day — tap Edit to rate it.</div>' + ph;
-      ph += '<div class="day-pillar-actions"><button class="pillar-foot-link danger" data-daynottracked data-day="' + k + '">Mark not tracked</button></div>';
-      body += dayCard("The Seven Pillars", ph, '<button class="day-edit-toggle" data-editpillars>Edit</button>');
+      if (ph) ph += '<div class="day-pillar-actions"><button class="pillar-foot-link danger" data-daynottracked data-day="' + k + '">Mark not tracked</button></div>';
+      if (ph) body += dayCard("The Seven Pillars", ph);
     }
 
     // Habits — only those scheduled that day and already created by then
@@ -9101,13 +9109,19 @@
       }
     }
 
-    // Prayers lifted that day
+    // Prayers lifted that day — for others (with the person's name) kept separate from your own
     var pr = (db.prayers || []).filter(function (x) { return x.created === k; });
     if (pr.length) {
-      var prh = pr.map(function (x) {
+      var prLine = function (x, showWho) {
+        var who = (showWho && x.who && x.who.trim()) ? '<b>' + escapeHtml(x.who.trim()) + '</b> — ' : '';
         return '<div class="day-list-line' + (x.answered ? ' answered' : '') + '"><span class="dll-mk">' + (x.answered ? '✓' : '•') + '</span>' +
-          '<span style="flex:1">' + escapeHtml(x.text || x.who || "") + '</span>' + (x.answered ? '<span class="dll-tag">answered</span>' : '') + '</div>';
-      }).join("");
+          '<span style="flex:1">' + who + escapeHtml(x.text || "") + '</span>' + (x.answered ? '<span class="dll-tag">answered</span>' : '') + '</div>';
+      };
+      var forOthers = pr.filter(function (x) { return x.scope === "others"; });
+      var forMe = pr.filter(function (x) { return x.scope !== "others"; });
+      var prh = "";
+      if (forOthers.length) prh += '<div class="day-subhead">For others</div>' + forOthers.map(function (x) { return prLine(x, true); }).join("");
+      if (forMe.length) prh += '<div class="day-subhead"' + (forOthers.length ? ' style="margin-top:13px"' : '') + '>For me</div>' + forMe.map(function (x) { return prLine(x, false); }).join("");
       body += dayCard("Prayers", prh);
     }
 
@@ -9129,8 +9143,9 @@
     });
     if (vh) body += dayCard("Voice", vh);
 
-    // Notes written that day (preview → tap opens in Notes; no duplicate storage)
-    var notes = (db.thoughts || []).filter(function (t) { return t.dateKey === k && ((t.text && t.text.trim()) || t.voice); });
+    // Notes written that day (preview → tap opens in Notes; no duplicate storage).
+    // Exclude reflection-linked notes — they already show in the Reflections card above.
+    var notes = (db.thoughts || []).filter(function (t) { return t.dateKey === k && !t.refCard && ((t.text && t.text.trim()) || t.voice); });
     if (notes.length) {
       var nh = notes.map(function (t) {
         var lines = (t.text || "").split("\n"), title = (t.title && t.title.trim()) || (lines[0] || "").trim() || "Untitled note";
@@ -9165,14 +9180,6 @@
   $("daysPrev").addEventListener("click", function () { var i = daysList.indexOf(daysKey); if (i > -1 && i < daysList.length - 1) { daysGo(daysList[i + 1]); playPage(); buzz(6); } });
   $("daysNext").addEventListener("click", function () { var i = daysList.indexOf(daysKey); if (i > 0) { daysGo(daysList[i - 1]); playPage(); buzz(6); } });
   $("daysBody").addEventListener("click", function (e) {
-    var edit = e.target.closest("[data-editpillars]");
-    if (edit) {                                   // toggle inline pillar-editing for this day
-      var card = edit.closest(".day-card");
-      var on = card.classList.toggle("editing");
-      edit.textContent = on ? "Done" : "Edit";
-      buzz(6);
-      return;
-    }
     var ntk = e.target.closest("[data-daynottracked]");
     if (ntk) {                                    // mark this whole day "not tracked" (with a confirm)
       var d1 = ntk.getAttribute("data-day");
@@ -9201,20 +9208,7 @@
     journalTab = "notes"; setView("journal"); renderJournalTab();
     openWriterEdit(nt);            // opens the same note in Notes — no duplicate storage
   });
-  // adjust a past day's pillar score (correct a mistake) — writes back to db.ratings[day], live
-  $("daysBody").addEventListener("input", function (e) {
-    var sl = e.target.closest(".day-pillar-edit"); if (!sl) return;
-    var key = sl.getAttribute("data-editkey"), day = sl.getAttribute("data-editday"), val = Number(sl.value);
-    if (!db.ratings[day]) db.ratings[day] = {};
-    var r = db.ratings[day][key] || (db.ratings[day][key] = { score: val, why: "", deep: false, facets: null });
-    r.score = val; r.rated = true; r.deep = false; r.facets = null;   // rating (or correcting) a day is a simple score
-    save();
-    var sc = $("dscore-" + key); if (sc) sc.textContent = val + "/10";
-    var row = sl.previousElementSibling; if (row && row.classList) row.classList.remove("day-pillar-unrated");  // now rated → keep it visible
-    var empty = document.querySelector("#daysBody .day-pillar-empty"); if (empty) empty.remove();
-    var iv = document.querySelector("#daysBody .day-integ-val");
-    if (iv) { var ni = entryIntegration(day); iv.textContent = ni != null ? ni : "—"; }
-  });
+  // (Days pillars are read-only now — the only edit is "mark not tracked" above.)
   // swipe between days (left → older, right → newer)
   (function () {
     var x0 = null, y0 = null;
@@ -9350,7 +9344,7 @@
   });
   if (window.matchMedia) { try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { if (db.theme === "auto") applyTheme("auto"); }); } catch (e) {} }
 
-  var APP_VERSION = "v61.31";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v61.36-dev";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
@@ -9462,7 +9456,7 @@
   function openOnboarding() {
     $("obName").value = (db.profile && db.profile.name) || "";
     $("obCode").value = "";
-    $("obPhotoLabel").textContent = "A face makes your circle personal.";
+    $("obPhotoLabel").textContent = "Find your best smile.";
     var oa = $("obPhotoBtn"); if (oa) { oa.classList.remove("has-photo"); oa.style.backgroundImage = ""; }
     $("obMsg").textContent = "";
     $("welcome").hidden = true; $("authModal").hidden = true;
@@ -9557,10 +9551,8 @@
     $("setReadingToggle").querySelector(".srt-action").textContent = "Change";
     renderSoundToggle();
     renderLockToggle();
-    renderNotifyToggle();
     if (typeof renderAccount === "function") renderAccount();
     if (typeof renderOuraSettings === "function") renderOuraSettings();
-    if (typeof renderFcbhSettings === "function") renderFcbhSettings();
     $("settingsMsg").textContent = "";
     $("lockCoach").hidden = true; $("lockToggle").classList.remove("coach-target"); // clear any coach mark
     $("settings").hidden = false;
@@ -9697,7 +9689,7 @@
     return added;
   }
   function recoverEntries() {
-    var msg = $("settingsMsg"); msg.textContent = "Searching every backup…";
+    var msg = $("settingsMsg"); msg.textContent = "Making sure every word is safe…";
     var total = 0;
     var snap = readSnapshot(); if (snap && snap.data) total += mergeRecover(snap.data);
     function finish() {
@@ -9707,9 +9699,9 @@
         try { if (typeof rerenderAll === "function") rerenderAll(); } catch (e) {}
         try { if (typeof renderJournalPage === "function") renderJournalPage(); } catch (e) {}
         try { if (typeof renderHabits === "function") renderHabits(); } catch (e) {}
-        msg.textContent = "Filled in " + total + " item" + (total === 1 ? "" : "s") + " from your backups — nothing was overwritten.";
+        msg.textContent = "Brought back " + total + " item" + (total === 1 ? "" : "s") + " from your backups — nothing was changed.";
         if (typeof playChime === "function") playChime();
-      } else { msg.textContent = "Verified — everything here matches your backups. All is well."; }
+      } else { msg.textContent = "All safe — every word is right where it should be."; }
       if (typeof reconcileEntries === "function") reconcileEntries();   // and settle the per-entry rows both ways
     }
     if (typeof sb !== "undefined" && sb && session) {
@@ -9718,7 +9710,7 @@
     } else { finish(); }
   }
   $("recoverBtn").addEventListener("click", function () {
-    confirmDialog("Check this device against your snapshot and your account, and quietly fill in anything missing? This only adds — it never removes or overwrites what you have.", "Verify", recoverEntries);
+    confirmDialog("Gently check this device against your backup and your account, and quietly fill in anything missing? This only ever adds — it never removes or changes what you already have.", "Check", recoverEntries);
   });
   // The on-device safety snapshot is a silent backstop: it is only ever read by
   // "Recover lost entries" (additive merge). The old wholesale "Restore snapshot"
@@ -9741,6 +9733,111 @@
     };
     reader.readAsText(f);
   });
+
+  // ================= new-day streak celebration =================
+  var scelRAF = 0;
+  function streakLine(n) {
+    if (n >= 100) return "One hundred days. A man being remade.";
+    if (n >= 50) return "Fifty days of showing up — that's rare air.";
+    if (n >= 30) return "A full month. This is who you are now.";
+    if (n >= 21) return "Three weeks — it's a habit now, not a hope.";
+    if (n >= 14) return "Two weeks straight. The rhythm is yours.";
+    if (n >= 7) return "A week kept. The fire is catching.";
+    if (n >= 3) return "Three days running. Momentum.";
+    return "You came back. That's the whole thing.";
+  }
+  function countUp(el, from, to, dur) {
+    var t0 = null;
+    (function step(ts) {
+      ts = ts || (window.performance && performance.now ? performance.now() : 0);
+      if (t0 === null) t0 = ts;
+      var p = Math.min(1, (ts - t0) / dur), e = 1 - Math.pow(1 - p, 3);
+      el.textContent = Math.round(from + (to - from) * e);
+      if (p < 1) requestAnimationFrame(step); else el.textContent = to;
+    })();
+  }
+  function startScelFx(mode) {
+    cancelAnimationFrame(scelRAF);
+    var cv = $("scelCanvas"); if (!cv || REDUCED) return;
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    cv.width = Math.round(cv.clientWidth * dpr); cv.height = Math.round(cv.clientHeight * dpr);
+    var g = cv.getContext("2d"); g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    var W = cv.clientWidth, H = cv.clientHeight, cx = W / 2, cy = H * 0.4;
+    var parts = [], GOLD = ["#f5a04a", "#f5c064", "#e0c074", "#ffd98a", "#f0b64c"];
+    function rc(a) { return a[Math.floor(Math.random() * a.length)]; }
+    function seedBurst(n) { for (var i = 0; i < n; i++) { var a = Math.random() * Math.PI * 2, sp = 2 + Math.random() * 6; parts.push({ x: cx, y: cy, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: 1, sz: 2 + Math.random() * 3, c: rc(GOLD), g: 0.03 }); } }
+    if (mode === "burst") seedBurst(48);
+    function frame(ts) {
+      g.clearRect(0, 0, W, H);
+      if (mode === "embers" && parts.length < 95 && Math.random() < 0.85) parts.push({ x: Math.random() * W, y: H + 8, vx: (Math.random() - 0.5) * 0.6, vy: -(0.6 + Math.random() * 1.5), life: 1, sz: 1.5 + Math.random() * 2.4, c: rc(GOLD), g: -0.002, fl: Math.random() * 6 });
+      else if (mode === "confetti" && parts.length < 85 && Math.random() < 0.75) parts.push({ x: Math.random() * W, y: -8, vx: (Math.random() - 0.5) * 1.2, vy: 1 + Math.random() * 2, life: 1, sz: 3 + Math.random() * 3, c: rc(GOLD), g: 0.01, rot: Math.random() * 6, vr: (Math.random() - 0.5) * 0.3, conf: true });
+      else if (mode === "burst" && !parts.length) seedBurst(48);
+      if (mode === "rings") { var tt = ts / 1000; for (var r = 0; r < 3; r++) { var pr = ((tt * 0.5 + r / 3) % 1), rad = pr * Math.max(W, H) * 0.55; g.beginPath(); g.arc(cx, cy, rad, 0, Math.PI * 2); g.strokeStyle = "rgba(245,160,74," + (0.5 * (1 - pr)) + ")"; g.lineWidth = 2.5; g.stroke(); } }
+      if (mode === "rays") { g.save(); g.translate(cx, cy); g.rotate(ts / 2600); for (var i2 = 0, N = 14; i2 < N; i2++) { g.rotate(Math.PI * 2 / N); var grd = g.createLinearGradient(0, 0, 0, -H * 0.62); grd.addColorStop(0, "rgba(245,170,80,0.16)"); grd.addColorStop(1, "rgba(245,170,80,0)"); g.beginPath(); g.moveTo(0, 0); g.lineTo(0, -Math.max(W, H)); g.strokeStyle = grd; g.lineWidth = 14; g.stroke(); } g.restore(); }
+      for (var i = parts.length - 1; i >= 0; i--) { var p = parts[i]; p.vy += p.g; p.x += p.vx; p.y += p.vy; if (p.vr) p.rot += p.vr; p.life -= (mode === "burst" ? 0.012 : 0.006);
+        if (p.life <= 0 || p.y > H + 20 || p.y < -30) { parts.splice(i, 1); continue; }
+        g.globalAlpha = Math.max(0, Math.min(1, p.life)) * (mode === "embers" ? (0.55 + 0.45 * Math.sin(ts / 120 + (p.fl || 0))) : 1);
+        g.fillStyle = p.c;
+        if (p.conf) { g.save(); g.translate(p.x, p.y); g.rotate(p.rot || 0); g.fillRect(-p.sz / 2, -p.sz, p.sz, p.sz * 2); g.restore(); }
+        else { g.beginPath(); g.arc(p.x, p.y, p.sz, 0, Math.PI * 2); g.fill(); }
+      }
+      g.globalAlpha = 1;
+      scelRAF = requestAnimationFrame(frame);
+    }
+    scelRAF = requestAnimationFrame(frame);
+  }
+  function showStreakCelebration(from, to) {
+    from = from || 0; to = to || 1;
+    var reset = to <= from;
+    $("scelFlame").innerHTML = FLAME_SVG;
+    var name = (db.profile && db.profile.name) ? db.profile.name.trim().split(" ")[0] : "";
+    $("scelEyebrow").textContent = name ? ("Welcome back, " + name) : "Welcome back";
+    $("scelSub").textContent = reset ? "A new fire begins. Day one." : streakLine(to);
+    $("scelNum").textContent = reset ? to : from;
+    $("streakCel").hidden = false;
+    document.body.classList.add("rw-open");
+    startScelFx(["embers", "rays", "confetti", "rings", "burst"][((to % 5) + 5) % 5]);
+    if (!reset) countUp($("scelNum"), from, to, 1150);
+    setTimeout(function () { if (typeof playFanfare === "function") playFanfare(); }, 200);
+    buzzPattern([0, 20, 50, 20, 40, 90]);
+  }
+  function streakSlam() {
+    var numEl = $("scelNum"), pill = $("streak");
+    if (!numEl || !pill) return;
+    var start = numEl.getBoundingClientRect(), end = pill.getBoundingClientRect();
+    var f = document.createElement("div"); f.className = "flame-fly"; f.innerHTML = FLAME_SVG;
+    var x0 = start.left + start.width / 2 - 11, y0 = start.top + start.height / 2 - 11;
+    f.style.left = x0 + "px"; f.style.top = y0 + "px"; document.body.appendChild(f);
+    var xT = end.left + end.width / 2 - 11 - x0, yT = end.top + end.height / 2 - 11 - y0;
+    void f.offsetWidth;
+    f.style.transform = "translate(" + (xT * 0.25).toFixed(1) + "px, -34px) scale(1.7)";
+    setTimeout(function () { f.classList.add("dive"); f.style.transform = "translate(" + xT.toFixed(1) + "px," + yT.toFixed(1) + "px) scale(0.7)"; }, 300);
+    setTimeout(function () {
+      f.remove();
+      pill.classList.add("streak-hit"); setTimeout(function () { pill.classList.remove("streak-hit"); }, 620);
+      if (typeof celebrate === "function") { try { celebrate(pill); } catch (e) {} }
+      if (typeof playChime === "function") playChime();
+      buzzPattern([0, 45, 60, 30, 120]);
+    }, 480);
+  }
+  function dismissStreakCelebration() {
+    var cel = $("streakCel"); if (!cel || cel.hidden) return;
+    streakSlam();
+    cancelAnimationFrame(scelRAF);
+    cel.classList.add("scel-closing");
+    setTimeout(function () { cel.hidden = true; cel.classList.remove("scel-closing"); document.body.classList.remove("rw-open"); }, 320);
+  }
+  function maybeShowStreakCelebration() {
+    var s = db.streakToCelebrate;
+    if (!s || s.day !== todayKey) return;
+    if (document.hidden) return;
+    if (typeof appGated === "function" && appGated()) return;
+    if (!$("streakCel").hidden) return;
+    delete db.streakToCelebrate; save();
+    showStreakCelebration(s.from, s.to);
+  }
+  $("scelBtn").addEventListener("click", dismissStreakCelebration);
+  $("streakCel").addEventListener("click", function (e) { if (e.target === this) dismissStreakCelebration(); });
 
   // ================= the daily render (re-runnable at midnight) =================
   function dailyRefresh() {
@@ -9767,7 +9864,10 @@
 
     // rollover: streak + (for each sequential plan) advance the reading position
     if (db.lastOpen !== todayKey) {
+      var _prevStreak = db.streak || 0;
       db.streak = (db.lastOpen === yKey) ? (db.streak || 0) + 1 : 1;
+      // queue the new-day celebration for the first time they're actually looking (not a background midnight roll)
+      if (db.lastOpen) db.streakToCelebrate = { from: _prevStreak, to: db.streak, day: todayKey };
       if (db.lastOpen) {
         plans.forEach(function (plan) {
           if (plan.key === "proverbs") return;
@@ -9791,6 +9891,7 @@
     if (typeof currentView !== "undefined" && currentView === "fellowship" && typeof loadCircle === "function") {
       loadCircle(function () { if (typeof renderCircle === "function") renderCircle(); });
     }
+    setTimeout(maybeShowStreakCelebration, 350);   // celebrate the new day once the home is laid out
   }
 
   // load the day-scoped field VALUES (called on init and after each rollover)
@@ -10347,8 +10448,7 @@
   if (db.lockEnabled && db.passcode) showLockEnter();
   resetIdle();
 
-  // thought reminders + a gentle nudge / memory on open
-  scheduleNotify();
+  // a gentle nudge / memory on open
   setTimeout(function () { maybeNudge(); }, 2600); // maybeNudge() now self-guards while gated
   setTimeout(function () { maybeBackupReminder(); }, 9000); // later, and only if a nudge isn't already showing
 
@@ -10362,8 +10462,9 @@
 
   // also catch the day change when the tab is reopened/refocused (covers laptop sleep)
   document.addEventListener("visibilitychange", function () {
-    if (document.hidden) { if (pushTimer) { clearTimeout(pushTimer); pushTimer = null; cloudPush(); } } // flush before backgrounding
-    else if (keyOf(new Date()) !== todayKey) dailyRefresh();
+    if (document.hidden) { if (pushTimer) { clearTimeout(pushTimer); pushTimer = null; cloudPush(); } return; } // flush before backgrounding
+    if (keyOf(new Date()) !== todayKey) dailyRefresh();          // new day → dailyRefresh shows the celebration
+    else setTimeout(maybeShowStreakCelebration, 120);            // same day but a celebration may be queued
   });
   // last-ditch flush so a quick capture-then-close still reaches the cloud
   window.addEventListener("pagehide", function () { if (pushTimer) { clearTimeout(pushTimer); pushTimer = null; cloudPush(); } });
@@ -10378,6 +10479,7 @@
   window.addEventListener("offline", function () { if (needsPush) setSync("offline"); });
   window.addEventListener("focus", function () {
     if (keyOf(new Date()) !== todayKey) dailyRefresh();
+    else setTimeout(maybeShowStreakCelebration, 120);
   });
 
 })();
