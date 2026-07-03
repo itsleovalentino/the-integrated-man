@@ -157,7 +157,7 @@
   .wrap {
     max-width: 620px;
     margin: 0 auto;
-    padding: 56px 24px 96px;
+    padding: 56px 24px calc(128px + env(safe-area-inset-bottom, 0px));  /* clear the floating bottom nav */
   }
 
   /* ---- top bar ---- */
@@ -826,6 +826,8 @@
     font-variant-numeric: tabular-nums;
   }
   .pillar-score .of { color: var(--ink-faint); font-size: 13px; }
+  .pillar-score .score-na { color: var(--ink-faint); font-weight: 400; }
+  .pillar.unrated .pillar-slider input[type="range"] { opacity: 0.5; }   /* neutral until they choose */
   .pillar-toggle {
     background: none; border: none; cursor: pointer;
     color: var(--ink-faint);
@@ -1111,6 +1113,17 @@
   }
   .pray-note::placeholder { color: var(--ink-faint); }
   .pray-note:focus { outline: none; border-color: var(--accent); }
+  .pray-note-row { display: flex; align-items: flex-end; gap: 8px; margin-top: 8px; }
+  .pray-note-row .pray-note { margin-top: 0; flex: 1; }
+  .pray-note-save {
+    flex: 0 0 auto; width: 36px; height: 36px; border-radius: 9px; cursor: pointer;
+    background: var(--accent-soft); border: 1px solid var(--accent); color: var(--accent);
+    display: inline-flex; align-items: center; justify-content: center;
+    transition: background 0.2s ease, color 0.2s ease, transform 0.1s ease;
+  }
+  .pray-note-save svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.4; }
+  .pray-note-save:hover { background: var(--accent); color: var(--bg); }
+  .pray-note-save.saved { background: var(--accent); color: var(--bg); transform: scale(1.08); }
 
   /* ---- keystone habits ---- */
   .habit-list { margin-bottom: 4px; }
@@ -1276,89 +1289,8 @@
   .storage-warn[hidden] { display: none; }
   .dev-ribbon { position: fixed; top: 0; left: 0; right: 0; z-index: 9998; background: #b45309; color: #fff; text-align: center; font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; padding: 3px 4px; font-family: "Spline Sans Mono", ui-monospace, monospace; pointer-events: none; }
 
-  /* ---- floating thought capture ---- */
-  .fab {
-    position: fixed; right: 22px; bottom: 22px; z-index: 88;
-    width: 58px; height: 58px; border-radius: 50%;
-    background: var(--accent); border: none; cursor: pointer;
-    box-shadow: 0 10px 30px -8px rgba(0,0,0,0.6), 0 0 0 6px var(--accent-soft);
-    display: flex; align-items: center; justify-content: center;
-    transition: transform 0.12s ease, box-shadow 0.2s ease;
-    touch-action: none;
-  }
-  .fab { overflow: visible; }
-  /* no thought capture before you're in / while the app is gated */
-  body:has(#welcome:not([hidden])) .fab,
-  body:has(#onboard:not([hidden])) .fab,
-  body:has(#authModal:not([hidden])) .fab,
-  body:has(#lock:not([hidden])) .fab,
-  body:has(#threshold:not([hidden])) .fab { display: none !important; }
-  .fab:hover { transform: scale(1.06); }
-  .fab:active { transform: scale(0.94); }
-  .fab-bubble { width: 25px; height: 25px; stroke: var(--bg); stroke-width: 1.8; fill: none; stroke-linejoin: round; }
-  .fab-bubble .fb-dot { fill: var(--bg); stroke: none; }
-  .fab-label {
-    position: absolute; right: 70px; top: 50%; transform: translateY(-50%) translateX(8px);
-    background: var(--panel); border: 1px solid var(--panel-edge); color: var(--ink);
-    padding: 8px 14px; border-radius: 999px; white-space: nowrap; font-size: 13px;
-    box-shadow: 0 8px 24px -8px rgba(0,0,0,0.5);
-    opacity: 0; pointer-events: none; transition: opacity 0.18s ease, transform 0.18s ease;
-  }
-  .fab:hover .fab-label { opacity: 1; transform: translateY(-50%) translateX(0); }
-  .fab.recording { animation: fabPulse 1s ease-in-out infinite; }
-  .fab.recording .fab-bubble { display: none; }
-  .fab-rec { width: 18px; height: 18px; border-radius: 3px; background: var(--bg); }
-  @media (hover: none) { .fab-label { display: none; } }
-  @keyframes fabPulse { 0%,100% { box-shadow: 0 10px 30px -8px rgba(0,0,0,0.6), 0 0 0 6px var(--accent-soft); } 50% { box-shadow: 0 10px 30px -8px rgba(0,0,0,0.6), 0 0 0 14px var(--accent-soft); } }
-  @media (min-width: 1100px) { body.journal-docked .fab { right: 22px; } }
-
-  .capture-overlay {
-    position: fixed; inset: 0; z-index: 92;
-    background: rgba(0,0,0,0.55); backdrop-filter: blur(3px);
-    display: flex; align-items: center; justify-content: center;
-    padding: 24px; overflow-y: auto;
-  }
-  .capture-overlay[hidden] { display: none; }
-  .capture-card {
-    width: 100%; max-width: 520px; margin: auto;
-    background: var(--panel); border: 1px solid var(--panel-edge);
-    border-radius: 18px; padding: 22px;
-    box-shadow: 0 24px 70px -20px rgba(0,0,0,0.7);
-    animation: capturePop 0.24s cubic-bezier(.2,.7,.2,1);
-  }
-  @keyframes capturePop { from { transform: scale(0.96); opacity: 0; } to { transform: none; opacity: 1; } }
-  .capture-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 12px; }
-  .capture-prompt { font-size: 19px; font-weight: 300; color: var(--ink); }
-  #captureText { width: 100%; font-size: 19px; line-height: 1.5; min-height: 92px; }
-  .capture-taglabel { margin-top: 14px; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); }
-  .capture-taglabel span { text-transform: none; letter-spacing: 0; font-style: italic; opacity: 0.8; }
-  .capture-tags { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
-  .capture-mood { display: grid; grid-template-columns: repeat(10, 1fr); gap: 6px; margin-top: 8px; }
-  .mood-chip {
-    aspect-ratio: 1 / 1; border-radius: 8px; cursor: pointer;
-    background: var(--field); border: 1px solid var(--field-edge); color: var(--ink-soft);
-    font-family: inherit; font-size: 13px; display: flex; align-items: center; justify-content: center;
-    transition: all 0.12s ease; font-variant-numeric: tabular-nums;
-  }
-  .mood-chip:hover { color: var(--ink); border-color: var(--ink-faint); }
-  .mood-chip.sel { color: var(--bg); font-weight: 600; }
-  @media (max-width: 420px) { .mood-chip { font-size: 12px; } }
-  .capture-foot-l { display: flex; gap: 8px; }
+  /* ---- notes: mood badge (from legacy captures; capture feature removed) ---- */
   .th-mood { width: 22px; height: 18px; border-radius: 5px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: var(--bg); font-variant-numeric: tabular-nums; }
-  .ct-orb {
-    width: 22px; height: 22px; border-radius: 50%; cursor: pointer;
-    border: 1px solid rgba(255,255,255,0.14); opacity: 0.4;
-    transition: opacity 0.15s ease, transform 0.12s ease;
-  }
-  .ct-orb:hover { opacity: 0.8; }
-  .ct-orb.sel { opacity: 1; transform: scale(1.18); box-shadow: 0 0 0 2px var(--bg), 0 0 0 3.5px var(--accent); }
-  .capture-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 16px; gap: 10px; }
-  .cap-send {
-    background: var(--accent); color: var(--bg); border: none; border-radius: 10px;
-    padding: 11px 22px; font-family: inherit; font-size: 13px; font-weight: 600;
-    letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; transition: opacity 0.2s ease;
-  }
-  .cap-send:hover { opacity: 0.9; }
 
   /* ---- thought stream ---- */
   .thoughts-overlay { align-items: stretch; justify-content: flex-end; padding: 0; }
@@ -1519,6 +1451,9 @@
   .day-pillar-name { flex: 1; font-size: 14.5px; color: var(--ink); }
   .day-pillar-score { font-size: 13px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
   .day-pillar-why { font-size: 13px; color: var(--ink-faint); line-height: 1.5; margin: 1px 0 6px 21px; font-style: italic; }
+  .day-pillar-edit { display: none; width: 100%; margin: -2px 0 12px; }
+  .day-card.editing .day-pillar-edit { display: block; }
+  .day-edit-toggle { background: none; border: none; color: var(--accent); font-family: inherit; font-size: 12.5px; letter-spacing: 0.02em; cursor: pointer; padding: 0; }
   .day-habit { display: flex; align-items: center; gap: 11px; padding: 5px 0; font-size: 14.5px; color: var(--ink); }
   .day-habit.is-miss { color: var(--ink-faint); }
   .day-habit-mk { width: 20px; height: 20px; border-radius: 50%; flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; }
@@ -1527,6 +1462,8 @@
   .day-habit-mk svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
   .day-oura-rings { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
   .day-oura-steps { text-align: center; font-size: 13px; color: var(--ink-soft); margin-top: 12px; }
+  .day-steps { margin-top: 16px; }
+  .day-steps-pct { font-size: 12px; color: var(--ink-faint); letter-spacing: 0.02em; }
   .day-list-line { display: flex; gap: 9px; padding: 5px 0; font-size: 14.5px; line-height: 1.5; color: var(--ink); }
   .day-list-line.answered { color: var(--ink-soft); }
   .day-list-line .dll-mk { flex: 0 0 auto; color: var(--accent); }
@@ -1551,6 +1488,50 @@
   @keyframes tpFade { from { opacity: 0; } to { opacity: 1; } }
   @keyframes tpPop { from { opacity: 0; transform: translateY(12px) scale(0.98); } to { opacity: 1; transform: none; } }
   @media (prefers-reduced-motion: reduce) { .trends-pop, .trends-pop-card { animation: none; } }
+
+  /* ---- live voice-memo waveform HUD ---- */
+  .rec-hud { position: fixed; inset: 0; z-index: 98; display: flex; align-items: flex-end; justify-content: center;
+    padding: 0 14px calc(28px + env(safe-area-inset-bottom, 0px)); pointer-events: none;
+    background: linear-gradient(to top, rgba(0,0,0,0.6), rgba(0,0,0,0) 42%); animation: tpFade 0.2s ease; }
+  .rec-hud[hidden] { display: none; }
+  .rec-hud-card { pointer-events: auto; width: min(94vw, 460px); background: var(--panel); border: 1px solid var(--gold-line);
+    border-radius: 20px; padding: 15px 18px 17px; box-shadow: 0 26px 64px rgba(0,0,0,0.65); animation: tpPop 0.3s cubic-bezier(.2,.7,.2,1); }
+  .rec-hud-top { display: flex; align-items: center; gap: 9px; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-soft); margin-bottom: 6px; }
+  .rec-hud-dot { width: 9px; height: 9px; border-radius: 50%; background: #e0785f; animation: recPulse 1s ease-in-out infinite; }
+  .rec-hud-time { margin-left: auto; font-variant-numeric: tabular-nums; color: var(--ink); letter-spacing: 0.06em; font-size: 13px; }
+  .rec-hud-wave { display: block; width: 100%; height: 76px; }
+  .rec-hud-stop { width: 100%; margin-top: 12px; background: var(--accent); color: var(--bg); border: none; border-radius: 12px;
+    padding: 13px; font-family: inherit; font-size: 12.5px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; cursor: pointer; transition: opacity 0.2s ease; }
+  .rec-hud-stop:active { opacity: 0.8; }
+  @media (prefers-reduced-motion: reduce) { .rec-hud, .rec-hud-card { animation: none; } }
+
+  /* ---- forge celebration (covenant kept) ---- */
+  .forge-fx { position: fixed; inset: 0; z-index: 300; display: flex; align-items: center; justify-content: center; pointer-events: none; overflow: hidden; }
+  .forge-fx[hidden] { display: none; }
+  .forge-flash { position: absolute; top: 50%; left: 50%; width: 62vmin; height: 62vmin; transform: translate(-50%,-50%) scale(0.4); border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,240,205,0.95), rgba(203,178,126,0.4) 30%, rgba(203,178,126,0) 66%); opacity: 0; animation: forgeFlash 1.4s ease-out forwards; }
+  .forge-sword { position: absolute; top: 50%; left: 50%; width: 46px; height: 220px; margin: -110px 0 0 -23px; transform-origin: 50% 42%; filter: drop-shadow(0 6px 15px rgba(0,0,0,0.55)); }
+  .forge-sword svg { width: 100%; height: 100%; }
+  .sw-left { animation: forgeLeft 1.5s cubic-bezier(.15,.7,.25,1) forwards; }
+  .sw-right { animation: forgeRight 1.5s cubic-bezier(.15,.7,.25,1) forwards; }
+  .forge-word { position: absolute; top: 61%; left: 0; right: 0; text-align: center; font-size: 27px; color: var(--ink); letter-spacing: 0.005em; opacity: 0; text-shadow: 0 2px 20px rgba(0,0,0,0.7); animation: forgeWord 1.5s ease-out forwards; }
+  .forge-sparks { position: absolute; top: 50%; left: 50%; width: 0; height: 0; }
+  .forge-spark { position: absolute; width: 5px; height: 5px; border-radius: 50%; background: #ffd98a; box-shadow: 0 0 9px 1px #f0b64c; }
+  @keyframes forgeFlash { 0%,38% { opacity: 0; transform: translate(-50%,-50%) scale(0.4); } 46% { opacity: 1; transform: translate(-50%,-50%) scale(1); } 70%,100% { opacity: 0; transform: translate(-50%,-50%) scale(1.28); } }
+  @keyframes forgeLeft {
+    0% { transform: translate(-68vw, 32vh) rotate(-64deg); opacity: 0; }
+    10% { opacity: 1; } 40% { transform: translate(0, -3vh) rotate(40deg); }
+    47% { transform: translate(-7px, -3vh) rotate(35deg); } 55% { transform: translate(0, -3vh) rotate(40deg); }
+    82% { transform: translate(0, -3vh) rotate(40deg); opacity: 1; } 100% { transform: translate(0, -6vh) rotate(40deg); opacity: 0; }
+  }
+  @keyframes forgeRight {
+    0% { transform: translate(68vw, 32vh) rotate(64deg); opacity: 0; }
+    10% { opacity: 1; } 40% { transform: translate(0, -3vh) rotate(-40deg); }
+    47% { transform: translate(7px, -3vh) rotate(-35deg); } 55% { transform: translate(0, -3vh) rotate(-40deg); }
+    82% { transform: translate(0, -3vh) rotate(-40deg); opacity: 1; } 100% { transform: translate(0, -6vh) rotate(-40deg); opacity: 0; }
+  }
+  @keyframes forgeWord { 0%,45% { opacity: 0; transform: translateY(9px); } 58% { opacity: 1; transform: translateY(0); } 85% { opacity: 1; } 100% { opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) { .forge-sword, .forge-flash, .forge-word { animation-duration: 0.55s; } }
 
   .pd-integration {
     margin-top: 12px;
@@ -1798,6 +1779,7 @@
   .pillar-skip.on { background: var(--field); color: var(--ink-soft); border-color: var(--field-edge); }
   /* pillars footer — View Trends (left) · Not tracking today (right), set lower so it's not glued to the header */
   .pillar-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--line); }
+  .pillar-foot-top { margin-top: 2px; margin-bottom: 8px; padding-top: 0; padding-bottom: 14px; border-top: none; border-bottom: 1px solid var(--line); }
   .pillar-foot-link {
     display: inline-flex; align-items: center; gap: 7px; background: none; border: none; cursor: pointer;
     color: var(--accent); font-family: inherit; font-size: 12.5px; letter-spacing: 0.02em; padding: 6px 2px;
@@ -2100,7 +2082,6 @@
 
   /* ===== App shell: bottom nav + destinations ===== */
   .wrap[hidden] { display: none; }
-  .fab[hidden] { display: none !important; }
   .appview { position: fixed; inset: 0; z-index: 40; overflow-y: auto; -webkit-overflow-scrolling: touch; background: var(--bg); }
   .appview[hidden] { display: none; }
   /* Glassy floating iOS-style nav */
@@ -2966,7 +2947,7 @@
   .bv.has-note sup::after { content: "•"; color: var(--accent); font-size: 1.1em; margin-left: 1px; }
 
   @media (max-width: 480px) {
-    .wrap { padding: 36px 18px 80px; }
+    .wrap { padding: 36px 18px calc(120px + env(safe-area-inset-bottom, 0px)); }
     .greeting { font-size: 28px; }
     .question { font-size: 21px; }
     .scripture-card .ref { font-size: 17px; }
@@ -3146,6 +3127,13 @@
         <svg class="pe-chev" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
       <div id="pillarsBody" hidden>
+        <div class="pillar-foot pillar-foot-top">
+          <button class="pillar-foot-link" id="viewTrends" type="button">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="15 7 21 7 21 13"/></svg>
+            View Trends
+          </button>
+          <button class="pillar-skip" id="pillarSkip" type="button">Not tracking today</button>
+        </div>
         <div class="weekly-note" id="weeklyNote"></div>
 
         <div class="gauge-wrap">
@@ -3167,14 +3155,6 @@
         <div class="focus" id="focus" hidden>
           <div class="focus-head">Where to focus</div>
           <div class="focus-body" id="focusBody"></div>
-        </div>
-
-        <div class="pillar-foot">
-          <button class="pillar-foot-link" id="viewTrends" type="button">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="15 7 21 7 21 13"/></svg>
-            View Trends
-          </button>
-          <button class="pillar-skip" id="pillarSkip" type="button">Not tracking today</button>
         </div>
       </div>
     </section>
@@ -3234,40 +3214,7 @@
 
   </div>
 
-  <!-- Floating thought capture -->
-  <button class="fab" id="fab" aria-label="Capture a thought" hidden>
-    <span class="fab-label">Capture a thought</span>
-    <svg class="fab-bubble" viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M5 4.5h14a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-8l-4.5 4v-4H5a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2z"/>
-      <circle class="fb-dot" cx="9" cy="10" r="1.1"/><circle class="fb-dot" cx="12" cy="10" r="1.1"/><circle class="fb-dot" cx="15" cy="10" r="1.1"/>
-    </svg>
-    <span class="fab-rec" id="fabRec" hidden></span>
-  </button>
-
-  <!-- Capture sheet -->
-  <div class="capture-overlay" id="captureView" hidden>
-    <div class="capture-card">
-      <div class="capture-head">
-        <span class="capture-prompt serif" id="capturePrompt">What’s on your mind?</span>
-        <button class="label-btn" id="captureAll">All thoughts →</button>
-      </div>
-      <textarea id="captureText" rows="2" placeholder="Drop a thought…"></textarea>
-      <div class="capture-taglabel">How are you feeling? <span>(optional · 1–10)</span></div>
-      <div class="capture-mood" id="captureMood"></div>
-      <div class="voice-memo" id="captureMemo"></div>
-      <div class="capture-foot">
-        <div class="capture-foot-l">
-          <button class="voice-btn" id="captureDictate" data-voice="dictate" data-target="captureText" aria-label="Dictate">
-            <svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><line x1="12" y1="18" x2="12" y2="21"/></svg><span>Dictate</span>
-          </button>
-          <button class="voice-btn" id="captureRecord" aria-label="Record a voice thought">
-            <span class="rec-dot"></span><span class="rec-label">Record</span>
-          </button>
-        </div>
-        <button class="cap-send" id="captureSend">Send</button>
-      </div>
-    </div>
-  </div>
+  <!-- (Floating thought-capture FAB + quick-note/1–10 mood sheet removed — feature retired) -->
 
   <!-- Week in review -->
   <div class="modal-overlay" id="reviewView" hidden>
@@ -3441,6 +3388,28 @@
         <div>Your trend is still taking shape.<br><b>Rate your pillars a few more times</b> — after 3 or 4 check-ins, the pattern appears here.</div>
       </div>
     </div>
+  </div>
+
+  <!-- Live voice-memo waveform HUD (shown while recording) -->
+  <div class="rec-hud" id="recHud" hidden>
+    <div class="rec-hud-card">
+      <div class="rec-hud-top"><span class="rec-hud-dot"></span><span>Recording</span><span class="rec-hud-time" id="recHudTime">0:00</span></div>
+      <canvas class="rec-hud-wave" id="recHudWave"></canvas>
+      <button class="rec-hud-stop" id="recHudStop" type="button">Stop &amp; save</button>
+    </div>
+  </div>
+
+  <!-- Forge celebration — plays when a brother marks his covenant done for the day -->
+  <div class="forge-fx" id="forgeFx" hidden aria-hidden="true">
+    <div class="forge-flash"></div>
+    <div class="forge-sparks" id="forgeSparks"></div>
+    <div class="forge-sword sw-left">
+      <svg viewBox="0 0 44 210"><polygon points="22,6 29,44 26,150 18,150 15,44" fill="#d9dbe0"/><polygon points="22,6 29,44 26,150 22,150" fill="#f2f3f6"/><rect x="5" y="150" width="34" height="8" rx="2.5" fill="#b69256"/><rect x="17.5" y="158" width="9" height="34" rx="3.5" fill="#4a3d26"/><circle cx="22" cy="196" r="6.5" fill="#b69256"/></svg>
+    </div>
+    <div class="forge-sword sw-right">
+      <svg viewBox="0 0 44 210"><polygon points="22,6 29,44 26,150 18,150 15,44" fill="#d9dbe0"/><polygon points="22,6 29,44 26,150 22,150" fill="#f2f3f6"/><rect x="5" y="150" width="34" height="8" rx="2.5" fill="#b69256"/><rect x="17.5" y="158" width="9" height="34" rx="3.5" fill="#4a3d26"/><circle cx="22" cy="196" r="6.5" fill="#b69256"/></svg>
+    </div>
+    <div class="forge-word serif">Covenant kept.</div>
   </div>
 
   <!-- Full journal page (paper) -->
@@ -3639,6 +3608,17 @@
         </div>
         <div class="oura-msg" id="ouraMsg"></div>
         <p class="ob-reading-hint" style="text-align:left;margin-top:6px;">Tap <a href="https://cloud.ouraring.com/personal-access-tokens" target="_blank" rel="noopener" class="oura-link">Get your Oura token&nbsp;↗</a>, create one, copy it, and paste it above. It's stored privately in your own account.</p>
+      </div>
+
+      <label class="field-label">Audio Bible (Bible Brain)</label>
+      <div class="oura-connect" id="fcbhConnect">
+        <input type="password" id="fcbhKey" placeholder="Bible Brain API key" autocomplete="off" />
+        <div class="oura-row">
+          <button class="modal-secondary" id="fcbhSave" style="flex:1;">Connect</button>
+          <button class="modal-secondary" id="fcbhDisconnect" style="flex:1;" hidden>Disconnect</button>
+        </div>
+        <div class="oura-msg" id="fcbhMsg"></div>
+        <p class="ob-reading-hint" style="text-align:left;margin-top:6px;">Unlocks dramatized <b>Old + New Testament</b> audio in more versions, with <b>exact verse-by-verse karaoke</b> (real per-verse timecodes). Get a free key at <a href="https://www.faithcomesbyhearing.com/audio-bible-resources/bible-brain" target="_blank" rel="noopener" class="oura-link">Bible Brain&nbsp;↗</a> and paste it above. Stored privately in your account.</p>
       </div>
 
       <label class="field-label">Your data</label>
@@ -4702,6 +4682,30 @@
     o.connect(g); g.connect(ac.destination);
     o.start(t); o.stop(t + 0.18);
   }
+  function playBookClose() { // finished a reading: the soft whump of a book closing, then a warm resolve (a small reward)
+    var ac = audio(); if (!ac) return;
+    var t = ac.currentTime;
+    // the whump — pages + cover meeting (low-passed noise, quick)
+    var len = Math.floor(ac.sampleRate * 0.15), buf = ac.createBuffer(1, len, ac.sampleRate), d = buf.getChannelData(0);
+    for (var i = 0; i < len; i++) { var e = 1 - i / len; d[i] = (Math.random() * 2 - 1) * e * e; }
+    var ns = ac.createBufferSource(); ns.buffer = buf;
+    var lp = ac.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.setValueAtTime(650, t); lp.frequency.exponentialRampToValueAtTime(180, t + 0.12); lp.Q.value = 0.6;
+    var ng = ac.createGain(); ng.gain.setValueAtTime(0.17, t); ng.gain.exponentialRampToValueAtTime(0.0001, t + 0.17);
+    ns.connect(lp); lp.connect(ng); ng.connect(ac.destination); ns.start(t);
+    // the book's weight (low thump)
+    var o = ac.createOscillator(), g = ac.createGain();
+    o.type = "sine"; o.frequency.setValueAtTime(122, t); o.frequency.exponentialRampToValueAtTime(60, t + 0.16);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.12, t + 0.012); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.27);
+    o.connect(g); g.connect(ac.destination); o.start(t); o.stop(t + 0.3);
+    // the reward — a warm low chord blooming just after the close
+    var bt = t + 0.15;
+    [[196.0, 0.05], [261.63, 0.038], [392.0, 0.026]].forEach(function (nn) {
+      var oo = ac.createOscillator(), gg = ac.createGain();
+      oo.type = "sine"; oo.frequency.setValueAtTime(nn[0], bt);
+      gg.gain.setValueAtTime(0.0001, bt); gg.gain.setTargetAtTime(nn[1], bt, 0.04); gg.gain.setTargetAtTime(0.0001, bt + 0.28, 0.4);
+      oo.connect(gg); gg.connect(ac.destination); oo.start(bt); oo.stop(bt + 1.7);
+    });
+  }
   function buzz(ms) { if (!db.hapticsOn) return; try { if (navigator.vibrate) navigator.vibrate(ms || 12); } catch (e) {} }
   function buzzPattern(p) { if (!db.hapticsOn) return; try { if (navigator.vibrate) navigator.vibrate(p); } catch (e) {} }
   // Warm the audio pipeline on the very first interaction so tap sounds fire instantly.
@@ -4931,9 +4935,12 @@
   function ensureDay() { if (!db.ratings[todayKey]) db.ratings[todayKey] = {}; return db.ratings[todayKey]; }
   function rec(key) {
     var d = ensureDay();
-    if (!d[key]) d[key] = { score: DEFAULT_SCORE, why: "", deep: false, facets: null, open: false };
+    if (!d[key]) d[key] = { score: DEFAULT_SCORE, why: "", deep: false, facets: null, open: false, rated: false };
     return d[key];
   }
+  // A pillar is "rated" only once the user actually sets it. Old records (no `rated` field) count as
+  // rated for backward-compat; a record created just by opening the breakdown (rated:false) does not.
+  function pillarRated(rt, key) { var r = rt && rt[key]; return !!(r && r.rated !== false); }
   function effectiveScore(key) {
     var r = (db.ratings[todayKey] || {})[key];
     if (!r) return DEFAULT_SCORE;
@@ -4948,12 +4955,17 @@
   // paint one pillar card from its stored record (READ-ONLY — never creates a record)
   function applyPillar(key) {
     var p = pillarOf(key);
-    var r = (db.ratings[todayKey] || {})[key] || {};
+    var rt = db.ratings[todayKey] || {};
+    var r = rt[key] || {};
+    var rated = pillarRated(rt, key);
     var sc = effectiveScore(key);
-    $("score-" + key).innerHTML = sc + ' <span class="of">/ 10</span>';
+    // unrated → show "—" (N/A) with the slider resting in the middle as a neutral starting point,
+    // so no one is nudged toward a 5 or an accidental low score they didn't choose.
+    $("score-" + key).innerHTML = rated ? (sc + ' <span class="of">/ 10</span>') : '<span class="score-na">—</span>';
     var slider = $("slider-" + key);
-    slider.value = sc;
+    slider.value = rated ? sc : DEFAULT_SCORE;
     slider.disabled = !!r.deep;
+    $("card-" + key).classList.toggle("unrated", !rated);
     $("card-" + key).classList.toggle("derived", !!r.deep);
     $("card-" + key).classList.toggle("open", !!r.open);
     var note = $("derived-" + key);
@@ -4971,16 +4983,15 @@
   function refreshGauge() {
     renderTrends(); // history shows even when today isn't rated yet
     updatePillarsSummary();
-    var touched = !!db.ratings[todayKey] && !pillarsSkippedToday(); // resting today → N/A, no number
-    if (!touched) {
+    // Integration = the average of the pillars actually rated today (never padded with default 5s).
+    var rt = db.ratings[todayKey];
+    var avg = (rt && !pillarsSkippedToday()) ? dayIntegration(rt) : null;
+    if (avg == null) {
       $("gaugeNum").textContent = "—";
       $("gaugeFill").style.strokeDashoffset = CIRC;
       $("focus").hidden = true;
       return;
     }
-    var sum = 0;
-    pillars.forEach(function (p) { sum += effectiveScore(p.key); });
-    var avg = sum / pillars.length;
     $("gaugeNum").textContent = (Math.round(avg * 10) / 10).toFixed(1);
     $("gaugeFill").style.strokeDashoffset = CIRC * (1 - avg / 10);
     refreshFocus(avg);
@@ -5091,9 +5102,13 @@
   };
   function refreshFocus(avg) {
     var focus = $("focus"), body = $("focusBody");
-    focus.hidden = false;
-    var ranked = pillars.map(function (p) { return { p: p, s: effectiveScore(p.key) }; })
+    var rt = db.ratings[todayKey] || {};
+    // only weigh the pillars actually rated today — never suggest focus on something they didn't score
+    var ranked = pillars.filter(function (p) { return pillarRated(rt, p.key); })
+      .map(function (p) { return { p: p, s: effectiveScore(p.key) }; })
       .sort(function (a, b) { return a.s - b.s; });
+    if (!ranked.length) { focus.hidden = true; return; }
+    focus.hidden = false;
 
     var html = "";
     if (avg >= 8.5) {
@@ -5152,7 +5167,7 @@
   // ---------- Integration trend over time ----------
   function dayIntegration(rt) {
     var s = 0, n = 0;
-    pillars.forEach(function (p) { if (rt[p.key] && isNum(rt[p.key].score)) { s += rt[p.key].score; n++; } });
+    pillars.forEach(function (p) { if (rt[p.key] && rt[p.key].rated !== false && isNum(rt[p.key].score)) { s += rt[p.key].score; n++; } });
     return n ? s / n : null;
   }
   function trendLabel(k) {
@@ -5248,8 +5263,8 @@
 
   function pillarChanged(key) {
     rec(key).score = effectiveScore(key); // keep stored score in sync (incl. derived)
-    // engaging the check records all seven, so Integration reflects the whole, not just what you touched
-    pillars.forEach(function (p) { rec(p.key).score = effectiveScore(p.key); });
+    // NOTE: only the pillar the user actually touched is recorded. Untouched pillars stay
+    // unrated (N/A) — Integration is the average of what they chose to rate, never padded with 5s.
     applyPillar(key);
     save();
     refreshGauge();
@@ -5309,7 +5324,7 @@
     else if (act === "done") {
       if (!db.readLog[todayKey]) db.readLog[todayKey] = {};
       if (db.readLog[todayKey][dk]) delete db.readLog[todayKey][dk];
-      else { db.readLog[todayKey][dk] = true; bookPop(actEl); playPage(); buzz(16); }
+      else { db.readLog[todayKey][dk] = true; bookPop(actEl); playBookClose(); buzzPattern([0, 22, 30, 40, 55, 95]); if (typeof celebrate === "function") { try { celebrate(actEl); } catch (e) {} } }
       actEl.classList.toggle("done", !!db.readLog[todayKey][dk]); save();
     } else if (act === "noteToggle") {
       var w = card.querySelector(".sc-note"); w.hidden = !w.hidden;
@@ -6258,6 +6273,31 @@
     var m = $("ouraMsg"); m.className = "oura-msg"; m.textContent = "Disconnected.";
   });
 
+  // Bible Brain (FCBH) — unlocks dramatized OT+NT + exact per-verse karaoke once a key is set.
+  function renderFcbhSettings() {
+    var el = $("fcbhKey"); if (!el) return;
+    var connected = !!db.fcbhKey;
+    el.value = "";
+    el.placeholder = connected ? "Connected — paste a new key to replace" : "Bible Brain API key";
+    $("fcbhDisconnect").hidden = !connected;
+    $("fcbhSave").textContent = connected ? "Update" : "Connect";
+    var m = $("fcbhMsg"); m.className = "oura-msg"; m.textContent = connected ? "Connected — dramatized OT + NT with exact karaoke." : "";
+  }
+  var _fcbhSave = $("fcbhSave"); if (_fcbhSave) _fcbhSave.addEventListener("click", function () {
+    var t = $("fcbhKey").value.trim(), m = $("fcbhMsg");
+    if (!t) { m.className = "oura-msg err"; m.textContent = "Paste your Bible Brain key first."; return; }
+    db.fcbhKey = t; fcbhSets = null; save();
+    renderFcbhSettings();
+    m.className = "oura-msg"; m.textContent = "Connected — reopen a chapter to hear it.";
+    if (typeof updateAudioBtn === "function" && db.lastPassage) updateAudioBtn(db.lastPassage);
+  });
+  var _fcbhDisc = $("fcbhDisconnect"); if (_fcbhDisc) _fcbhDisc.addEventListener("click", function () {
+    db.fcbhKey = null; fcbhSets = null; save();
+    renderFcbhSettings();
+    var m = $("fcbhMsg"); m.className = "oura-msg"; m.textContent = "Disconnected — using the default audio.";
+    if (typeof updateAudioBtn === "function" && db.lastPassage) updateAudioBtn(db.lastPassage);
+  });
+
   // Bible Brain (FCBH) audio: db.fcbhKey powers dramatized OT+NT + exact timecodes.
   // Leo-only for now — no Settings UI by his call; the key gets set for his account
   // directly when he receives it (ask Leo / see CLAUDE.md).
@@ -6825,8 +6865,54 @@
   }
   // Celebration is purely additive particles AROUND the circle — it never touches the
   // circle's own fill (so it can't interfere with it). Runs after the fill is painted.
+  // a forge clang: low anvil thud + inharmonic metallic partials + a bright strike transient
+  function playForge() {
+    var ac = audio(); if (!ac) return;
+    var t = ac.currentTime;
+    var o = ac.createOscillator(), g = ac.createGain();     // the anvil impact
+    o.type = "sine"; o.frequency.setValueAtTime(92, t); o.frequency.exponentialRampToValueAtTime(46, t + 0.25);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.15, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.42);
+    o.connect(g); g.connect(ac.destination); o.start(t); o.stop(t + 0.46);
+    [1840, 2490, 3160, 4230].forEach(function (f, i) {        // ringing steel
+      var mo = ac.createOscillator(), mg = ac.createGain(), bp = ac.createBiquadFilter();
+      mo.type = "square"; mo.frequency.value = f * (1 + Math.random() * 0.012);
+      bp.type = "bandpass"; bp.frequency.value = f; bp.Q.value = 7;
+      mg.gain.setValueAtTime(0.0001, t); mg.gain.exponentialRampToValueAtTime(0.032 / (i + 1), t + 0.006); mg.gain.exponentialRampToValueAtTime(0.0001, t + 0.55 + i * 0.12);
+      mo.connect(bp); bp.connect(mg); mg.connect(ac.destination); mo.start(t); mo.stop(t + 1.0);
+    });
+    var len = Math.floor(ac.sampleRate * 0.06), buf = ac.createBuffer(1, len, ac.sampleRate), d = buf.getChannelData(0);
+    for (var i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len);
+    var ns = ac.createBufferSource(); ns.buffer = buf;
+    var hp = ac.createBiquadFilter(); hp.type = "highpass"; hp.frequency.value = 2600;
+    var ng = ac.createGain(); ng.gain.value = 0.1;
+    ns.connect(hp); hp.connect(ng); ng.connect(ac.destination); ns.start(t);
+  }
+  var CLASH_MS = 430;
+  function runForge() {
+    var fx = $("forgeFx"); if (!fx) return;
+    fx.hidden = false;
+    ["forge-flash", "sw-left", "sw-right", "forge-word"].forEach(function (cls) {
+      var el = fx.querySelector("." + cls); if (!el) return;
+      el.style.animation = "none"; void el.offsetWidth; el.style.animation = "";   // restart the keyframes
+    });
+    // sparks fly outward at the moment of impact
+    var sp = $("forgeSparks"); if (sp) {
+      sp.innerHTML = "";
+      for (var i = 0; i < 20; i++) {
+        var s = document.createElement("div"); s.className = "forge-spark"; sp.appendChild(s);
+        var ang = Math.random() * Math.PI * 2, dist = 55 + Math.random() * 175;
+        var dx = Math.cos(ang) * dist, dy = Math.sin(ang) * dist - 24;
+        try {
+          s.animate([{ transform: "translate(0,0) scale(1)", opacity: 1 }, { transform: "translate(" + dx + "px," + dy + "px) scale(0.3)", opacity: 0 }],
+            { duration: 620 + Math.random() * 420, delay: CLASH_MS, easing: "cubic-bezier(.2,.6,.2,1)", fill: "forwards" });
+        } catch (e) {}
+      }
+    }
+    setTimeout(function () { playForge(); buzzPattern([0, 34, 44, 22, 60, 90]); }, CLASH_MS);   // clang on contact
+    setTimeout(function () { fx.hidden = true; }, 1650);
+  }
   function covCelebrate(btn) {
-    playEmber(); buzzPattern([0, 15, 55]);
+    runForge();                                   // the forge: two blades meet, sparks, a clang — masculine, earned
     var tap = btn || $("circleBody").querySelector(".cov-row.mine .cov-tap");
     if (tap && typeof celebrate === "function") { try { celebrate(tap); } catch (e) {} }
   }
@@ -7584,6 +7670,7 @@
       try { writerRec = new MediaRecorder(stream); } catch (e) { stream.getTracks().forEach(function (t) { t.stop(); }); showToastMsg("Couldn’t start recording."); return; }
       writerRec.ondataavailable = function (ev) { if (ev.data && ev.data.size) writerChunks.push(ev.data); };
       writerRec.onstop = function () {
+        recWaveStop();
         stream.getTracks().forEach(function (t) { t.stop(); });
         btn.classList.remove("recording");
         var l = btn.querySelector(".writer-mic-lbl"); if (l) l.textContent = "Voice memo";
@@ -7592,7 +7679,7 @@
         reader.onload = function () { writerVoice = reader.result; renderWriterMemo(); if (typeof playPop === "function") playPop(); buzz(12); };
         reader.readAsDataURL(blob);
       };
-      writerRec.start(); btn.classList.add("recording"); var sl = btn.querySelector(".writer-mic-lbl"); if (sl) sl.textContent = "Stop"; buzz(16);
+      writerRec.start(); recWaveStart(stream, writerRec); btn.classList.add("recording"); var sl = btn.querySelector(".writer-mic-lbl"); if (sl) sl.textContent = "Stop"; buzz(16);
     }, function () { showToastMsg("Couldn’t access the microphone."); });
   });
 
@@ -7685,6 +7772,60 @@
 
   // --- voice memo (record) ---
   var mediaRec = null, recChunks = [], recBtn = null, recTarget = null;
+  // ---- live recording waveform HUD (reacts to the mic; visual only, not gated by soundOn) ----
+  var recWave = { raf: 0, analyser: null, src: null, recorder: null, t0: 0, timer: 0, data: null };
+  function recWaveCtx() { try { if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)(); if (actx.state === "suspended") actx.resume(); return actx; } catch (e) { return null; } }
+  function recRoundBar(g, x, y, w, h, r) { r = Math.min(r, w / 2, h / 2); g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); g.fill(); }
+  function recWaveDraw() {
+    var cv = $("recHudWave"); if (!cv || $("recHud").hidden || !recWave.analyser) return;
+    var dpr = Math.min(window.devicePixelRatio || 1, 2), w = cv.clientWidth, h = cv.clientHeight;
+    if (cv.width !== Math.round(w * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); }
+    var g = cv.getContext("2d"); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, w, h);
+    recWave.analyser.getByteFrequencyData(recWave.data);
+    var bins = recWave.data, n = 44, mid = h / 2, bw = w / n;
+    var accent = (getComputedStyle(document.documentElement).getPropertyValue("--accent") || "#cbb27e").trim();
+    for (var i = 0; i < n; i++) {
+      var idx = Math.floor((i / n) * bins.length * 0.68);        // weight toward the voice range
+      var v = bins[idx] / 255;
+      var bh = Math.max(3, v * v * (h * 0.92));
+      g.fillStyle = accent; g.globalAlpha = 0.3 + v * 0.7;
+      recRoundBar(g, i * bw + bw * 0.22, mid - bh / 2, bw * 0.56, bh, bw * 0.28);
+    }
+    g.globalAlpha = 1;
+    recWave.raf = requestAnimationFrame(recWaveDraw);
+  }
+  function recWaveStart(stream, recorder) {
+    try {
+      var ac = recWaveCtx(); if (!ac) return;
+      recWave.recorder = recorder;
+      recWave.src = ac.createMediaStreamSource(stream);
+      recWave.analyser = ac.createAnalyser(); recWave.analyser.fftSize = 128; recWave.analyser.smoothingTimeConstant = 0.72;
+      recWave.src.connect(recWave.analyser);        // analyser only — never to destination (no mic echo)
+      recWave.data = new Uint8Array(recWave.analyser.frequencyBinCount);
+      $("recHud").hidden = false;
+      recWave.t0 = Date.now(); $("recHudTime").textContent = "0:00";
+      clearInterval(recWave.timer);
+      recWave.timer = setInterval(function () {
+        var s = Math.floor((Date.now() - recWave.t0) / 1000);
+        $("recHudTime").textContent = Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0");
+      }, 300);
+      cancelAnimationFrame(recWave.raf); recWaveDraw();
+    } catch (e) {}
+  }
+  function recWaveStop() {
+    cancelAnimationFrame(recWave.raf); recWave.raf = 0;
+    clearInterval(recWave.timer);
+    try { if (recWave.src) recWave.src.disconnect(); } catch (e) {}
+    try { if (recWave.analyser) recWave.analyser.disconnect(); } catch (e) {}
+    recWave.src = null; recWave.analyser = null; recWave.recorder = null;
+    var hud = $("recHud"); if (hud) hud.hidden = true;
+  }
+  $("recHudStop").addEventListener("click", function () {
+    if (recWave.recorder && recWave.recorder.state === "recording") { try { recWave.recorder.stop(); } catch (e) {} }
+    else recWaveStop();
+    buzz(12);
+  });
+
   function stopRecording() {
     if (mediaRec && mediaRec.state !== "inactive") { try { mediaRec.stop(); } catch (e) {} }
     if (recBtn) { recBtn.classList.remove("recording"); recBtn.querySelector(".rec-label").textContent = "Voice memo"; }
@@ -7696,6 +7837,7 @@
       try { mediaRec = new MediaRecorder(stream); } catch (e) { mediaRec = new MediaRecorder(stream, {}); }
       mediaRec.ondataavailable = function (e) { if (e.data && e.data.size) recChunks.push(e.data); };
       mediaRec.onstop = function () {
+        recWaveStop();
         stream.getTracks().forEach(function (t) { t.stop(); });
         var blob = new Blob(recChunks, { type: (mediaRec && mediaRec.mimeType) || "audio/webm" });
         var reader = new FileReader();
@@ -7707,7 +7849,7 @@
         reader.readAsDataURL(blob);
         mediaRec = null; recBtn = null; recTarget = null;
       };
-      mediaRec.start(); recBtn = btn; recTarget = target;
+      mediaRec.start(); recWaveStart(stream, mediaRec); recBtn = btn; recTarget = target;
       btn.classList.add("recording"); btn.querySelector(".rec-label").textContent = "Stop"; buzz(10);
     }).catch(function () { voiceMsg(target, "Microphone unavailable (allow mic access, and use https or localhost)."); });
   }
@@ -7745,12 +7887,7 @@
   });
 
   // ===== Thought capture (floating, throughout the day) =====
-  var THOUGHT_PROMPTS = [
-    "What’s on your mind?", "What’s stirring right now?", "What did you just learn?",
-    "Who’s on your mind?", "What are you grateful for, right now?", "What’s God showing you?",
-    "What’s one honest thought?", "What just moved you?"
-  ];
-  var captureMood = null, toastTimer = null;
+  var toastTimer = null;
   var _idCounter = 0;
   function newId(pre) { return pre + Date.now().toString(36) + (_idCounter++).toString(36) + Math.floor(Math.random() * 1e9).toString(36); }
   // ---- notes are NEVER hard-deleted: soft-delete → recoverable trash + undo ----
@@ -7803,130 +7940,9 @@
     save();
     syncEntry(t);   // the entry gets its own cloud row the moment it exists
   }
-  (function buildCaptureMood() {
-    var h = "";
-    for (var m = 1; m <= 10; m++) h += '<button class="mood-chip" data-mood="' + m + '">' + m + "</button>";
-    $("captureMood").innerHTML = h;
-  })();
-  var capRec = null, capChunks = [], pendingVoice = null;
-  function stopCaptureRecording() {
-    if (capRec && capRec.state !== "inactive") { try { capRec.stop(); } catch (e) {} }
-    var b = $("captureRecord"); b.classList.remove("recording"); b.querySelector(".rec-label").textContent = "Record";
-  }
-  function startCaptureRecording() {
-    if (!canRecord) { $("captureMemo").innerHTML = '<div class="voice-msg">Recording isn’t available here.</div>'; return; }
-    navigator.mediaDevices.getUserMedia({ audio: true }).then(function (stream) {
-      capChunks = [];
-      try { capRec = new MediaRecorder(stream); } catch (e) { capRec = new MediaRecorder(stream, {}); }
-      capRec.ondataavailable = function (e) { if (e.data && e.data.size) capChunks.push(e.data); };
-      capRec.onstop = function () {
-        stream.getTracks().forEach(function (t) { t.stop(); });
-        var blob = new Blob(capChunks, { type: (capRec && capRec.mimeType) || "audio/webm" });
-        var rd = new FileReader();
-        rd.onload = function () { pendingVoice = rd.result; renderCaptureMemo(); };
-        rd.readAsDataURL(blob);
-        capRec = null;
-      };
-      capRec.start();
-      var b = $("captureRecord"); b.classList.add("recording"); b.querySelector(".rec-label").textContent = "Stop"; buzz(12);
-    }).catch(function () { $("captureMemo").innerHTML = '<div class="voice-msg">Microphone unavailable (allow access; use https or localhost).</div>'; });
-  }
-  function renderCaptureMemo() {
-    if (!vsrc(pendingVoice)) { $("captureMemo").innerHTML = ""; return; }
-    $("captureMemo").innerHTML = '<div class="vm-row"><audio controls src="' + pendingVoice + '"></audio>' +
-      '<button class="vm-del" id="capMemoDel" aria-label="Remove">×</button></div>';
-  }
-  function openCapture() {
-    // not before onboarding, and not while a gate overlay is up
-    if (!db.profile || !db.profile.onboarded) return;
-    if (!$("welcome").hidden || !$("onboard").hidden || !$("authModal").hidden || !$("lock").hidden || !$("threshold").hidden) return;
-    captureMood = null; pendingVoice = null;
-    $("captureText").value = ""; $("captureMemo").innerHTML = "";
-    $("capturePrompt").textContent = THOUGHT_PROMPTS[Math.floor(Math.random() * THOUGHT_PROMPTS.length)];
-    Array.prototype.forEach.call(document.querySelectorAll("#captureMood .mood-chip"), function (o) { o.classList.remove("sel"); o.style.background = ""; o.style.borderColor = ""; });
-    $("captureView").hidden = false;
-    setTimeout(function () { $("captureText").focus(); }, 60);
-  }
-  function closeCapture() { $("captureView").hidden = true; if (dictateBtn) stopDictation(); stopCaptureRecording(); }
-  function sendThought() {
-    var text = $("captureText").value.trim();
-    if (!text && !pendingVoice) { $("captureText").focus(); return; }
-    addThought({ text: text, voice: pendingVoice, mood: captureMood });
-    closeCapture(); playPop(); buzz(10); celebrate($("fab"));
-    if (!$("thoughtsPane").hidden) renderThoughts();
-  }
-  $("captureMood").addEventListener("click", function (e) {
-    var c = e.target.closest(".mood-chip"); if (!c) return;
-    var m = +c.getAttribute("data-mood");
-    Array.prototype.forEach.call(this.children, function (x) { x.classList.remove("sel"); x.style.background = ""; x.style.borderColor = ""; });
-    if (captureMood === m) { captureMood = null; }
-    else { captureMood = m; var col = moodColor(m); c.classList.add("sel"); c.style.background = col; c.style.borderColor = col; }
-  });
-  $("captureRecord").addEventListener("click", function () {
-    if ($("captureRecord").classList.contains("recording")) stopCaptureRecording();
-    else startCaptureRecording();
-  });
-  $("captureMemo").addEventListener("click", function (e) {
-    if (e.target.closest("#capMemoDel")) { pendingVoice = null; renderCaptureMemo(); }
-  });
-  $("captureSend").addEventListener("click", sendThought);
-  $("captureText").addEventListener("keydown", function (e) { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) sendThought(); });
-  $("captureView").addEventListener("click", function (e) { if (e.target === this) closeCapture(); });
-  $("captureAll").addEventListener("click", function () { closeCapture(); openThoughts(); });
+  // (thought-capture sheet removed — the quick-note + 1–10 mood feature was retired)
 
-  // FAB: tap = capture sheet, long-press = start voice (then TAP to stop).
-  // Tap-to-stop (rather than release-to-stop) so a first-time mic-permission prompt can't cut the recording short.
-  var fabRec = null, fabChunks = [], fabRecording = false, holdTimer = null, holdFired = false, fabMaxTimer = null;
-  function startFabRecording() {
-    if (!canRecord) { openCapture(); return; }
-    navigator.mediaDevices.getUserMedia({ audio: true }).then(function (stream) {
-      fabChunks = [];
-      try { fabRec = new MediaRecorder(stream); } catch (e) { fabRec = new MediaRecorder(stream, {}); }
-      fabRec.ondataavailable = function (e) { if (e.data && e.data.size) fabChunks.push(e.data); };
-      fabRec.onstop = function () {
-        stream.getTracks().forEach(function (t) { t.stop(); });
-        var blob = new Blob(fabChunks, { type: (fabRec && fabRec.mimeType) || "audio/webm" });
-        var rd = new FileReader();
-        rd.onload = function () {
-          var vt = { id: newId("t"), text: "", voice: rd.result, mood: null, star: false, ts: new Date().toISOString(), dateKey: todayKey };
-          db.thoughts.push(vt);
-          save();                       // audio → IndexedDB, text → localStorage (never overflows)
-          syncEntry(vt);
-          playPop(); celebrate($("fab"));
-          if (!$("thoughtsPane").hidden) renderThoughts();
-        };
-        rd.readAsDataURL(blob);
-        fabRec = null;
-      };
-      fabRec.start(); fabRecording = true;
-      $("fab").classList.add("recording"); $("fabRec").hidden = false; buzz(16);
-      showToastMsg("Recording… tap the button to stop.");
-      clearTimeout(fabMaxTimer); fabMaxTimer = setTimeout(stopFabRecording, 120000); // 2-min safety cap
-    }).catch(function () {
-      fabRecording = false; $("fab").classList.remove("recording"); $("fabRec").hidden = true;
-      showToastMsg("Microphone needs permission (and https or localhost).");
-    });
-  }
-  function stopFabRecording() {
-    clearTimeout(fabMaxTimer);
-    if (fabRec && fabRec.state !== "inactive") { try { fabRec.stop(); } catch (e) {} }
-    fabRecording = false; $("fab").classList.remove("recording"); $("fabRec").hidden = true;
-    $("toast").hidden = true;
-  }
-  var fab = $("fab");
-  fab.addEventListener("pointerdown", function (e) {
-    e.preventDefault();
-    if (fabRecording) return;            // a press while recording is handled on pointerup (stop)
-    holdFired = false;
-    holdTimer = setTimeout(function () { holdFired = true; startFabRecording(); }, 380);
-  });
-  fab.addEventListener("pointerup", function () {
-    clearTimeout(holdTimer);
-    if (fabRecording) { stopFabRecording(); return; }  // tap while recording → stop & save
-    if (!holdFired) openCapture();                     // quick tap → capture sheet
-    // long-press that started recording keeps going until the next tap
-  });
-  fab.addEventListener("contextmenu", function (e) { e.preventDefault(); });
+  // (floating capture FAB removed)
 
   // ----- thought stream -----
   function timeLabel(ts) {
@@ -8082,15 +8098,11 @@
     clearTimeout(toastTimer); toastTimer = setTimeout(function () { $("toast").hidden = true; }, 9000);
   }
   function showToast(kind, mem) {
+    if (!mem) return;
     var b = $("toastBody");
-    if (kind === "memory") {
-      var ago = mem.days >= 365 ? "A year ago" : (mem.days >= 30 ? "A month ago" : "A week ago");
-      b.innerHTML = '<div class="toast-kicker">Memory · ' + ago + '</div><div class="toast-text"><em>“' + escapeHtml(mem.t.text) + '”</em></div>';
-      b._action = openThoughts;
-    } else {
-      b.innerHTML = '<div class="toast-kicker">Thought bubble</div><div class="toast-text">What’s stirring right now? Tap to capture it.</div>';
-      b._action = openCapture;
-    }
+    var ago = mem.days >= 365 ? "A year ago" : (mem.days >= 30 ? "A month ago" : "A week ago");
+    b.innerHTML = '<div class="toast-kicker">Memory · ' + ago + '</div><div class="toast-text"><em>“' + escapeHtml(mem.t.text) + '”</em></div>';
+    b._action = openThoughts;
     $("toast").hidden = false;
     clearTimeout(toastTimer); toastTimer = setTimeout(function () { $("toast").hidden = true; }, 9000);
   }
@@ -8101,11 +8113,9 @@
     return !$("welcome").hidden || !$("onboard").hidden || !$("authModal").hidden || !$("lock").hidden || !$("threshold").hidden;
   }
   function maybeNudge() {
-    if (appGated()) return; // never nudge over the sign-in gate / setup / lock
+    if (appGated()) return; // never surface over the sign-in gate / setup / lock
     var mem = findMemory();
-    if (mem) { showToast("memory", mem); return; }
-    var hrs = (Date.now() - lastThoughtMs()) / 3600000;
-    if (!db.thoughts.length || hrs >= 3) showToast("nudge");
+    if (mem) showToast("memory", mem);   // gently resurface a past reflection ("a week ago…") — no capture nudge
   }
 
   // ----- thought reminders (notifications) -----
@@ -8115,7 +8125,7 @@
     clearInterval(notifyTimer);
     if (db.notifyOn && canNotify && Notification.permission === "granted") {
       notifyTimer = setInterval(function () {
-        try { new Notification("The Integrated Man", { body: "A thought bubble just floated by — capture it." }); } catch (e) {}
+        try { new Notification("The Integrated Man", { body: "A quiet moment to reflect — open your journal." }); } catch (e) {}
       }, db.notifyHours * 3600000);
     }
   }
@@ -8143,6 +8153,7 @@
       var r = rec(p.key);
       r.deep = false;
       r.score = Number(this.value);
+      r.rated = true;                 // the user has now consciously set this pillar
       pillarChanged(p.key);
     });
 
@@ -8175,6 +8186,7 @@
         }
         r.facets[f.key] = Number(this.value);
         r.deep = true;
+        r.rated = true;
         $("fscore-" + p.key + "-" + f.key).textContent = this.value;
         pillarChanged(p.key);
       });
@@ -8213,7 +8225,11 @@
     var who = it.who && it.who.trim() ? '<span class="pray-who">' + escapeHtml(it.who) + '</span> — ' : '';
     var meta = answered ? "Answered " + shortDate(it.answered) : "Since " + shortDate(it.created);
     var note = answered
-      ? '<textarea class="pray-note" data-note rows="1" placeholder="How was it answered? A thought of thanks…">' + escapeHtml(it.note || "") + '</textarea>'
+      ? '<div class="pray-note-row">' +
+          '<textarea class="pray-note" data-note rows="1" placeholder="How was it answered? A thought of thanks…">' + escapeHtml(it.note || "") + '</textarea>' +
+          '<button class="pray-note-save" data-act="saveNote" aria-label="Save this reflection" title="Save">' +
+            '<svg viewBox="0 0 24 24"><polyline points="5 12 10 17 19 7" stroke-linecap="round" stroke-linejoin="round"/></svg></button>' +
+        '</div>'
       : '';
     return '<div class="pray-item" data-id="' + it.id + '">' +
       '<button class="pray-check" data-act="toggle" aria-label="' + (answered ? "Reopen" : "Mark answered") + '">' +
@@ -8278,11 +8294,26 @@
     for (var i = 0; i < db.prayers.length; i++) { if (db.prayers[i].id === id) { it = db.prayers[i]; break; } }
     if (!it) return;
     var act = btn.getAttribute("data-act");
+    if (act === "saveNote") {                    // explicit save + confirmation for the answered reflection
+      var ta = row.querySelector("[data-note]");
+      if (ta) it.note = ta.value;
+      save();
+      btn.classList.add("saved"); playTick(); buzz(8);
+      setTimeout(function () { btn.classList.remove("saved"); }, 1400);
+      return;
+    }
     if (act === "toggle") {
       if (!it.answered) {
         confirmDialog("Move this to your Answered Prayers?", "Mark answered", function () {
-          it.answered = todayKey; save(); renderPrayers();
+          it.answered = todayKey; save();
+          $("prayAnswered").classList.add("open");    // reveal Answered so the reason is right there
+          renderPrayers();
           celebrate($("prayerHead")); playTick(); buzz(12);
+          // let them write why it was answered immediately
+          setTimeout(function () {
+            var note = $("prayAnswered").querySelector('.pray-item[data-id="' + it.id + '"] [data-note]');
+            if (note) { try { note.focus(); } catch (e) {} note.scrollIntoView({ block: "center", behavior: "smooth" }); }
+          }, 80);
         });
         return; // wait for confirmation
       }
@@ -8589,7 +8620,7 @@
     var rt = db.ratings[k];
     if (!rt) return null;
     var s = 0, n = 0;
-    pillars.forEach(function (p) { if (rt[p.key] && isNum(rt[p.key].score)) { s += rt[p.key].score; n++; } });
+    pillars.forEach(function (p) { if (rt[p.key] && rt[p.key].rated !== false && isNum(rt[p.key].score)) { s += rt[p.key].score; n++; } });
     return n ? (Math.round(s / n * 10) / 10).toFixed(1) : null;
   }
   function entryPreview(k) {
@@ -8862,6 +8893,17 @@
       (side ? '<span class="dch-side">' + side + '</span>' : '') + '</div>' + inner + '</div>';
   }
   var DAY_CHECK = '<svg viewBox="0 0 24 24"><polyline points="5 12 10 17 19 7"/></svg>';
+  // read-only steps block for Days — matches the live health widget (foot icon · big count · goal bar)
+  function dayStepsHtml(steps) {
+    if (steps == null) return "";
+    var goal = db.stepGoal || 8000, pct = Math.max(0, Math.min(100, Math.round(steps / goal * 100))), hit = steps >= goal;
+    return '<div class="steps-wrap day-steps' + (hit ? " hit" : "") + '">' +
+      '<div class="steps-head"><div class="steps-title">' + FOOT_ICON + ' Steps</div>' +
+        '<span class="day-steps-pct">' + (hit ? "Goal reached" : pct + "% there") + '</span></div>' +
+      '<div class="steps-count-row"><span class="steps-count">' + fmtNum(steps) + '</span><span class="steps-goal-lbl">/ ' + fmtNum(goal) + '</span></div>' +
+      '<div class="steps-bar"><div class="steps-fill" style="width:' + pct + '%"></div></div>' +
+    '</div>';
+  }
   function renderDay(k) {
     var p = k.split("-"), d = new Date(p[0], p[1] - 1, p[2]), isToday = (k === todayKey);
     $("daysEyebrow").textContent = isToday ? "Today" : "Looking back";
@@ -8877,8 +8919,8 @@
       if (ou.sl && isNum(ou.sl.score)) rings += healthRing(ou.sl.score, HR_MOON, "Sleep");
       if (ou.ac && isNum(ou.ac.score)) rings += healthRing(ou.ac.score, HR_ACTIVITY, "Activity");
       var steps = (ou.ac && isNum(ou.ac.steps)) ? ou.ac.steps : null;
-      if (rings) body += dayCard("Body · Oura", '<div class="day-oura-rings">' + rings + '</div>' +
-        (steps != null ? '<div class="day-oura-steps">Steps — ' + fmtNum(steps) + '</div>' : ''));
+      if (rings || steps != null) body += dayCard("Body · Oura",
+        (rings ? '<div class="day-oura-rings">' + rings + '</div>' : '') + dayStepsHtml(steps));
     }
 
     // The Seven Pillars
@@ -8886,14 +8928,16 @@
       body += dayCard("The Seven Pillars", '<div class="day-reflect-a" style="color:var(--ink-faint)">Not tracked — a resting day.</div>');
     } else if (db.ratings[k]) {
       var rt = db.ratings[k], integ = entryIntegration(k), ph = "";
-      if (integ) ph += '<div class="day-integ"><b>' + integ + '</b><span>Integration / 10</span></div>';
+      if (integ) ph += '<div class="day-integ"><b class="day-integ-val">' + integ + '</b><span>Integration / 10</span></div>';
       pillars.forEach(function (pl) {
-        var v = rt[pl.key]; if (!v || !isNum(v.score)) return;
+        var v = rt[pl.key]; if (!v || v.rated === false || !isNum(v.score)) return;
         ph += '<div class="day-pillar"><span class="day-pillar-dot" style="background:' + pl.color + ';color:' + pl.color + '"></span>' +
-          '<span class="day-pillar-name">' + pl.name + '</span><span class="day-pillar-score">' + v.score + '/10</span></div>';
+          '<span class="day-pillar-name">' + pl.name + '</span><span class="day-pillar-score" id="dscore-' + pl.key + '">' + v.score + '/10</span></div>' +
+          '<input type="range" class="day-pillar-edit" min="0" max="10" step="1" value="' + v.score + '" data-editkey="' + pl.key + '" data-editday="' + k + '" aria-label="Adjust ' + escapeHtml(pl.name) + '">';
         if (v.why && v.why.trim()) ph += '<div class="day-pillar-why">' + escapeHtml(v.why) + '</div>';
       });
-      body += dayCard("The Seven Pillars", ph);
+      // editable "for now" so anyone can fix a past mistake (e.g. a stray low score)
+      body += dayCard("The Seven Pillars", ph, '<button class="day-edit-toggle" data-editpillars>Edit</button>');
     }
 
     // Habits — only those scheduled that day and already created by then
@@ -9001,6 +9045,14 @@
   $("daysPrev").addEventListener("click", function () { var i = daysList.indexOf(daysKey); if (i > -1 && i < daysList.length - 1) { daysGo(daysList[i + 1]); playPage(); buzz(6); } });
   $("daysNext").addEventListener("click", function () { var i = daysList.indexOf(daysKey); if (i > 0) { daysGo(daysList[i - 1]); playPage(); buzz(6); } });
   $("daysBody").addEventListener("click", function (e) {
+    var edit = e.target.closest("[data-editpillars]");
+    if (edit) {                                   // toggle inline pillar-editing for this day
+      var card = edit.closest(".day-card");
+      var on = card.classList.toggle("editing");
+      edit.textContent = on ? "Done" : "Edit";
+      buzz(6);
+      return;
+    }
     var n = e.target.closest(".day-note"); if (!n) return;
     var id = n.getAttribute("data-note"), nt = null;
     for (var i = 0; i < (db.thoughts || []).length; i++) if (db.thoughts[i].id === id) { nt = db.thoughts[i]; break; }
@@ -9008,6 +9060,18 @@
     closeDays();
     journalTab = "notes"; setView("journal"); renderJournalTab();
     openWriterEdit(nt);            // opens the same note in Notes — no duplicate storage
+  });
+  // adjust a past day's pillar score (correct a mistake) — writes back to db.ratings[day], live
+  $("daysBody").addEventListener("input", function (e) {
+    var sl = e.target.closest(".day-pillar-edit"); if (!sl) return;
+    var key = sl.getAttribute("data-editkey"), day = sl.getAttribute("data-editday"), val = Number(sl.value);
+    if (!db.ratings[day] || !db.ratings[day][key]) return;
+    var r = db.ratings[day][key];
+    r.score = val; r.rated = true; r.deep = false; r.facets = null;   // a manual correction is a simple score
+    save();
+    var sc = $("dscore-" + key); if (sc) sc.textContent = val + "/10";
+    var iv = document.querySelector("#daysBody .day-integ-val");
+    if (iv) { var ni = entryIntegration(day); iv.textContent = ni != null ? ni : "—"; }
   });
   // swipe between days (left → older, right → newer)
   (function () {
@@ -9144,7 +9208,7 @@
   });
   if (window.matchMedia) { try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { if (db.theme === "auto") applyTheme("auto"); }); } catch (e) {} }
 
-  var APP_VERSION = "v61.20";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v61.24-dev";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
@@ -9322,6 +9386,7 @@
     renderNotifyToggle();
     if (typeof renderAccount === "function") renderAccount();
     if (typeof renderOuraSettings === "function") renderOuraSettings();
+    if (typeof renderFcbhSettings === "function") renderFcbhSettings();
     $("settingsMsg").textContent = "";
     $("lockCoach").hidden = true; $("lockToggle").classList.remove("coach-target"); // clear any coach mark
     $("settings").hidden = false;
