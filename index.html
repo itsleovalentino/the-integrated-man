@@ -3691,8 +3691,8 @@
         <button class="modal-secondary" id="importBtn">Restore from a file</button>
         <input type="file" id="importFile" accept="application/json" hidden />
       </div>
-      <button class="modal-secondary" id="recoverBtn" style="width:100%;margin-top:8px;">Verify my journal</button>
-      <p class="ob-reading-hint" style="margin-top:8px;text-align:left;">Your journal is kept in more than one place — on this device, in an automatic snapshot, and entry-by-entry in your account. <b>Verify my journal</b> checks them against each other and quietly fills in anything missing. Download a file now and then for extra peace of mind.</p>
+      <button class="modal-secondary" id="recoverBtn" style="width:100%;margin-top:8px;">Check my journal is safe</button>
+      <p class="ob-reading-hint" style="margin-top:8px;text-align:left;">Your words are safe. Every entry is kept in more than one place — on this device, in an automatic backup, and one-by-one in your account — and they stay in sync on their own. This just gives you a way to double-check whenever you like; it only ever <b>adds anything missing</b>, and never removes or overwrites a thing. Saving a backup file now and then is a nice bit of extra peace of mind.</p>
       <div class="settings-msg" id="settingsMsg"></div>
       </div>
       <div class="settings-foot">
@@ -9344,7 +9344,7 @@
   });
   if (window.matchMedia) { try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { if (db.theme === "auto") applyTheme("auto"); }); } catch (e) {} }
 
-  var APP_VERSION = "v61.35-dev";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v61.36-dev";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
@@ -9689,7 +9689,7 @@
     return added;
   }
   function recoverEntries() {
-    var msg = $("settingsMsg"); msg.textContent = "Searching every backup…";
+    var msg = $("settingsMsg"); msg.textContent = "Making sure every word is safe…";
     var total = 0;
     var snap = readSnapshot(); if (snap && snap.data) total += mergeRecover(snap.data);
     function finish() {
@@ -9699,9 +9699,9 @@
         try { if (typeof rerenderAll === "function") rerenderAll(); } catch (e) {}
         try { if (typeof renderJournalPage === "function") renderJournalPage(); } catch (e) {}
         try { if (typeof renderHabits === "function") renderHabits(); } catch (e) {}
-        msg.textContent = "Filled in " + total + " item" + (total === 1 ? "" : "s") + " from your backups — nothing was overwritten.";
+        msg.textContent = "Brought back " + total + " item" + (total === 1 ? "" : "s") + " from your backups — nothing was changed.";
         if (typeof playChime === "function") playChime();
-      } else { msg.textContent = "Verified — everything here matches your backups. All is well."; }
+      } else { msg.textContent = "All safe — every word is right where it should be."; }
       if (typeof reconcileEntries === "function") reconcileEntries();   // and settle the per-entry rows both ways
     }
     if (typeof sb !== "undefined" && sb && session) {
@@ -9710,7 +9710,7 @@
     } else { finish(); }
   }
   $("recoverBtn").addEventListener("click", function () {
-    confirmDialog("Check this device against your snapshot and your account, and quietly fill in anything missing? This only adds — it never removes or overwrites what you have.", "Verify", recoverEntries);
+    confirmDialog("Gently check this device against your backup and your account, and quietly fill in anything missing? This only ever adds — it never removes or changes what you already have.", "Check", recoverEntries);
   });
   // The on-device safety snapshot is a silent backstop: it is only ever read by
   // "Recover lost entries" (additive merge). The old wholesale "Restore snapshot"
