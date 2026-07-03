@@ -7118,13 +7118,12 @@
       loadCircle(function () { setView("fellowship"); });   // → the room (ceremony opens for a new member)
     }, function (e) { console.error("join failed:", e); if (cb) cb(false); });
   }
-  // After sign-in / onboarding, if they arrived via an invite link, drop them
-  // straight into the circle — no confirm dialog (clicking the link is consent).
-  function maybeAutoJoin() {
-    var code = currentJoinCode();
-    if (!code || !sb || !session || !(db.profile && db.profile.onboarded)) return;
-    doJoin(code);
-  }
+  // Auto-join is DISABLED on purpose. A stored invite code (from a `?join=` link visited once)
+  // must NEVER silently drop a new signup into a circle — that was putting fresh accounts into
+  // The Circle and popping the covenant ceremony before they'd joined anything. Joining is always
+  // explicit now: the man enters the code at the chapel door. We also clear any lingering code so
+  // it can't auto-join on a shared/reused device.
+  function maybeAutoJoin() { clearJoin(); }
 
   // ---- covenant-board delegated actions (separate from the wall handler) ----
   $("circleBody").addEventListener("click", function (e) {
@@ -9305,7 +9304,7 @@
   });
   if (window.matchMedia) { try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { if (db.theme === "auto") applyTheme("auto"); }); } catch (e) {} }
 
-  var APP_VERSION = "v61.29-dev";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v61.30-dev";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
