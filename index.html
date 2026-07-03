@@ -46,6 +46,11 @@
   // OFF (so a bug here can never touch the real journal), no service worker, a PREVIEW ribbon.
   // It still uses the real backend for circles/covenants (that's the point of testing here).
   window.TIM_DEV = /\/dev\//.test(location.pathname);
+  // The production service worker's scope (/the-integrated-man/) reaches into /dev/ and can
+  // serve the wrong (prod) build here. In dev, evict any worker so /dev/ is truly SW-free.
+  if (window.TIM_DEV && "serviceWorker" in navigator) {
+    try { navigator.serviceWorker.getRegistrations().then(function (rs) { rs.forEach(function (r) { try { r.unregister(); } catch (e) {} }); }); } catch (e) {}
+  }
   // offline support (only when served over http/https — not file://, and never in dev)
   if (!window.TIM_DEV && "serviceWorker" in navigator && location.protocol.indexOf("http") === 0) {
     // auto-update: if the app was already controlled by a worker, a new one taking
@@ -2186,47 +2191,51 @@
   .focus-edit-field { width: 100%; margin-top: 8px; padding: 9px 11px; border-radius: 9px; border: 1px solid var(--field-edge); background: var(--field); color: var(--ink); font-family: inherit; font-size: 14px; }
   .focus-edit-actions { display: flex; gap: 8px; margin-top: 10px; }
 
-  .cov-board { display: flex; flex-direction: column; gap: 12px; }
-  .cov-card { border: 1px solid var(--field-edge); border-radius: 16px; padding: 15px 16px; background: var(--panel); display: flex; flex-direction: column; gap: 12px; }
-  .cov-card.mine { border-color: var(--gold-line); background: linear-gradient(180deg, rgba(203,178,126,0.05), var(--panel)); }
-  .cov-card-top { display: flex; align-items: center; gap: 12px; }
-  .cov-card-who { min-width: 0; flex: 1; }
-  .cov-card-name { font-size: 15.5px; color: var(--ink); font-weight: 600; display: flex; align-items: center; gap: 7px; }
-  .cov-card-name .you-tag { font-size: 10px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); background: var(--accent-soft); padding: 2px 7px; border-radius: 999px; }
-  .cov-card-action { font-size: 15px; line-height: 1.4; color: var(--ink-high); font-style: italic; margin-top: 3px; word-wrap: break-word; }
-  .cov-card-preparing { font-size: 14px; color: var(--ink-faint); font-style: italic; margin-top: 3px; }
-  .cov-card-cadence { font-size: 10.5px; letter-spacing: 0.14em; color: var(--ink-faint); margin-top: 5px; text-transform: uppercase; }
-  .cov-state-pill { flex: 0 0 auto; font-size: 11px; font-weight: 600; letter-spacing: 0.04em; padding: 5px 11px; border-radius: 999px; align-self: flex-start; }
+  /* ===== glassy compact covenant rows (holds a full circle of 9 without a giant scroll) ===== */
+  .cov-board { display: flex; flex-direction: column; gap: 9px; }
+  .cov-row { position: relative; display: flex; align-items: center; gap: 12px; padding: 12px 13px; border-radius: 18px;
+    background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08);
+    -webkit-backdrop-filter: blur(20px) saturate(1.4); backdrop-filter: blur(20px) saturate(1.4);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 10px 26px -18px rgba(0,0,0,0.7); }
+  [data-theme="light"] .cov-row { background: rgba(255,255,255,0.6); border-color: rgba(40,36,28,0.07); box-shadow: inset 0 1px 0 rgba(255,255,255,0.8), 0 10px 26px -18px rgba(40,36,28,0.28); }
+  .cov-row.mine { background: linear-gradient(120deg, rgba(203,178,126,0.14), rgba(203,178,126,0.05)); border-color: var(--gold-line); }
+  [data-theme="light"] .cov-row.mine { background: linear-gradient(120deg, rgba(203,178,126,0.22), rgba(255,255,255,0.55)); }
+  .cov-row-main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+  .cov-row-name { font-size: 15px; font-weight: 600; color: var(--ink); display: flex; align-items: baseline; gap: 7px; min-width: 0; }
+  .cov-row-name .rn { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .cov-row-cad { flex: 0 0 auto; font-size: 9.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-faint); font-weight: 500; }
+  .cov-row-vow { font-size: 12.5px; line-height: 1.35; color: var(--ink-soft); font-style: italic; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .cov-row-preparing { font-size: 12.5px; color: var(--ink-faint); font-style: italic; }
+  /* the compact week: 7 small dots, today ringed, all states visible in both themes */
+  .cov-week { display: flex; align-items: center; gap: 6px; margin-top: 3px; }
+  .cov-mini { width: 8px; height: 8px; border-radius: 50%; box-sizing: border-box; flex: 0 0 auto; transition: all 0.3s ease; background: var(--field-edge); }
+  .cov-mini.done { background: var(--accent); box-shadow: 0 0 6px -1px var(--accent); }
+  .cov-mini.missed { background: transparent; box-shadow: inset 0 0 0 1.5px var(--field-edge); }
+  .cov-mini.open { background: var(--field-edge); opacity: 0.6; }
+  .cov-mini.future, .cov-mini.neutral { background: var(--field-edge); opacity: 0.4; }
+  .cov-mini.is-today { outline: 1.5px solid var(--accent); outline-offset: 1.5px; }
+  .cov-week-prog { margin-left: 4px; font-size: 10px; letter-spacing: 0.06em; color: var(--ink-faint); white-space: nowrap; }
+  /* right-side control */
+  .cov-row-right { flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; gap: 3px; }
+  /* MY tap-to-mark — the circle IS the button (fixes "tapping the circle does nothing") */
+  .cov-tap { width: 48px; height: 48px; border-radius: 50%; border: 2px solid var(--accent); background: var(--accent-soft); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.15s ease, background 0.2s ease; -webkit-tap-highlight-color: transparent; }
+  .cov-tap svg { width: 22px; height: 22px; fill: none; stroke: var(--accent); stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; opacity: 0.85; }
+  .cov-tap:active { transform: scale(0.9); }
+  .cov-tap.done { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 16px -3px var(--accent); }
+  .cov-tap.done svg { stroke: var(--bg); opacity: 1; }
+  .cov-tap-cap { font-family: "Spline Sans Mono", ui-monospace, monospace; font-size: 8px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); }
+  .cov-tap.done ~ .cov-tap-cap { color: var(--accent); }
+  /* brother state + nudge */
+  .cov-state-pill { flex: 0 0 auto; font-size: 10.5px; font-weight: 600; letter-spacing: 0.03em; padding: 4px 10px; border-radius: 999px; }
   .cov-state-pill.done { color: var(--accent); background: var(--accent-soft); }
-  .cov-state-pill.notyet { color: var(--ink-faint); background: rgba(128,126,120,0.14); }
-  .cov-state-pill.renewing { color: #c2a86a; background: rgba(194,168,106,0.16); }
-  /* the week as a legible strip: a day letter over a dot, today emphasised — reads as a calendar, never a stray circle */
-  .cov-week { display: flex; justify-content: space-between; gap: 3px; }
-  .cov-day { display: flex; flex-direction: column; align-items: center; gap: 7px; flex: 1 1 0; min-width: 0; }
-  .cov-day-l { font-family: "Spline Sans Mono", ui-monospace, monospace; font-size: 9px; letter-spacing: 0.02em; color: var(--ink-faint); text-transform: uppercase; }
-  .cov-day.is-today .cov-day-l { color: var(--accent); font-weight: 600; }
-  .cov-day-d { width: 14px; height: 14px; border-radius: 50%; box-sizing: border-box; border: 1.5px solid transparent; transition: all 0.3s ease; }
-  .cov-day-d.done { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 8px -1px var(--accent-soft); }
-  .cov-day-d.missed { border-color: var(--field-edge); background: transparent; }
-  .cov-day-d.open { border-color: var(--field-edge); background: transparent; opacity: 0.55; }
-  .cov-day-d.future { background: var(--field); opacity: 0.5; }
-  .cov-day-d.neutral { background: var(--field); opacity: 0.35; }
-  .cov-day.is-today .cov-day-d { outline: 2px solid var(--gold-line); outline-offset: 2px; }
-  .cov-week-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 4px; }
-  .cov-week-prog { font-size: 10.5px; letter-spacing: 0.1em; color: var(--ink-faint); text-transform: uppercase; }
-  /* the mark action — a full-width bar, unmistakably THE thing you tap (never confused with a dot) */
-  .cov-mark { width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 9px; padding: 13px; border-radius: 13px; border: 1px solid var(--accent); background: transparent; color: var(--accent); font-family: inherit; font-size: 14.5px; font-weight: 600; cursor: pointer; transition: all 0.2s ease; }
-  .cov-mark svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
-  .cov-mark:active { transform: scale(0.985); }
-  .cov-mark.done { background: var(--accent); color: var(--bg); border-color: var(--accent); }
-  .cov-mark.done svg { stroke: var(--bg); }
-  /* brother actions: got-your-back / celebrate */
-  .cov-card-foot { display: flex; align-items: center; gap: 10px; padding-top: 2px; }
-  .cov-back-btn, .cov-fire-btn { display: inline-flex; align-items: center; gap: 6px; font-family: inherit; font-size: 13px; font-weight: 500; padding: 8px 13px; border-radius: 999px; border: 1px solid var(--field-edge); background: var(--field); color: var(--ink-soft); cursor: pointer; transition: all 0.2s ease; }
-  .cov-back-btn:active, .cov-fire-btn:active { transform: scale(0.96); }
-  .cov-back-btn.sent { color: var(--accent); border-color: var(--gold-line); background: var(--accent-soft); pointer-events: none; }
-  .cov-fire-btn .cf-count { color: var(--accent); font-weight: 600; }
-  .cov-mark-hint { font-size: 12.5px; color: var(--ink-faint); }
+  .cov-state-pill.notyet { color: var(--ink-faint); background: rgba(128,126,120,0.16); }
+  .cov-state-pill.renewing { color: #c2a86a; background: rgba(194,168,106,0.18); }
+  .cov-nudge { width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--field-edge); background: rgba(255,255,255,0.04); display: inline-flex; align-items: center; justify-content: center; font-size: 18px; cursor: pointer; transition: transform 0.15s ease; position: relative; }
+  [data-theme="light"] .cov-nudge { background: rgba(255,255,255,0.5); }
+  .cov-nudge:active { transform: scale(0.9); }
+  .cov-nudge.sent { border-color: var(--gold-line); background: var(--accent-soft); pointer-events: none; }
+  .cov-nudge svg { width: 20px; height: 20px; fill: none; stroke: var(--ink-soft); stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+  .cov-nudge .cf-count { position: absolute; top: -3px; right: -3px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 999px; background: var(--accent); color: var(--bg); font-size: 10px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; }
   /* leader invite row */
   .cov-invite { margin-top: 22px; border-top: 1px solid var(--gold-line); padding-top: 18px; }
   .cov-invite-title { font-family: "Spline Sans Mono", ui-monospace, monospace; font-size: 10px; letter-spacing: 0.24em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 10px; }
@@ -6346,28 +6355,25 @@
       (isLeader ? '<button class="fc-edit" data-act="editFocus" aria-label="Edit focus"><svg viewBox="0 0 24 24"><path d="M4 20l4-1 9-9-3-3-9 9-1 4z"/><line x1="14" y1="6" x2="17" y2="9"/></svg></button>' : "") +
       '</div>';
   }
-  var DAY_LETTERS = ["S", "M", "T", "W", "T", "F", "S"];
-  function dayLetter(dateKey) { var d = new Date(dateKey + "T00:00:00"); return isNaN(d.getTime()) ? "" : DAY_LETTERS[d.getDay()]; }
+  var CHECK_SVG = '<svg viewBox="0 0 24 24"><polyline points="5 12 10 17 19 7"/></svg>';
+  var HANDS_SVG = '<svg viewBox="0 0 24 24"><path d="M7 11V7a2 2 0 0 1 4 0v3M11 8a2 2 0 0 1 4 0v3M15 9.5a2 2 0 0 1 3.5 1.3V14a6 6 0 0 1-6 6h-1.2a5 5 0 0 1-3.5-1.5l-3.1-3.1a1.6 1.6 0 0 1 2.3-2.3L10 15"/></svg>';
   function covCardHtml(m, days, today, weekKey, uid) {
     var mine = m.user_id === uid;
     var prof = circleState.profiles[m.user_id] || {};
     var name = mine && hasRealName() ? myName() : (isRealName(prof.display_name) ? prof.display_name.trim() : "A brother");
     var url = prof.avatar_url || (mine && db.profile && db.profile.avatarUrl) || null;
     var cov = circleState.covenants[m.user_id];
-    var head = '<div class="cov-card-top">' + pwAvatar(name, url, "lg") +
-      '<div class="cov-card-who"><div class="cov-card-name">' + escapeHtml(name) + '</div>';
+    var av = pwAvatar(name, url, "lg");
     if (!cov) {
-      head += '<div class="cov-card-preparing">preparing his covenant…</div></div></div>';
-      return '<div class="cov-card' + (mine ? " mine" : "") + '">' + head + '</div>';
+      return '<div class="cov-row' + (mine ? " mine" : "") + '">' + av +
+        '<div class="cov-row-main"><div class="cov-row-name"><span class="rn">' + escapeHtml(name) + '</span></div>' +
+        '<div class="cov-row-preparing">preparing his covenant…</div></div></div>';
     }
     var freq = +cov.freq || 7, daily = freq >= 7;
-    head += '<div class="cov-card-action">“' + escapeHtml(cov.body) + '”</div>' +
-      '<div class="cov-card-cadence">' + covCadenceLabel(freq) + '</div></div></div>';
     var renewing = cov.signed_day < weekKey;
     var doneToday = !!(circleState.checks[m.user_id] && circleState.checks[m.user_id][today]);
     var baseline = cov.signed_day; if (m.joined_day && m.joined_day > baseline) baseline = m.joined_day;
     var doneCount = 0;
-    // week strip: a day letter over a state dot, today emphasised
     var week = days.map(function (day) {
       var cls = "neutral";
       var did = !!(circleState.checks[m.user_id] && circleState.checks[m.user_id][day]);
@@ -6376,33 +6382,30 @@
         if (day < baseline) cls = "neutral";
         else if (did) cls = "done";
         else if (day > today) cls = "future";
-        else cls = daily ? "missed" : "open";   // daily unmarked past = missed; N/week = simply open
+        else cls = daily ? "missed" : "open";
       }
-      return '<div class="cov-day' + (day === today ? " is-today" : "") + '"><span class="cov-day-l">' + dayLetter(day) + '</span><span class="cov-day-d ' + cls + '"></span></div>';
+      return '<span class="cov-mini ' + cls + (day === today ? " is-today" : "") + '"></span>';
     }).join("");
-    var progress = renewing ? "" : (daily ? "" : (doneCount + " of " + freq + " this week"));
-    var stateNote = "";
-    if (renewing) stateNote = '<span class="cov-state-pill renewing">renewing</span>';
-    else if (!mine) stateNote = '<span class="cov-state-pill ' + (doneToday ? "done" : "notyet") + '">' + (doneToday ? "done today" : "not yet") + '</span>';
-    var weekBlock = '<div class="cov-week">' + week + '</div>' +
-      (progress || stateNote ? '<div class="cov-week-foot"><span class="cov-week-prog">' + progress + '</span>' + stateNote + '</div>' : "");
-    // the action / footer
-    var foot = "";
+    var prog = renewing ? "" : (daily ? "" : (doneCount + "/" + freq));
+    var main = '<div class="cov-row-main">' +
+      '<div class="cov-row-name"><span class="rn">' + escapeHtml(name) + '</span><span class="cov-row-cad">' + covCadenceLabel(freq) + '</span></div>' +
+      '<div class="cov-row-vow">“' + escapeHtml(cov.body) + '”</div>' +
+      '<div class="cov-week">' + week + (prog ? '<span class="cov-week-prog">' + prog + '</span>' : "") + '</div></div>';
+    // right-side control
+    var right;
     if (renewing) {
-      foot = "";
+      right = '<span class="cov-state-pill renewing">renewing</span>';
     } else if (mine) {
-      var hitGoal = !daily && doneCount >= freq;
-      var CHECK = '<svg viewBox="0 0 24 24"><polyline points="5 12 10 17 19 7"/></svg>';
-      foot = '<button class="cov-mark' + (doneToday ? " done" : "") + '" data-act="' + (doneToday ? "unmarkToday" : "markToday") + '">' + CHECK +
-        (doneToday ? (hitGoal ? "This week, kept" : "Lived it today") : "Mark today as lived") + '</button>';
+      right = '<div class="cov-row-right"><button class="cov-tap' + (doneToday ? " done" : "") + '" data-act="' + (doneToday ? "unmarkToday" : "markToday") + '" aria-label="Mark today">' + CHECK_SVG + '</button><span class="cov-tap-cap">Today</span></div>';
     } else if (doneToday) {
       var fc = circleState.fireCounts[m.user_id] || 0;
-      foot = '<div class="cov-card-foot"><button class="cov-fire-btn" data-act="fire" data-uid="' + m.user_id + '">🔥' + (fc ? ' <span class="cf-count">' + fc + '</span>' : "") + '</button></div>';
+      var firedByMe = circleState.sentBack[m.user_id + ":fire"];
+      right = '<button class="cov-nudge' + (firedByMe ? " sent" : "") + '" data-act="fire" data-uid="' + m.user_id + '" aria-label="Celebrate">🔥' + (fc ? '<span class="cf-count">' + fc + '</span>' : "") + '</button>';
     } else {
       var sent = circleState.sentBack[m.user_id + ":back"];
-      foot = '<div class="cov-card-foot"><button class="cov-back-btn' + (sent ? " sent" : "") + '" data-act="gotBack" data-uid="' + m.user_id + '">' + (sent ? "✓ Got his back" : "🤝 Got your back") + '</button></div>';
+      right = '<button class="cov-nudge' + (sent ? " sent" : "") + '" data-act="gotBack" data-uid="' + m.user_id + '" aria-label="Got your back">' + HANDS_SVG + '</button>';
     }
-    return '<div class="cov-card' + (mine ? " mine" : "") + '">' + head + weekBlock + foot + '</div>';
+    return '<div class="cov-row' + (mine ? " mine" : "") + '">' + av + main + right + '</div>';
   }
   function renderBoard() {
     var c = circleState.circle, uid = myId(), days = weekDaysSat(), weekKey = days[0], today = todayLocal();
@@ -6435,20 +6438,21 @@
   }
   function covCelebrate() {
     playEmber(); buzzPattern([0, 15, 55]);
-    var card = $("circleBody").querySelector(".cov-card.mine");
+    var card = $("circleBody").querySelector(".cov-row.mine");
     if (!card) return;
-    var btn = card.querySelector(".cov-mark"), dot = card.querySelector(".cov-day.is-today .cov-day-d") || btn;
-    if (btn && dot && typeof FLAME_SVG === "string") {
-      var a = btn.getBoundingClientRect(), b = dot.getBoundingClientRect();
+    var tap = card.querySelector(".cov-tap"), today = card.querySelector(".cov-mini.is-today");
+    if (tap) celebrate(tap);                         // ember burst on the circle you tapped
+    if (today && tap && typeof FLAME_SVG === "string") {
+      var a = tap.getBoundingClientRect(), b = today.getBoundingClientRect();
       var f = document.createElement("div"); f.className = "flame-fly"; f.innerHTML = FLAME_SVG;
       var x0 = a.left + a.width / 2 - 11, y0 = a.top + a.height / 2 - 11;
       f.style.left = x0 + "px"; f.style.top = y0 + "px"; document.body.appendChild(f);
       var xT = b.left + b.width / 2 - 11 - x0, yT = b.top + b.height / 2 - 11 - y0;
       void f.offsetWidth;
-      f.style.transform = "translate(" + (xT * 0.3).toFixed(1) + "px,-30px) scale(1.4)";
-      setTimeout(function () { f.classList.add("dive"); f.style.transform = "translate(" + xT.toFixed(1) + "px," + yT.toFixed(1) + "px) scale(0.7)"; }, 300);
-      setTimeout(function () { f.remove(); if (dot) celebrate(dot); }, 500);
-    } else if (dot) celebrate(dot);
+      f.style.transform = "translate(" + (xT * 0.4).toFixed(1) + "px,-26px) scale(1.3)";
+      setTimeout(function () { f.classList.add("dive"); f.style.transform = "translate(" + xT.toFixed(1) + "px," + yT.toFixed(1) + "px) scale(0.6)"; }, 280);
+      setTimeout(function () { f.remove(); if (today) celebrate(today); }, 480);
+    }
   }
 
   // ---- nudges ----
@@ -8576,7 +8580,7 @@
   });
   if (window.matchMedia) { try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { if (db.theme === "auto") applyTheme("auto"); }); } catch (e) {} }
 
-  var APP_VERSION = "v61.4-dev";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v61.5-dev";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
