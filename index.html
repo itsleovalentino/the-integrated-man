@@ -6647,6 +6647,33 @@
         // my own marks win: a just-made tap (mirrored in db.covChecks) can't be un-filled
         // by a cloud read that hasn't caught up yet
         if (db.covChecks) { checks[uid] = checks[uid] || {}; for (var _d in db.covChecks) { var _c = db.covChecks[_d]; if (_c && _c.circleId === cid) checks[uid][_d] = _c.done; } }
+        // re-push my own marks that never reached the cloud (a tap made offline) so brothers see them
+        if (sb && db.covChecks) {
+          var cloudMineChk = {}; (res[4].data || []).forEach(function (c) { if (c.user_id === uid) cloudMineChk[c.day] = c.done; });
+          for (var _pd in db.covChecks) {
+            var _pc = db.covChecks[_pd];
+            if (_pc && _pc.circleId === cid && cloudMineChk[_pd] !== _pc.done) {
+              sb.from("covenant_checks").upsert({ circle_id: cid, user_id: uid, day: _pd, done: _pc.done, updated_at: new Date().toISOString() }, { onConflict: "circle_id,user_id,day" }).then(function () {});
+            }
+          }
+        }
+        // my own VOW wins the same way, and is re-pushed if it never reached the cloud.
+        // This is what makes signing offline safe: the covenant is saved locally (db.covenants),
+        // shown on the board from local, and synced up whenever the network returns — no false
+        // "sealed", no vanished vow, and no friction for the man.
+        if (db.covenants && db.covenants.length) {
+          var myLocalCov = null;
+          db.covenants.forEach(function (r) { if (r.circleId === cid && (!myLocalCov || (r.signed_at || "") > (myLocalCov.signed_at || ""))) myLocalCov = r; });
+          if (myLocalCov && !myLocalCov.synced && (!cov[uid] || (myLocalCov.signed_at || "") > (cov[uid].signed_at || ""))) {
+            cov[uid] = { id: myLocalCov.id, user_id: uid, body: myLocalCov.body, kind: myLocalCov.kind, freq: myLocalCov.freq, signed_day: myLocalCov.signed_day, signed_at: myLocalCov.signed_at, circle_id: cid };
+          }
+          if (sb) db.covenants.forEach(function (r) {   // retry any of my vows that never landed
+            if (r.circleId === cid && !r.synced) {
+              sb.from("covenants").insert({ circle_id: cid, user_id: uid, body: r.body, kind: r.kind, freq: r.freq, signed_day: r.signed_day })
+                .then(function (res) { if (!(res && res.error)) { r.synced = true; save(); } });
+            }
+          });
+        }
         var sentBack = {}, fireCounts = {}, received = [];
         (res[5].data || []).forEach(function (n) {
           if (n.from_id === uid && n.day === today) sentBack[n.to_id + ":" + n.kind] = true;
@@ -7047,8 +7074,10 @@
     var rec = { id: newId("cov"), circleId: c.id, body: body, kind: kind, freq: freq, signed_day: day, signed_at: new Date().toISOString() };
     db.covenants = db.covenants || []; db.covenants.push(rec); save();               // durable append-only mirror
     circleState.covenants[uid] = { id: rec.id, user_id: uid, body: body, kind: kind, freq: freq, signed_day: day, circle_id: c.id };
+    // the vow is already saved locally + on the board above; the cloud insert just propagates it.
+    // On success we mark it synced; on failure it stays pending and loadCircle re-pushes it later.
     if (sb) sb.from("covenants").insert({ circle_id: c.id, user_id: uid, body: body, kind: kind, freq: freq, signed_day: day })
-      .then(function (res) { if (res && res.error) console.error("covenant insert failed:", res.error); else loadCircle(function () { renderBoard(); }); });
+      .then(function (res) { if (res && res.error) { console.error("covenant insert failed (kept locally, will retry):", res.error); } else { rec.synced = true; save(); loadCircle(function () { renderBoard(); }); } });
     playChime(); buzzPattern([0, 30, 60, 30, 130]);
     closeCeremony(); renderBoard();
     showToastMsg("Your covenant is sealed. Welcome, brother.", 3000);
@@ -9257,7 +9286,7 @@
   });
   if (window.matchMedia) { try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { if (db.theme === "auto") applyTheme("auto"); }); } catch (e) {} }
 
-  var APP_VERSION = "v61.27-dev";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v61.28-dev";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
@@ -9661,6 +9690,11 @@
     // honoring any prompt the user switched to + collapsing once answered.
     loadDayFields();
     if (journalVisible()) renderJournal();
+    // if the Fellowship board is open across a day change (phone left on the tab overnight),
+    // reload it so a tap lands on the correct day and the week strip / "today" dot are current
+    if (typeof currentView !== "undefined" && currentView === "fellowship" && typeof loadCircle === "function") {
+      loadCircle(function () { if (typeof renderCircle === "function") renderCircle(); });
+    }
   }
 
   // load the day-scoped field VALUES (called on init and after each rollover)
@@ -10238,7 +10272,13 @@
   // last-ditch flush so a quick capture-then-close still reaches the cloud
   window.addEventListener("pagehide", function () { if (pushTimer) { clearTimeout(pushTimer); pushTimer = null; cloudPush(); } });
   // came back online → push anything that never made it up
-  window.addEventListener("online", function () { if (needsPush) cloudPush(); else setSync("synced"); });
+  window.addEventListener("online", function () {
+    if (needsPush) cloudPush(); else setSync("synced");
+    // back online while looking at the circle → resync vows + marks and repaint
+    if (typeof currentView !== "undefined" && currentView === "fellowship" && typeof loadCircle === "function") {
+      loadCircle(function () { if (typeof renderCircle === "function") renderCircle(); });
+    }
+  });
   window.addEventListener("offline", function () { if (needsPush) setSync("offline"); });
   window.addEventListener("focus", function () {
     if (keyOf(new Date()) !== todayKey) dailyRefresh();
