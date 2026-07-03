@@ -3652,24 +3652,6 @@
         <span class="toggle-switch" id="hapticsSwitch"></span>
       </button>
 
-      <label class="field-label">Thought reminders</label>
-      <button class="toggle-row" id="notifyToggle" type="button">
-        <span id="notifyLabel">Off</span>
-        <span class="toggle-switch" id="notifySwitch"></span>
-      </button>
-      <div class="lock-opts" id="notifyOpts" hidden>
-        <div class="ob-perday" style="margin-top:12px;">
-          <span>Remind every</span>
-          <select class="ob-book" id="notifyHours" style="width:auto;">
-            <option value="2">2 hours</option>
-            <option value="3">3 hours</option>
-            <option value="4">4 hours</option>
-            <option value="6">6 hours</option>
-          </select>
-        </div>
-        <div class="voice-msg">Reminders fire while the app is open in a tab. Full background reminders come once it’s installed as an app.</div>
-      </div>
-
       <div id="lockSection">
         <label class="field-label">Passcode lock</label>
         <div class="coach-tip" id="lockCoach" hidden>Turn this on to set a 4-digit code that locks your journal. <b>Tap the switch below to begin.</b></div>
@@ -3701,17 +3683,6 @@
         </div>
         <div class="oura-msg" id="ouraMsg"></div>
         <p class="ob-reading-hint" style="text-align:left;margin-top:6px;">Tap <a href="https://cloud.ouraring.com/personal-access-tokens" target="_blank" rel="noopener" class="oura-link">Get your Oura token&nbsp;↗</a>, create one, copy it, and paste it above. It's stored privately in your own account.</p>
-      </div>
-
-      <label class="field-label">Audio Bible (Bible Brain)</label>
-      <div class="oura-connect" id="fcbhConnect">
-        <input type="password" id="fcbhKey" placeholder="Bible Brain API key" autocomplete="off" />
-        <div class="oura-row">
-          <button class="modal-secondary" id="fcbhSave" style="flex:1;">Connect</button>
-          <button class="modal-secondary" id="fcbhDisconnect" style="flex:1;" hidden>Disconnect</button>
-        </div>
-        <div class="oura-msg" id="fcbhMsg"></div>
-        <p class="ob-reading-hint" style="text-align:left;margin-top:6px;">Unlocks dramatized <b>Old + New Testament</b> audio in more versions, with <b>exact verse-by-verse karaoke</b> (real per-verse timecodes). Get a free key at <a href="https://www.faithcomesbyhearing.com/audio-bible-resources/bible-brain" target="_blank" rel="noopener" class="oura-link">Bible Brain&nbsp;↗</a> and paste it above. Stored privately in your account.</p>
       </div>
 
       <label class="field-label">Your data</label>
@@ -4182,8 +4153,6 @@
   db.noteTrash = db.noteTrash || []; // soft-deleted notes — recoverable, never hard-deleted
   db.covenants = db.covenants || []; // durable append-only mirror of my covenant signings (never edited/deleted)
   db.covChecks = db.covChecks || {}; // day -> {done, circleId, ts} — my own covenant-check record
-  if (typeof db.notifyOn !== "boolean") db.notifyOn = false;
-  if (typeof db.notifyHours !== "number") db.notifyHours = 3;
   if (typeof db.soundOn !== "boolean") db.soundOn = true;
   if (typeof db.hapticsOn !== "boolean") db.hapticsOn = true;
   if (typeof db.lockEnabled !== "boolean") db.lockEnabled = false;
@@ -6421,34 +6390,9 @@
     var m = $("ouraMsg"); m.className = "oura-msg"; m.textContent = "Disconnected.";
   });
 
-  // Bible Brain (FCBH) — unlocks dramatized OT+NT + exact per-verse karaoke once a key is set.
-  function renderFcbhSettings() {
-    var el = $("fcbhKey"); if (!el) return;
-    var connected = !!db.fcbhKey;
-    el.value = "";
-    el.placeholder = connected ? "Connected — paste a new key to replace" : "Bible Brain API key";
-    $("fcbhDisconnect").hidden = !connected;
-    $("fcbhSave").textContent = connected ? "Update" : "Connect";
-    var m = $("fcbhMsg"); m.className = "oura-msg"; m.textContent = connected ? "Connected — dramatized OT + NT with exact karaoke." : "";
-  }
-  var _fcbhSave = $("fcbhSave"); if (_fcbhSave) _fcbhSave.addEventListener("click", function () {
-    var t = $("fcbhKey").value.trim(), m = $("fcbhMsg");
-    if (!t) { m.className = "oura-msg err"; m.textContent = "Paste your Bible Brain key first."; return; }
-    db.fcbhKey = t; fcbhSets = null; save();
-    renderFcbhSettings();
-    m.className = "oura-msg"; m.textContent = "Connected — reopen a chapter to hear it.";
-    if (typeof updateAudioBtn === "function" && db.lastPassage) updateAudioBtn(db.lastPassage);
-  });
-  var _fcbhDisc = $("fcbhDisconnect"); if (_fcbhDisc) _fcbhDisc.addEventListener("click", function () {
-    db.fcbhKey = null; fcbhSets = null; save();
-    renderFcbhSettings();
-    var m = $("fcbhMsg"); m.className = "oura-msg"; m.textContent = "Disconnected — using the default audio.";
-    if (typeof updateAudioBtn === "function" && db.lastPassage) updateAudioBtn(db.lastPassage);
-  });
-
   // Bible Brain (FCBH) audio: db.fcbhKey powers dramatized OT+NT + exact timecodes.
-  // Leo-only for now — no Settings UI by his call; the key gets set for his account
-  // directly when he receives it (ask Leo / see CLAUDE.md).
+  // No Settings UI (removed by Leo's call — unnecessary). The plumbing below stays
+  // dormant unless a key is ever set on db.fcbhKey directly for an account.
 
   // ----- Local Weather (Open-Meteo — free, browser-friendly, no key) -----
   var weatherCache = null;
@@ -8327,33 +8271,6 @@
     if (mem) showToast("memory", mem);   // gently resurface a past reflection ("a week ago…") — no capture nudge
   }
 
-  // ----- thought reminders (notifications) -----
-  var notifyTimer = null;
-  var canNotify = ("Notification" in window);
-  function scheduleNotify() {
-    clearInterval(notifyTimer);
-    if (db.notifyOn && canNotify && Notification.permission === "granted") {
-      notifyTimer = setInterval(function () {
-        try { new Notification("The Integrated Man", { body: "A quiet moment to reflect — open your journal." }); } catch (e) {}
-      }, db.notifyHours * 3600000);
-    }
-  }
-  function renderNotifyToggle() {
-    $("notifyToggle").classList.toggle("on", db.notifyOn);
-    $("notifyLabel").textContent = db.notifyOn ? "On" : "Off";
-    $("notifyOpts").hidden = !db.notifyOn;
-    $("notifyHours").value = String(db.notifyHours);
-  }
-  $("notifyToggle").addEventListener("click", function () {
-    if (db.notifyOn) { db.notifyOn = false; save(); renderNotifyToggle(); scheduleNotify(); return; }
-    if (!canNotify) { $("settingsMsg").textContent = "Notifications aren’t supported in this browser."; return; }
-    Notification.requestPermission().then(function (p) {
-      if (p === "granted") { db.notifyOn = true; save(); renderNotifyToggle(); scheduleNotify(); }
-      else { $("settingsMsg").textContent = "Allow notifications in your browser to turn this on."; }
-    });
-  });
-  $("notifyHours").addEventListener("change", function () { db.notifyHours = +this.value; save(); scheduleNotify(); });
-  if (!canNotify) $("notifyToggle").hidden = true;
 
   // Pillar interactions
   pillars.forEach(function (p) {
@@ -9427,7 +9344,7 @@
   });
   if (window.matchMedia) { try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { if (db.theme === "auto") applyTheme("auto"); }); } catch (e) {} }
 
-  var APP_VERSION = "v61.34-dev";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v61.35-dev";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
@@ -9634,10 +9551,8 @@
     $("setReadingToggle").querySelector(".srt-action").textContent = "Change";
     renderSoundToggle();
     renderLockToggle();
-    renderNotifyToggle();
     if (typeof renderAccount === "function") renderAccount();
     if (typeof renderOuraSettings === "function") renderOuraSettings();
-    if (typeof renderFcbhSettings === "function") renderFcbhSettings();
     $("settingsMsg").textContent = "";
     $("lockCoach").hidden = true; $("lockToggle").classList.remove("coach-target"); // clear any coach mark
     $("settings").hidden = false;
@@ -10533,8 +10448,7 @@
   if (db.lockEnabled && db.passcode) showLockEnter();
   resetIdle();
 
-  // thought reminders + a gentle nudge / memory on open
-  scheduleNotify();
+  // a gentle nudge / memory on open
   setTimeout(function () { maybeNudge(); }, 2600); // maybeNudge() now self-guards while gated
   setTimeout(function () { maybeBackupReminder(); }, 9000); // later, and only if a nudge isn't already showing
 
