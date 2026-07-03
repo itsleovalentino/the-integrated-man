@@ -928,6 +928,15 @@
     transition: background 0.2s ease, color 0.2s ease;
   }
   .focus-add:hover { background: var(--accent); color: var(--bg); }
+  .focus-sug { display: flex; align-items: center; gap: 7px; justify-content: flex-end; margin: 14px 0 2px; }
+  .focus-sug .focus-add { margin: 0; }
+  .focus-decline {
+    flex: 0 0 auto; width: 26px; height: 26px; border-radius: 50%;
+    background: none; border: 1px solid var(--line); color: var(--ink-faint);
+    font-size: 15px; line-height: 1; cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
+    transition: color 0.2s ease, border-color 0.2s ease;
+  }
+  .focus-decline:hover { color: var(--ink-soft); border-color: var(--ink-faint); }
   .focus-dot {
     width: 10px; height: 10px; border-radius: 50%; margin-top: 6px; flex-shrink: 0;
     background: var(--fc, var(--accent));
@@ -1529,35 +1538,19 @@
   .days-empty { text-align: center; color: var(--ink-faint); font-style: italic; font-size: 15px; padding: 54px 0; }
   @media (prefers-reduced-motion: reduce) { .days-view { animation: none; } }
 
-  /* ---- save entry ---- */
-  .save-entry {
-    width: 100%;
-    margin-top: 22px;
-    background: var(--accent);
-    color: var(--bg);
-    border: none;
-    border-radius: 12px;
-    padding: 16px;
-    font-family: inherit;
-    font-size: 13px;
-    font-weight: 600;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-    cursor: pointer;
-    transition: opacity 0.2s ease, transform 0.05s ease;
-  }
-  .save-entry:hover { opacity: 0.9; }
-  .save-entry:active { transform: scale(0.99); }
-  .save-confirm {
-    text-align: center;
-    margin-top: 12px;
-    font-size: 13px;
-    color: var(--ink-faint);
-    font-style: italic;
-    min-height: 18px;
-    transition: color 0.3s ease;
-  }
-  .save-confirm.show { color: var(--accent); font-style: normal; }
+  /* ---- View Trends glassy popup ---- */
+  .trends-pop { position: fixed; inset: 0; z-index: 96; display: flex; align-items: center; justify-content: center; padding: 22px; background: rgba(0,0,0,0.74); -webkit-backdrop-filter: blur(7px); backdrop-filter: blur(7px); animation: tpFade 0.2s ease; }
+  .trends-pop[hidden] { display: none; }
+  .trends-pop-card { width: 100%; max-width: 460px; background: var(--panel); border: 1px solid var(--gold-line); border-radius: 20px; padding: 24px 22px 22px; box-shadow: 0 30px 80px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.04); position: relative; animation: tpPop 0.26s cubic-bezier(.2,.7,.2,1); }
+  .tp-close { position: absolute; top: 12px; right: 12px; width: 34px; height: 34px; border-radius: 50%; background: none; border: none; color: var(--ink-faint); font-size: 22px; line-height: 1; cursor: pointer; z-index: 1; }
+  .tp-close:hover { color: var(--ink); }
+  .tp-title { font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 18px; }
+  .tp-wait { text-align: center; color: var(--ink-soft); font-size: 14.5px; line-height: 1.6; padding: 26px 8px 12px; }
+  .tp-wait svg { display: block; margin: 0 auto 16px; width: 42px; height: 42px; fill: none; stroke: var(--accent); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; opacity: 0.75; }
+  .tp-wait b { color: var(--ink); font-weight: 500; }
+  @keyframes tpFade { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes tpPop { from { opacity: 0; transform: translateY(12px) scale(0.98); } to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) { .trends-pop, .trends-pop-card { animation: none; } }
 
   .pd-integration {
     margin-top: 12px;
@@ -1670,9 +1663,24 @@
     padding: 12px 14px; box-shadow: 0 8px 24px -10px rgba(0,0,0,0.6);
   }
   .customize-bar[hidden] { display: none; }
+  .customize-bar { background: linear-gradient(var(--accent-soft), var(--accent-soft)), var(--panel); }   /* opaque, accent-tinted — reads as a mode */
   .cb-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-  .cb-text b { font-size: 14px; color: var(--ink); }
+  .cb-text b { font-size: 14px; color: var(--ink); display: flex; align-items: center; }
   .cb-text span { font-size: 11.5px; color: var(--ink-faint); }
+  .cb-live { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); margin-right: 9px; flex: 0 0 auto; animation: cbLive 1.8s ease-in-out infinite; }
+  @keyframes cbLive { 0%,100% { opacity: 1; box-shadow: 0 0 0 0 var(--gold-line); } 50% { opacity: 0.55; box-shadow: 0 0 0 6px rgba(203,178,126,0); } }
+  /* unmistakable "you're editing" cues — visible at ANY scroll position so widgets aren't removed by accident */
+  .customize-frame { position: fixed; inset: 0; z-index: 44; pointer-events: none; display: none; }
+  .customizing-on .customize-frame { display: block; }
+  .customize-frame::before { content: ""; position: absolute; inset: 0; border: 3px solid var(--accent); box-shadow: inset 0 0 55px -18px var(--accent); animation: cfPulse 2.6s ease-in-out infinite; }
+  .customize-frame::after {
+    content: "✎  EDITING HOME"; position: absolute; left: 50%; bottom: calc(86px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%);
+    background: var(--accent); color: var(--bg); font-family: "Spline Sans Mono", ui-monospace, monospace;
+    font-size: 10px; font-weight: 700; letter-spacing: 0.16em; padding: 6px 16px; border-radius: 999px; white-space: nowrap;
+    box-shadow: 0 10px 28px -8px rgba(0,0,0,0.7);
+  }
+  @keyframes cfPulse { 0%,100% { opacity: 0.5; } 50% { opacity: 0.85; } }
+  @media (prefers-reduced-motion: reduce) { .customize-frame::before { animation: none; opacity: 0.7; } .cb-live { animation: none; } }
   .cb-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
   .cb-add {
     background: var(--accent-soft); color: var(--accent); border: 1px solid var(--accent); border-radius: 999px;
@@ -1781,7 +1789,6 @@
   .pe-sub b { color: var(--accent); font-weight: 500; }
   /* "not tracking today" — a calm opt-out so the check never feels mandatory */
   .pillar-skip {
-    display: block; width: fit-content; margin: 0 0 16px auto;
     background: none; border: 1px solid var(--field-edge); color: var(--ink-faint);
     border-radius: 999px; padding: 7px 14px; cursor: pointer;
     font-family: inherit; font-size: 12px; letter-spacing: 0.02em;
@@ -1789,12 +1796,25 @@
   }
   .pillar-skip:hover { color: var(--ink-soft); border-color: var(--ink-faint); }
   .pillar-skip.on { background: var(--field); color: var(--ink-soft); border-color: var(--field-edge); }
+  /* pillars footer — View Trends (left) · Not tracking today (right), set lower so it's not glued to the header */
+  .pillar-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--line); }
+  .pillar-foot-link {
+    display: inline-flex; align-items: center; gap: 7px; background: none; border: none; cursor: pointer;
+    color: var(--accent); font-family: inherit; font-size: 12.5px; letter-spacing: 0.02em; padding: 6px 2px;
+    transition: opacity 0.2s ease;
+  }
+  .pillar-foot-link:hover { opacity: 0.78; }
+  .pillar-foot-link svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  /* the commit button after rating — reassuring, prominent */
+  .pillar-submit { display: block; width: 100%; text-align: center; margin: 20px 0 0; padding: 13px; }
+  #pillarSubmitMsg { text-align: center; }
   /* greyed "resting" state */
   #pillarsSection.skipped .pe-orbs { filter: grayscale(1); opacity: 0.4; }
   #pillarsSection.skipped .pe-title,
   #pillarsSection.skipped #pillarsSummary { color: var(--ink-faint); }
   #pillarsSection.skipped .gauge-wrap,
   #pillarsSection.skipped #pillars,
+  #pillarsSection.skipped #pillarSubmit,
   #pillarsSection.skipped #focus,
   #pillarsSection.skipped #weeklyNote { opacity: 0.35; filter: grayscale(0.8); pointer-events: none; }
   .pe-chev {
@@ -2970,8 +2990,9 @@
       </button>
     </div>
 
+    <div class="customize-frame" id="customizeFrame" aria-hidden="true"></div>
     <div class="customize-bar" id="customizeBar" hidden>
-      <div class="cb-text"><b>Customize your home</b><span>Reorder with ↑ ↓ or drag · add &amp; remove</span></div>
+      <div class="cb-text"><b><span class="cb-live"></span>Editing your home</b><span>Reorder with ↑ ↓ or drag · add &amp; remove · tap Save when you’re done</span></div>
       <div class="cb-actions">
         <button class="cb-add" id="openGalleryBtn" type="button">+ Add widget</button>
         <button class="cb-done" id="customizeDone">Save</button>
@@ -3125,7 +3146,6 @@
         <svg class="pe-chev" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
       <div id="pillarsBody" hidden>
-        <button class="pillar-skip" id="pillarSkip" type="button">Not tracking today</button>
         <div class="weekly-note" id="weeklyNote"></div>
 
         <div class="gauge-wrap">
@@ -3141,9 +3161,20 @@
 
         <div class="pillars" id="pillars"></div>
 
+        <button class="save-mini pillar-submit" id="pillarSubmit" data-tone="chime" type="button">Save entry</button>
+        <div class="save-mini-confirm" id="pillarSubmitMsg"></div>
+
         <div class="focus" id="focus" hidden>
           <div class="focus-head">Where to focus</div>
           <div class="focus-body" id="focusBody"></div>
+        </div>
+
+        <div class="pillar-foot">
+          <button class="pillar-foot-link" id="viewTrends" type="button">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="15 7 21 7 21 13"/></svg>
+            View Trends
+          </button>
+          <button class="pillar-skip" id="pillarSkip" type="button">Not tracking today</button>
         </div>
       </div>
     </section>
@@ -3192,10 +3223,9 @@
       </div>
     </section>
 
-    <section id="homeActions">
-      <button class="save-entry" id="saveEntry">Save today's entry</button>
-      <div class="save-confirm" id="saveConfirm"></div>
-    </section>
+    <!-- layout anchor: home widgets are inserted before this. Per-widget saving replaced the old
+         "Save today's entry" button — each widget now commits its own data as you go. -->
+    <section id="homeActions" aria-hidden="true"></section>
 
     <footer>
       <div class="verse serif">Do not conform to the pattern of this world, but be transformed by the renewing of your mind.</div>
@@ -3390,6 +3420,26 @@
     </div>
     <div class="days-scroll" id="daysScroll">
       <div class="days-inner" id="daysBody"></div>
+    </div>
+  </div>
+
+  <!-- View Trends popup (glassy; Integration over time) -->
+  <div class="trends-pop" id="trendsPop" hidden>
+    <div class="trends-pop-card">
+      <button class="tp-close" id="tpClose" aria-label="Close">&times;</button>
+      <div class="tp-title">Integration · over time</div>
+      <div id="tpChartWrap">
+        <div class="trend-head">
+          <div><span class="trend-big serif" id="tpAvg">—</span><span class="trend-unit">/10 average</span></div>
+          <div class="trend-range" id="tpRange"></div>
+        </div>
+        <svg class="trend-chart" id="tpChart" viewBox="0 0 600 180"></svg>
+        <div class="trend-xaxis" id="tpX"></div>
+      </div>
+      <div class="tp-wait" id="tpWait" hidden>
+        <svg viewBox="0 0 24 24"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="15 7 21 7 21 13"/></svg>
+        <div>Your trend is still taking shape.<br><b>Rate your pillars a few more times</b> — after 3 or 4 check-ins, the pattern appears here.</div>
+      </div>
     </div>
   </div>
 
@@ -4040,6 +4090,7 @@
   db.weather = db.weather || null;        // { name, lat, lon } — chosen city for the weather widget
   db.prayers = db.prayers || [];          // [{id, scope:'others'|'mine', who, text, created, answered}]
   db.habits = db.habits || [];            // [{id, name, icon}]
+  db.declinedSuggest = db.declinedSuggest || []; // lowercased suggestion names the user has dismissed
   db.habitLog = db.habitLog || {};        // dateKey -> {habitId: true}
   db.readLog = db.readLog || {};          // dateKey -> {prov:true, rom:true}
   db.scriptureNotes = db.scriptureNotes || {}; // passage ref -> note text (builds a personal commentary)
@@ -4576,34 +4627,45 @@
       ps.start(pt);
     }
   }
-  function playBlaze() { // every anchor done: heat rising, a hard flare that settles, and a chapel fifth
+  function playBlaze() { // every anchor done: a warm gathering that blooms into ONE resolved chord — grounded, sacred, never chirpy
     var ac = audio(); if (!ac) return;
     var t = ac.currentTime;
-    // the fire's body: a low fifth swelling in an S-curve (heat rising, no corner)
-    [[98, 0.085], [147, 0.05]].forEach(function (v) {
+    // the fire's body: a low fifth swelling in an S-curve (heat rising, no corner) — kept warm and weighty
+    [[98, 0.075], [147, 0.045]].forEach(function (v) {
       var o = ac.createOscillator(), g = ac.createGain();
       o.type = "sine"; o.frequency.setValueAtTime(v[0], t);
       g.gain.setValueAtTime(0.0001, t);
-      g.gain.linearRampToValueAtTime(v[1] * 0.6, t + 0.15); g.gain.linearRampToValueAtTime(v[1], t + 0.3);
-      g.gain.setTargetAtTime(0.0001, t + 0.5, 0.45);       // long warm tail — weightier than the ember
-      o.connect(g); g.connect(ac.destination); o.start(t); o.stop(t + 2.0);
+      g.gain.linearRampToValueAtTime(v[1] * 0.6, t + 0.16); g.gain.linearRampToValueAtTime(v[1], t + 0.32);
+      g.gain.setTargetAtTime(0.0001, t + 0.55, 0.5);       // long warm tail
+      o.connect(g); g.connect(ac.destination); o.start(t); o.stop(t + 2.2);
     });
-    // the flare: crackles hard at ignition, then settles (front-loaded, decaying, stereo)
-    for (var p = 0; p < 9; p++) {
-      var frac = p / 9;
-      sparkPop(ac, t + 0.05 + Math.pow(frac, 1.6) * 0.5, 1600 + Math.random() * 3000,
-               (0.026 - frac * 0.014) * (0.7 + Math.random() * 0.5), (Math.random() * 2 - 1) * 0.35);
+    // fire texture: a few soft, LOW wood-knot pops (low-passed — nothing high enough to read as a chirp)
+    for (var p = 0; p < 3; p++) {
+      var pt = t + 0.05 + Math.random() * 0.3;
+      var plen = Math.floor(ac.sampleRate * 0.016), pbuf = ac.createBuffer(1, plen, ac.sampleRate), pd = pbuf.getChannelData(0);
+      for (var j = 0; j < plen; j++) { var env = 1 - j / plen; pd[j] = (Math.random() * 2 - 1) * env * env; }
+      var ps = ac.createBufferSource(); ps.buffer = pbuf;
+      var lp = ac.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 900; lp.Q.value = 0.6;
+      var pg = ac.createGain(); pg.gain.value = 0.02;
+      ps.connect(lp); lp.connect(pg); pg.connect(panTo(ac, (Math.random() * 2 - 1) * 0.3));
+      ps.start(pt);
     }
-    // the bell: C4 then G4 — an open fifth blooming slowly, a chapel, not a casino
-    [[261.63, 0.0], [392.0, 0.25]].forEach(function (n) {
-      var bt = t + 0.3 + n[1];
+    // the resolution: root + fifth + octave bloom TOGETHER into one full, resonant chord that holds and settles
+    // (all at once — no ascending two-note "bird" motion, which is what read as a chirp)
+    var bt = t + 0.34, chord = [130.81, 196.0, 261.63, 392.0], vols = [0.06, 0.04, 0.045, 0.026]; // C3 G3 C4 G4
+    chord.forEach(function (f, i) {
       var o = ac.createOscillator(), g = ac.createGain();
-      o.type = "sine"; o.frequency.setValueAtTime(n[0], bt);
+      o.type = "sine"; o.frequency.setValueAtTime(f, bt);
       g.gain.setValueAtTime(0.0001, bt);
-      g.gain.setTargetAtTime(0.045, bt, 0.028);            // 80ms bloom
-      g.gain.setTargetAtTime(0.0001, bt + 0.15, 0.4);      // 1.2s+ release
-      o.connect(g); g.connect(ac.destination); o.start(bt); o.stop(bt + 1.8);
+      g.gain.setTargetAtTime(vols[i], bt, 0.05);           // gentle simultaneous bloom (~150ms)
+      g.gain.setTargetAtTime(0.0001, bt + 0.35, 0.6);      // long, warm 1.8s+ release
+      o.connect(g); g.connect(ac.destination); o.start(bt); o.stop(bt + 2.4);
     });
+    // a quiet low sub for weight — grounds the chord so completion feels earned, not tinkly
+    var sub = ac.createOscillator(), sg = ac.createGain();
+    sub.type = "sine"; sub.frequency.setValueAtTime(65.41, bt); // C2
+    sg.gain.setValueAtTime(0.0001, bt); sg.gain.setTargetAtTime(0.03, bt, 0.06); sg.gain.setTargetAtTime(0.0001, bt + 0.3, 0.5);
+    sub.connect(sg); sg.connect(ac.destination); sub.start(bt); sub.stop(bt + 2.0);
   }
   function playChime() { // deep, resonant — a low fifth that blooms (warm, restrained)
     tone(130.81, 1.3, "sine", 0.085);
@@ -4950,6 +5012,46 @@
     else db.pillarSkip[todayKey] = true;
     save(); applyPillarSkip(); buzz(8);
   });
+  // Save entry — a reassuring commit after rating (ratings already autosave; this confirms it)
+  $("pillarSubmit").addEventListener("click", function () {
+    save();
+    celebrate(this); playChime(); buzz(14);
+    var m = $("pillarSubmitMsg");
+    m.textContent = "Saved to your journal."; m.classList.add("show");
+    clearTimeout(m._t); m._t = setTimeout(function () { m.classList.remove("show"); }, 2400);
+  });
+  // View Trends → glassy popup
+  $("viewTrends").addEventListener("click", function () { openTrendsPop(); buzz(8); });
+  function openTrendsPop() {
+    var pts = Object.keys(db.ratings)
+      .filter(function (k) { return dayIntegration(db.ratings[k]) != null && !db.pillarSkip[k]; })
+      .sort()
+      .map(function (k) { return { k: k, v: dayIntegration(db.ratings[k]) }; }).slice(-30);
+    var enough = pts.length >= 3;   // needs a few check-ins before a trend is meaningful
+    $("tpChartWrap").hidden = !enough;
+    $("tpWait").hidden = enough;
+    if (enough) {
+      var W = 600, H = 180, padL = 10, padR = 10, padT = 14, padB = 14;
+      var innerW = W - padL - padR, innerH = H - padT - padB;
+      var X = function (i) { return padL + innerW * i / (pts.length - 1); };
+      var Y = function (v) { return padT + (1 - v / 10) * innerH; };
+      var sum = 0; pts.forEach(function (pt) { sum += pt.v; });
+      $("tpAvg").textContent = (Math.round(sum / pts.length * 10) / 10).toFixed(1);
+      $("tpRange").textContent = pts.length + " days · " + trendLabel(pts[0].k) + " – " + trendLabel(pts[pts.length - 1].k);
+      var grid = ""; [0, 5, 10].forEach(function (g) { var y = Y(g); grid += '<line class="tg-grid" x1="' + padL + '" y1="' + y + '" x2="' + (W - padR) + '" y2="' + y + '"/>'; });
+      var line = "", area = "M " + X(0) + " " + Y(0);
+      pts.forEach(function (pt, i) { var x = X(i), y = Y(pt.v); line += (i ? " L " : "M ") + x + " " + y; area += " L " + x + " " + y; });
+      area += " L " + X(pts.length - 1) + " " + Y(0) + " Z";
+      var dots = ""; pts.forEach(function (pt, i) { var last = i === pts.length - 1; dots += '<circle class="tg-dot' + (last ? ' tg-last' : '') + '" cx="' + X(i) + '" cy="' + Y(pt.v) + '" r="' + (last ? 4 : 2.6) + '"><title>' + trendLabel(pt.k) + ': ' + (Math.round(pt.v * 10) / 10) + '</title></circle>'; });
+      $("tpChart").innerHTML = grid + '<path class="tg-area" d="' + area + '"/><path class="tg-line" d="' + line + '"/>' + dots;
+      $("tpX").innerHTML = '<span>' + trendLabel(pts[0].k) + '</span><span>' + trendLabel(pts[Math.floor((pts.length - 1) / 2)].k) + '</span><span>' + trendLabel(pts[pts.length - 1].k) + '</span>';
+    }
+    $("trendsPop").hidden = false;
+    if (typeof playPage === "function") playPage();
+  }
+  function closeTrendsPop() { $("trendsPop").hidden = true; }
+  $("tpClose").addEventListener("click", function () { closeTrendsPop(); buzz(6); });
+  $("trendsPop").addEventListener("click", function (e) { if (e.target === this) closeTrendsPop(); });
   function updatePillarsSummary() {
     var sumEl = $("pillarsSummary"), note = $("weeklyNote");
     if (pillarsSkippedToday()) {
@@ -5012,8 +5114,13 @@
         num = fr.v; // show the weak facet's own score, not the pillar average
       }
       var sug = HABIT_SUGGEST[p.key];
-      var sugBtn = sug ? '<button class="focus-add" data-habit="' + escapeHtml(sug.name) + '" data-cadence="' + sug.cadence +
-        '">+ Habit: ' + escapeHtml(sug.name) + ' · ' + cadenceLabel(sug.cadence) + '</button>' : '';
+      var already = sug && db.habits.some(function (h) { return h.name.toLowerCase() === sug.name.toLowerCase(); });
+      var sugBtn = (sug && !already && !suggestDeclined(sug.name)) ?
+        '<div class="focus-sug">' +
+          '<button class="focus-add" data-habit="' + escapeHtml(sug.name) + '" data-cadence="' + sug.cadence +
+            '">+ Habit: ' + escapeHtml(sug.name) + ' · ' + cadenceLabel(sug.cadence) + '</button>' +
+          '<button class="focus-decline" data-decline="' + escapeHtml(sug.name) + '" aria-label="Not for me" title="Not for me">&times;</button>' +
+        '</div>' : '';
       html += '<div class="focus-item" style="--fc:' + p.color + '">' +
         '<span class="focus-dot"></span>' +
         '<div class="focus-text"><b>' + escapeHtml(head) + ' (' + num + '/10)</b> — ' +
@@ -5021,7 +5128,18 @@
     });
     body.innerHTML = html;
   }
+  function suggestDeclined(name) { return (db.declinedSuggest || []).indexOf(name.toLowerCase()) > -1; }
   $("focusBody").addEventListener("click", function (e) {
+    var dec = e.target.closest(".focus-decline");
+    if (dec) {                                    // dismiss a suggestion — remembered so it won't return
+      var nm = dec.getAttribute("data-decline").toLowerCase();
+      db.declinedSuggest = db.declinedSuggest || [];
+      if (db.declinedSuggest.indexOf(nm) < 0) db.declinedSuggest.push(nm);
+      save();
+      var wrap = dec.closest(".focus-sug"); if (wrap) wrap.remove();
+      if (typeof playPop === "function") playPop(); buzz(6);
+      return;
+    }
     var b = e.target.closest(".focus-add"); if (!b) return;
     var name = b.getAttribute("data-habit"), cad = b.getAttribute("data-cadence");
     if (db.habits.some(function (h) { return h.name.toLowerCase() === name.toLowerCase(); })) {
@@ -5705,6 +5823,7 @@
   document.addEventListener("keydown", function (e) {
     if (e.key !== "Escape") return;
     if (!$("reflectWriter").hidden) { closeReflectWriter(false); return; }
+    if (!$("trendsPop").hidden) { closeTrendsPop(); return; }
     if (!$("daysView").hidden) { closeDays(); return; }
     if (!$("bibleView").hidden) $("bibleView").hidden = true;
     if (!$("anchorsView").hidden) $("anchorsView").hidden = true;
@@ -8410,23 +8529,10 @@
     this.setAttribute("aria-expanded", opening ? "true" : "false");
   });
 
-  // Save today's entry — seals the whole journal for the day
-  $("saveEntry").addEventListener("click", function () {
-    // morning / journal / evening already autosave; only snapshot the pillars if they were
-    // actually checked today (weekly cadence — a normal day's save shouldn't manufacture one)
-    if (db.ratings[todayKey]) {
-      pillars.forEach(function (p) { rec(p.key).score = effectiveScore(p.key); });
-    }
-    save();
-    refreshGauge();
-    celebrate(this); playChime();
-    var c = $("saveConfirm");
-    c.textContent = "Today's entry is saved.";
-    c.classList.add("show");
-    clearTimeout(c._t);
-    c._t = setTimeout(function () { c.classList.remove("show"); }, 2600);
-    if (journalVisible()) renderJournal();
-  });
+  // "Save today's entry" retired — every widget now saves on its own as you go (reflections via the
+  // writer's Done, pillars via pillarChanged + the pillars "Save entry", habits/reading mark instantly,
+  // gratitude autosaves). The old button's only real work — sealing pillar scores — already happens
+  // live in pillarChanged, so nothing is lost.
 
   // ===== Journal (Day One–style) — docked sidebar on wide screens, overlay drawer on narrow =====
   function isWide() { return window.matchMedia("(min-width: 1100px)").matches; }
@@ -9038,7 +9144,7 @@
   });
   if (window.matchMedia) { try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { if (db.theme === "auto") applyTheme("auto"); }); } catch (e) {} }
 
-  var APP_VERSION = "v61.19-dev";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v61.20-dev";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
@@ -9866,6 +9972,7 @@
     if (customizing) return;
     customizing = true;
     document.querySelector(".wrap").classList.add("customizing");
+    document.body.classList.add("customizing-on");   // shows the pulsing frame + "EDITING HOME" pill
     $("customizeBar").hidden = false;
     widgetEls().forEach(function (s) { if (!s.classList.contains("w-disabled")) widgetControlsFor(s); }); // only widgets on the home
     refreshMoveButtons();
@@ -9877,6 +9984,7 @@
     customizing = false;
     Array.prototype.forEach.call(document.querySelectorAll(".w-controls"), function (c) { c.remove(); });
     document.querySelector(".wrap").classList.remove("customizing");
+    document.body.classList.remove("customizing-on");
     $("customizeBar").hidden = true;
     if (typeof paintHealth === "function" && ouraCache) paintHealth(ouraCache);   // hide the metric editor
     captureLayout();
