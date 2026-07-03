@@ -2218,7 +2218,7 @@
   /* right-side control */
   .cov-row-right { flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; gap: 3px; }
   /* MY tap-to-mark — the circle IS the button (fixes "tapping the circle does nothing") */
-  .cov-tap { width: 48px; height: 48px; border-radius: 50%; border: 2px solid var(--accent); background: var(--accent-soft); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.15s ease, background 0.2s ease; -webkit-tap-highlight-color: transparent; }
+  .cov-tap { width: 48px; height: 48px; border-radius: 50%; border: 2px solid var(--accent); background: var(--accent-soft); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.15s ease, background 0.2s ease, border-color 0.2s ease; -webkit-tap-highlight-color: transparent; position: relative; z-index: 1; will-change: transform, background; }
   .cov-tap svg { width: 22px; height: 22px; fill: none; stroke: var(--accent); stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; opacity: 0.85; }
   .cov-tap:active { transform: scale(0.9); }
   .cov-tap.done { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 16px -3px var(--accent); }
@@ -6425,7 +6425,10 @@
   }
 
   // ---- marking your own covenant ----
-  function setCheck(makeDone) {
+  // Mark today. CRITICAL: we update the exact circle you tapped IN PLACE and do NOT
+  // rebuild the whole board — a full re-render was what failed to show the gold fill
+  // on some devices. Directly toggling the tapped element's class can't be lost.
+  function setCheck(makeDone, btn) {
     var uid = myId(), day = todayLocal(), c = circleState.circle;
     (circleState.checks[uid] = circleState.checks[uid] || {})[day] = makeDone;
     db.covChecks = db.covChecks || {};
@@ -6433,8 +6436,27 @@
     save();
     if (sb) sb.from("covenant_checks").upsert({ circle_id: c.id, user_id: uid, day: day, done: makeDone, updated_at: new Date().toISOString() }, { onConflict: "circle_id,user_id,day" })
       .then(function (res) { if (res && res.error) console.error("check failed:", res.error); });
-    renderBoard();
+    // 1) the circle you tapped — fill/unfill it directly, right now
+    if (!btn) { var r = $("circleBody").querySelector(".cov-row.mine .cov-tap"); if (r) btn = r; }
+    var row = btn ? btn.closest(".cov-row") : $("circleBody").querySelector(".cov-row.mine");
+    if (btn) { btn.classList.toggle("done", makeDone); btn.setAttribute("data-act", makeDone ? "unmarkToday" : "markToday"); }
+    // 2) the week dots + progress for this row, in place
+    if (row) updateRowWeek(row, uid);
     if (makeDone) covCelebrate();
+  }
+  // repaint one row's week strip + progress from state (no innerHTML rebuild of the board)
+  function updateRowWeek(row, uid) {
+    var cov = circleState.covenants[uid]; if (!cov) return;
+    var freq = +cov.freq || 7, daily = freq >= 7, today = todayLocal(), days = weekDaysSat();
+    var baseline = cov.signed_day, jd = circleState.myJoinedDay; if (jd && jd > baseline) baseline = jd;
+    var minis = row.querySelectorAll(".cov-mini"), cnt = 0;
+    days.forEach(function (d, i) {
+      var did = !!(circleState.checks[uid] && circleState.checks[uid][d]);
+      if (did && d >= baseline) cnt++;
+      var cls = (d < baseline) ? "neutral" : did ? "done" : (d > today) ? "future" : (daily ? "missed" : "open");
+      if (minis[i]) minis[i].className = "cov-mini " + cls + (d === today ? " is-today" : "");
+    });
+    var prog = row.querySelector(".cov-week-prog"); if (prog && !daily) prog.textContent = cnt + "/" + freq;
   }
   function covCelebrate() {
     playEmber(); buzzPattern([0, 15, 55]);
@@ -6469,25 +6491,31 @@
     var r = circleState.received || [];
     if (!r.length) { refreshCircleBadge(); return; }
     var backs = r.filter(function (n) { return n.kind === "back"; });
-    var msg;
+    var fires = r.filter(function (n) { return n.kind === "fire"; });
+    var msg, icon;
     if (backs.length) {
       var who = nudgerName(backs[0].from_id);
+      icon = "🤝";
       msg = backs.length > 1 ? (who + " and " + (backs.length - 1) + " more have your back today.") : (who + " has your back today.");
+      if (fires.length) msg += " You were celebrated too. 🔥";
     } else {
-      msg = "Your brothers celebrated you today. 🔥";
+      icon = "🔥";
+      var fw = nudgerName(fires[0].from_id);
+      msg = fires.length > 1 ? (fw + " and " + (fires.length - 1) + " more celebrated you today.") : (fw + " celebrated you today.");
     }
-    showNudgeBanner(msg);
+    showNudgeBanner(msg, icon);
     var ids = r.map(function (n) { return n.id; });
-    sb.from("nudges").update({ seen: true }).in("id", ids).then(function () {});
+    if (sb) sb.from("nudges").update({ seen: true }).in("id", ids).then(function () {});
     circleState.received = []; refreshCircleBadge();
   }
   function nudgerName(uid) { var p = circleState.profiles[uid]; return (p && isRealName(p.display_name)) ? p.display_name.trim() : "A brother"; }
-  function showNudgeBanner(text) {
+  function showNudgeBanner(text, icon) {
     var old = $("nudgeBanner"); if (old) old.remove();
     var b = document.createElement("div"); b.className = "nudge-banner"; b.id = "nudgeBanner";
-    b.innerHTML = '<span class="nb-icon">🤝</span><span>' + escapeHtml(text) + '</span>';
+    b.innerHTML = '<span class="nb-icon">' + (icon || "🤝") + '</span><span>' + escapeHtml(text) + '</span>';
     document.body.appendChild(b);
-    setTimeout(function () { if (b.parentNode) { b.style.transition = "opacity .4s ease"; b.style.opacity = "0"; setTimeout(function () { b.remove(); }, 400); } }, 5200);
+    if (typeof playChime === "function") playChime();
+    setTimeout(function () { if (b.parentNode) { b.style.transition = "opacity .4s ease"; b.style.opacity = "0"; setTimeout(function () { b.remove(); }, 400); } }, 5600);
   }
   function refreshCircleBadge() { var el = $("navFellowshipBadge"); if (el) el.classList.toggle("on", (circleState.received || []).length > 0); }
   // warm the badge in the background on sign-in (does not switch views)
@@ -6585,8 +6613,8 @@
     if (act === "retryCircle") { circleState.error = false; openCircle(); }
     else if (act === "showCode") { var cta = $("chapelCta"), cd = $("chapelCode"); if (cta) cta.hidden = true; if (cd) { cd.hidden = false; var i = $("chapelCodeInput"); if (i) i.focus(); } }
     else if (act === "submitCode") { submitCode(); }
-    else if (act === "markToday") { confirmDialog("Mark today’s covenant as lived?", "Yes, lived it", function () { setCheck(true); }); }
-    else if (act === "unmarkToday") { confirmDialog("Unmark today?", "Unmark", function () { setCheck(false); }); }
+    else if (act === "markToday") { setCheck(true, el); }        // instant — tap fills the circle, tap again to undo
+    else if (act === "unmarkToday") { setCheck(false, el); }
     else if (act === "gotBack") { sendNudge(uid, "back"); showToastMsg("He’ll know you’re with him."); buzz(10); }
     else if (act === "fire") { sendNudge(uid, "fire"); buzz(10); }
     else if (act === "renewContinue") { var pc = circleState.covenants[myId()]; if (pc) { doSign(pc.body, "continue", pc.freq); } }
@@ -8580,7 +8608,7 @@
   });
   if (window.matchMedia) { try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { if (db.theme === "auto") applyTheme("auto"); }); } catch (e) {} }
 
-  var APP_VERSION = "v61.5-dev";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v61.6-dev";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
