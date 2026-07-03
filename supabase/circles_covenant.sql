@@ -12,6 +12,11 @@
 --   covenant_checks   one row per member per local day; un-mark flips done=false (never deleted)
 --   nudges            "got your back" / 🔥, one per (from,to,day,kind) — limit enforced in DB
 
+-- Don't validate function bodies at CREATE time: is_circle_member() references
+-- circle_members before that table is created below. (Postgres validates
+-- LANGUAGE sql bodies by default; the table exists by the time it's ever called.)
+set check_function_bodies = off;
+
 -- ---------- 0) membership helper (SECURITY DEFINER avoids RLS recursion) ----------
 create or replace function public.is_circle_member(p_circle uuid, p_user uuid)
 returns boolean language sql security definer stable set search_path = public as $$
@@ -201,6 +206,8 @@ drop policy if exists "prayers read"          on public.prayers;
 drop policy if exists "prayers read circle"   on public.prayers;
 create policy "prayers read circle" on public.prayers for select to authenticated
   using (circle_id is not null and public.is_circle_member(circle_id, auth.uid()));
+
+reset check_function_bodies;
 
 -- Done. Your invite link: https://itsleovalentino.github.io/the-integrated-man/?join=CORD3
 -- (the /dev/ copy uses the same backend: .../the-integrated-man/dev/?join=CORD3)
