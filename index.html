@@ -1456,6 +1456,30 @@
   }
   .save-mini-confirm.show { opacity: 1; }
 
+  /* ---- full-screen focus writing (reflection / end-of-day) ---- */
+  .panel.jp-focus {
+    position: fixed; inset: 0; z-index: 240;
+    border-radius: 0; border: none; box-shadow: none;
+    background: var(--bg);
+    padding: calc(env(safe-area-inset-top, 0px) + 22px) 20px calc(env(safe-area-inset-bottom, 0px) + 16px);
+    display: flex; flex-direction: column;
+    animation: jpFocusIn 0.26s cubic-bezier(.2,.7,.2,1);
+    overscroll-behavior: contain;
+  }
+  @keyframes jpFocusIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+  .panel.jp-focus .jp-edit { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+  .panel.jp-focus .prompt-collapse { display: inline-flex !important; }
+  .panel.jp-focus .journal-answer {
+    flex: 1 1 auto; min-height: 0; height: auto !important;
+    margin-top: 20px; resize: none; overflow-y: auto;
+    font-size: 17px; line-height: 1.62;
+    border: none; background: transparent; padding-left: 0; padding-right: 0;
+  }
+  .panel.jp-focus .voice-bar { flex-shrink: 0; }
+  .panel.jp-focus .save-mini { width: 100%; text-align: center; padding: 15px; font-size: 13px; margin-top: 14px; }
+  body.jp-focus-open { overflow: hidden; }
+  @media (prefers-reduced-motion: reduce) { .panel.jp-focus { animation: none; } }
+
   /* ---- save entry ---- */
   .save-entry {
     width: 100%;
@@ -2970,7 +2994,7 @@
             </button>
           </div>
           <div class="voice-memo" id="memo-journal"></div>
-          <button class="save-mini" id="journalSave" data-tone="tick">Save reflection</button>
+          <button class="save-mini" id="journalSave" data-tone="tick">Done</button>
           <div class="save-mini-confirm" id="journalSaveMsg"></div>
         </div>
       </div>
@@ -3036,7 +3060,7 @@
             </button>
           </div>
           <div class="voice-memo" id="memo-evening"></div>
-          <button class="save-mini" id="eveningSave" data-tone="chime">Save to journal</button>
+          <button class="save-mini" id="eveningSave" data-tone="chime">Done</button>
           <div class="save-mini-confirm" id="eveningSaveMsg"></div>
         </div>
       </div>
@@ -5594,6 +5618,8 @@
   });
   document.addEventListener("keydown", function (e) {
     if (e.key !== "Escape") return;
+    var fp = document.querySelector(".panel.jp-focus");
+    if (fp) { var fc = JCARDS[fp.id === "eveningPanel" ? "evening" : "journal"]; if (fc) { jcardExitFocus(fc); return; } }
     if (!$("bibleView").hidden) $("bibleView").hidden = true;
     if (!$("anchorsView").hidden) $("anchorsView").hidden = true;
   });
@@ -5648,6 +5674,27 @@
     jcardSyncCollapseBtn(c);
     var t = $(c.textId); t.focus(); try { t.setSelectionRange(t.value.length, t.value.length); } catch (e) {} grow(t);
   }
+  // ----- full-screen focus writing (tap to expand, "Done" to finish) -----
+  function jcardInFocus(c) { return $(c.panelId).classList.contains("jp-focus"); }
+  function jcardEnterFocus(c) {
+    var p = $(c.panelId);
+    if (p.classList.contains("jp-focus")) return;
+    jcardCollapse(c, false);                    // ensure the editor (not the collapsed summary) is showing
+    p.classList.add("jp-focus");
+    document.body.classList.add("jp-focus-open");
+    buzz(6);
+    var t = $(c.textId);
+    requestAnimationFrame(function () { try { t.focus(); t.setSelectionRange(t.value.length, t.value.length); } catch (e) {} });
+  }
+  function jcardExitFocus(c) {
+    var p = $(c.panelId);
+    if (!p.classList.contains("jp-focus")) return;
+    p.classList.remove("jp-focus");
+    if (!document.querySelector(".panel.jp-focus")) document.body.classList.remove("jp-focus-open");
+    try { $(c.textId).blur(); } catch (e) {}
+    grow($(c.textId));                          // restore the compact auto-height on the home card
+    save();
+  }
   function jcardAnother(c) {
     jcardSwitch(c); // move to a fresh prompt
     var t = $(c.textId);
@@ -5658,7 +5705,8 @@
   Object.keys(JCARDS).forEach(function (k) {
     var c = JCARDS[k];
     $(c.switchId).addEventListener("click", function () { jcardSwitch(c); });
-    $(c.collapseId).addEventListener("click", function () { jcardCollapse(c, true); buzz(8); });
+    $(c.collapseId).addEventListener("click", function () { if (jcardInFocus(c)) { jcardExitFocus(c); buzz(8); } else { jcardCollapse(c, true); buzz(8); } });
+    $(c.textId).addEventListener("focus", function () { jcardEnterFocus(c); }); // tap to expand into full-screen writing
     $(c.textId).addEventListener("input", function () { jcardSyncCollapseBtn(c); });
     $(c.collapsedId).addEventListener("click", function (e) { if (!e.target.closest("#" + c.anotherId)) jcardReopen(c); });
     $(c.anotherId).addEventListener("click", function (e) { e.stopPropagation(); jcardAnother(c); });
@@ -5670,6 +5718,7 @@
       celebrate(this);
       (this.getAttribute("data-tone") === "chime") ? playChime() : playTick();
       buzz(14);
+      if (card && jcardInFocus(card)) jcardExitFocus(card);   // "Done" closes the full-screen writer
       var m = $(msgId);
       m.textContent = "Saved to your journal.";
       m.classList.add("show");
@@ -8695,7 +8744,7 @@
   });
   if (window.matchMedia) { try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { if (db.theme === "auto") applyTheme("auto"); }); } catch (e) {} }
 
-  var APP_VERSION = "v61.16-dev";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v61.17-dev";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
