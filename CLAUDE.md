@@ -145,3 +145,25 @@ There is no hard delete of user content anywhere, and it must stay that way:
    their unique `id` (`newId()`), only.
 3. **Never ask for git tokens** — gh CLI / keychain handles auth.
 4. Keep `APP_VERSION` and the sw.js `CACHE` version in lockstep on every deploy.
+
+## Fellowship = circles + weekly covenant board (as of v61.10-dev, on `dev`)
+
+Replaced the old prayer feed. Section in index.html: "Fellowship: circles + covenant board".
+- **Backend SQL (run in Supabase, in order):** `circles_covenant.sql`, `circles_covenant_freq.sql`,
+  `join_circle_fix.sql`, `profiles_avatar_fix.sql`. Tables: circles / circle_members / covenants
+  (append-only) / covenant_checks / nudges. RPCs: join_circle, circle_preview, regenerate_code.
+  Invite code seeded **CORD3** ("The Circle", Leo = leader).
+- **Board = glassy compact rows** (`.cov-row`), holds 9+. Each: avatar · name · vow · cadence ·
+  7-dot mini-week · a right control (your action toward that man): tap-to-mark (you), 🔥 (him done),
+  🤝 got-your-back (him not yet). Chapel door (no circle) = 3 photo circles + verse + code field.
+- **Marking (do NOT change the mechanism):** the today circle IS the button. `setCheck()` fills the
+  tapped element with **inline styles via `paintTap()`** and updates that row in place — it must
+  NOT call `renderBoard()` (a full re-render was failing to paint gold on-device). `reassertMyMark()`
+  re-paints from state on delays to beat the post-signing loadCircle race.
+- **Names/photos come from the `profiles` table** (`select("*")`, resilient to missing columns).
+  Never let a real member render as "A brother" — if they do, a profiles read/column/RLS issue is
+  back (see `profiles_avatar_fix.sql`). Leo is adamant: no anonymous fallback for real users.
+- **Invite:** code persisted in localStorage (`tim_join_code`), `maybeAutoJoin()` joins with no
+  confirm after signup/onboarding. Leo hands out the CODE, not links.
+- **Out of scope** (don't build unbidden): feed UI, circle create/switch UI, friends/following,
+  leaderboards/ranking, anonymous check-ins, prayer features, push notifications.
