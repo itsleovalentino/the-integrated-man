@@ -29,11 +29,24 @@ Voice: dictation + memos → Thought capture → Journal (Day One–style drawer
 Full journal page → daily render → Morning threshold → accounts + cloud sync (Supabase) →
 customize mode (home widgets) → init + auto-renew.
 
+## Dev / production split (as of July 2 2026)
+
+Two branches, one GitHub Pages site (`.github/workflows/pages.yml` assembles both):
+- **`main` → production root** (`…/the-integrated-man/`). NEVER commit features here directly.
+- **`dev` → `…/the-integrated-man/dev/`** — the workshop. ALL work happens on `dev`.
+- **Ship to production ONLY when Leo explicitly says "ship to production"** → then merge `dev`→`main`
+  and push; the workflow redeploys both. Pushing `dev` deploys only `/dev/`; production is untouched.
+- The `/dev/` copy is guarded at runtime by `window.TIM_DEV` (`/\/dev\//` in the path): its own
+  localStorage drawer (`leo_daily_v1_dev`), **journal cloud-sync OFF** (a dev bug can't touch the real
+  journal blob), **no service worker**, and a PREVIEW ribbon. It DOES use the real Supabase backend
+  (so circles/covenants are testable live).
+- Pages is `build_type=workflow`; the `github-pages` environment allows deploys from `main` AND `dev`.
+
 ## Run / deploy
 
 - **Run locally:** `.claude/launch.json` serves the folder on :8765 (preview tools), or open `index.html`.
 - **Deploy:** bump `APP_VERSION` in index.html **and** `CACHE` in sw.js (keep them in lockstep, e.g.
-  `v55`/`tim-v55`), commit, `git push origin main`. GitHub Pages auto-deploys from `main`.
+  `v55`/`tim-v55`), commit to the working branch. `dev` push → `/dev/` only; `main` push → production.
 - **A push is NOT a deploy.** Always verify:
   `curl -s https://itsleovalentino.github.io/the-integrated-man/ | grep APP_VERSION` and `gh run list`.
   Pages deploys can time out GitHub-side (check githubstatus.com for Pages incidents) — re-trigger
