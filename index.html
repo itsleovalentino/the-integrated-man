@@ -1470,7 +1470,9 @@
   .day-oura-steps { text-align: center; font-size: 13px; color: var(--ink-soft); margin-top: 12px; }
   .day-steps { margin-top: 16px; }
   .day-steps-pct { font-size: 12px; color: var(--ink-faint); letter-spacing: 0.02em; }
+  .day-subhead { font-size: 10.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 5px; }
   .day-list-line { display: flex; gap: 9px; padding: 5px 0; font-size: 14.5px; line-height: 1.5; color: var(--ink); }
+  .day-list-line b { color: var(--ink); font-weight: 500; }
   .day-list-line.answered { color: var(--ink-soft); }
   .day-list-line .dll-mk { flex: 0 0 auto; color: var(--accent); }
   .day-list-line .dll-tag { color: var(--accent); font-size: 12px; letter-spacing: 0.02em; }
@@ -2634,6 +2636,7 @@
     overflow-y: auto;
   }
   .modal-overlay[hidden] { display: none; }
+  #confirmModal { z-index: 310; }   /* confirm must sit ABOVE every overlay it can be triggered from (Days z-72, popups, etc.) */
   /* the verse-note editor opens from within the Bible page (z 70) — keep it on top */
   #verseNoteModal { z-index: 110; }
   .modal {
@@ -4264,7 +4267,20 @@
     "What would you do differently today if you knew God had already gone before you?",
     "Who in your life only sees the polished version of you — and what would it cost to be known?",
     "What is the next right step of obedience, even if you can't see the whole staircase?",
-    "Where is God growing you through something you would never have chosen?"
+    "Where is God growing you through something you would never have chosen?",
+    "If today were a chapter in your story, what would you title it?",
+    "What's one small win today that deserves a quiet celebration?",
+    "What would the boldest version of you do this week that you keep putting off?",
+    "What are you better at than you give yourself credit for?",
+    "If tomorrow were completely free, what would you actually do — and what does that tell you?",
+    "What are you curious about right now that's worth chasing?",
+    "When did you last laugh hard — and what would more of that look like?",
+    "If you got 10% better at one skill this month, which one would change the most?",
+    "Who could you encourage today with a single text, and what would you say?",
+    "What would make tomorrow a small adventure instead of just a to-do list?",
+    "If your 80-year-old self could whisper one thing to you today, what would it be?",
+    "What's something you've been meaning to try? What's the smallest first step?",
+    "Where did you feel most alive lately, and how do you get more of it?"
   ];
 
   // Evening reflection prompts — review the day, grow, prepare for tomorrow.
@@ -5983,12 +5999,37 @@
     var c = rwCard;
     db[c.data][todayKey] = $("rwBody").value;     // final write-through (input already persisted along the way)
     save();
+    syncReflectionNote(c);                         // mirror the reflection into Notes as its own note
     $("reflectWriter").hidden = true;
     document.body.classList.remove("rw-open");
     jcardLoad(c);                                  // sync + collapse the compact home card to its saved state
     if (typeof journalVisible === "function" && journalVisible()) renderJournal();
     if (committed) { playTick(); buzz(12); } else { buzz(6); }
     rwCard = null;
+  }
+  // ----- a reflection lives in Notes as its own note (linked back to its day via refDay/refCard) -----
+  function reflectionNote(cardData, day) {
+    var arr = db.thoughts || [];
+    for (var i = 0; i < arr.length; i++) { var t = arr[i]; if (t.refCard === cardData && t.refDay === day && !t._deletedAt) return t; }
+    return null;
+  }
+  function syncReflectionNote(c) {
+    var answer = (db[c.data][todayKey] || "").trim();
+    var prompt = c.prompts[jcardIdx(c)];
+    var note = reflectionNote(c.data, todayKey);
+    if (!answer) return;                            // nothing written → don't create an empty note
+    var combined = prompt + "\n" + answer;          // title line = the prompt, body = the answer
+    if (note) {
+      note.text = combined; note.title = prompt; note.edited = new Date().toISOString();
+      save(); if (typeof syncEntry === "function") syncEntry(note);
+    } else {
+      addThought({ text: combined, title: prompt, refDay: todayKey, refCard: c.data });
+    }
+  }
+  function openReflectionNote(note) {
+    if (typeof commitWriter === "function") commitWriter();   // save any note already open first
+    journalTab = "notes"; setView("journal"); if (typeof renderJournalTab === "function") renderJournalTab();
+    openWriterEdit(note);
   }
   function jcardAnother(c) {
     jcardSwitch(c); // move to a fresh prompt
@@ -6004,7 +6045,12 @@
     // tapping the compact field opens the full-screen writer; focus transfers so the keyboard stays up
     $(c.textId).addEventListener("focus", function () { openReflectWriter(c); });
     $(c.textId).addEventListener("input", function () { jcardSyncCollapseBtn(c); });
-    $(c.collapsedId).addEventListener("click", function (e) { if (!e.target.closest("#" + c.anotherId)) jcardReopen(c); });
+    $(c.collapsedId).addEventListener("click", function (e) {
+      if (e.target.closest("#" + c.anotherId)) return;
+      var note = reflectionNote(c.data, todayKey);      // a completed reflection lives in Notes → open it there
+      if (note) { openReflectionNote(note); return; }
+      jcardReopen(c);                                    // (fallback, e.g. legacy day with no linked note)
+    });
     $(c.anotherId).addEventListener("click", function (e) { e.stopPropagation(); jcardAnother(c); });
   });
 
@@ -7678,6 +7724,7 @@
   function writerToNotes() {
     var tools = $("writerTools"); if (tools) tools.style.transform = "";
     stopWriterRec();
+    commitWriter();   // commit the open note before leaving (never lose the last edit; also syncs a reflection back)
     if (journalWide() && currentView === "journal" && journalTab === "notes") {
       renderJournalPage();   // two-pane: keep the editor docked, just refresh the list on the left
       return;
@@ -7701,6 +7748,13 @@
           arr[i].text = combined; arr[i].title = title || null;
           arr[i].html = hasRich ? bodyHtml : null; arr[i].voice = writerVoice;
           arr[i].edited = new Date().toISOString();
+          // if this note is a linked reflection, mirror the edit back to db.journal/db.evening
+          // so the home card + Days view stay in sync (body = everything after the prompt/title line)
+          if (arr[i].refCard && arr[i].refDay && db[arr[i].refCard]) {
+            var rb = arr[i].text || "", nl = rb.indexOf("\n");
+            db[arr[i].refCard][arr[i].refDay] = (nl >= 0 ? rb.slice(nl + 1) : rb).trim();
+            if (arr[i].refDay === todayKey && typeof JCARDS !== "undefined" && JCARDS[arr[i].refCard]) { try { jcardLoad(JCARDS[arr[i].refCard]); } catch (e) {} }
+          }
           syncEntry(arr[i]); break;
         }
       }
@@ -8049,11 +8103,13 @@
       id: newId("t"), text: (o.text || "").trim(), voice: o.voice || null,
       title: o.title || null, html: o.html || null,
       mood: (typeof o.mood === "number") ? o.mood : null, star: false,
-      ts: new Date().toISOString(), dateKey: todayKey
+      refDay: o.refDay || null, refCard: o.refCard || null,   // links a reflection note back to its day/card
+      ts: new Date().toISOString(), dateKey: o.dateKey || todayKey
     };
     db.thoughts.push(t);
     save();
     syncEntry(t);   // the entry gets its own cloud row the moment it exists
+    return t;
   }
   // (thought-capture sheet removed — the quick-note + 1–10 mood feature was retired)
 
@@ -9038,26 +9094,23 @@
         (rings ? '<div class="day-oura-rings">' + rings + '</div>' : '') + dayStepsHtml(steps));
     }
 
-    // The Seven Pillars — looking back you can rate/fix a day, or mark it "not tracked"
+    // The Seven Pillars — READ-ONLY lookback. Past scores can't be changed; the only correction
+    // allowed is marking a whole day "not tracked" (in case it was logged by mistake).
     if (db.pillarSkip[k]) {
       body += dayCard("The Seven Pillars",
         '<div class="day-reflect-a" style="color:var(--ink-faint)">Not tracked — a resting day.</div>' +
         '<div class="day-pillar-actions"><button class="pillar-foot-link" data-daytrack data-day="' + k + '">Track this day</button></div>');
-    } else {
-      var rt = db.ratings[k] || {}, integ = entryIntegration(k), ph = "", anyRated = false;
+    } else if (db.ratings[k]) {
+      var rt = db.ratings[k], integ = entryIntegration(k), ph = "";
       if (integ) ph += '<div class="day-integ"><b class="day-integ-val">' + integ + '</b><span>Integration / 10</span></div>';
       pillars.forEach(function (pl) {
-        var v = rt[pl.key], rated = !!(v && v.rated !== false && isNum(v.score)), sc = rated ? v.score : 5;
-        if (rated) anyRated = true;
-        // rated rows always show; unrated rows appear only in Edit mode (so you can rate them too)
-        ph += '<div class="day-pillar' + (rated ? '' : ' day-pillar-unrated') + '"><span class="day-pillar-dot" style="background:' + pl.color + ';color:' + pl.color + '"></span>' +
-          '<span class="day-pillar-name">' + pl.name + '</span><span class="day-pillar-score" id="dscore-' + pl.key + '">' + (rated ? (v.score + '/10') : '—') + '</span></div>' +
-          '<input type="range" class="day-pillar-edit" min="0" max="10" step="1" value="' + sc + '" data-editkey="' + pl.key + '" data-editday="' + k + '" aria-label="Rate ' + escapeHtml(pl.name) + '">';
-        if (rated && v.why && v.why.trim()) ph += '<div class="day-pillar-why">' + escapeHtml(v.why) + '</div>';
+        var v = rt[pl.key]; if (!v || v.rated === false || !isNum(v.score)) return;
+        ph += '<div class="day-pillar"><span class="day-pillar-dot" style="background:' + pl.color + ';color:' + pl.color + '"></span>' +
+          '<span class="day-pillar-name">' + pl.name + '</span><span class="day-pillar-score">' + v.score + '/10</span></div>';
+        if (v.why && v.why.trim()) ph += '<div class="day-pillar-why">' + escapeHtml(v.why) + '</div>';
       });
-      if (!anyRated) ph = '<div class="day-reflect-a day-pillar-empty" style="color:var(--ink-faint)">Not rated this day — tap Edit to rate it.</div>' + ph;
-      ph += '<div class="day-pillar-actions"><button class="pillar-foot-link danger" data-daynottracked data-day="' + k + '">Mark not tracked</button></div>';
-      body += dayCard("The Seven Pillars", ph, '<button class="day-edit-toggle" data-editpillars>Edit</button>');
+      if (ph) ph += '<div class="day-pillar-actions"><button class="pillar-foot-link danger" data-daynottracked data-day="' + k + '">Mark not tracked</button></div>';
+      if (ph) body += dayCard("The Seven Pillars", ph);
     }
 
     // Habits — only those scheduled that day and already created by then
@@ -9101,13 +9154,19 @@
       }
     }
 
-    // Prayers lifted that day
+    // Prayers lifted that day — for others (with the person's name) kept separate from your own
     var pr = (db.prayers || []).filter(function (x) { return x.created === k; });
     if (pr.length) {
-      var prh = pr.map(function (x) {
+      var prLine = function (x, showWho) {
+        var who = (showWho && x.who && x.who.trim()) ? '<b>' + escapeHtml(x.who.trim()) + '</b> — ' : '';
         return '<div class="day-list-line' + (x.answered ? ' answered' : '') + '"><span class="dll-mk">' + (x.answered ? '✓' : '•') + '</span>' +
-          '<span style="flex:1">' + escapeHtml(x.text || x.who || "") + '</span>' + (x.answered ? '<span class="dll-tag">answered</span>' : '') + '</div>';
-      }).join("");
+          '<span style="flex:1">' + who + escapeHtml(x.text || "") + '</span>' + (x.answered ? '<span class="dll-tag">answered</span>' : '') + '</div>';
+      };
+      var forOthers = pr.filter(function (x) { return x.scope === "others"; });
+      var forMe = pr.filter(function (x) { return x.scope !== "others"; });
+      var prh = "";
+      if (forOthers.length) prh += '<div class="day-subhead">For others</div>' + forOthers.map(function (x) { return prLine(x, true); }).join("");
+      if (forMe.length) prh += '<div class="day-subhead"' + (forOthers.length ? ' style="margin-top:13px"' : '') + '>For me</div>' + forMe.map(function (x) { return prLine(x, false); }).join("");
       body += dayCard("Prayers", prh);
     }
 
@@ -9129,8 +9188,9 @@
     });
     if (vh) body += dayCard("Voice", vh);
 
-    // Notes written that day (preview → tap opens in Notes; no duplicate storage)
-    var notes = (db.thoughts || []).filter(function (t) { return t.dateKey === k && ((t.text && t.text.trim()) || t.voice); });
+    // Notes written that day (preview → tap opens in Notes; no duplicate storage).
+    // Exclude reflection-linked notes — they already show in the Reflections card above.
+    var notes = (db.thoughts || []).filter(function (t) { return t.dateKey === k && !t.refCard && ((t.text && t.text.trim()) || t.voice); });
     if (notes.length) {
       var nh = notes.map(function (t) {
         var lines = (t.text || "").split("\n"), title = (t.title && t.title.trim()) || (lines[0] || "").trim() || "Untitled note";
@@ -9165,14 +9225,6 @@
   $("daysPrev").addEventListener("click", function () { var i = daysList.indexOf(daysKey); if (i > -1 && i < daysList.length - 1) { daysGo(daysList[i + 1]); playPage(); buzz(6); } });
   $("daysNext").addEventListener("click", function () { var i = daysList.indexOf(daysKey); if (i > 0) { daysGo(daysList[i - 1]); playPage(); buzz(6); } });
   $("daysBody").addEventListener("click", function (e) {
-    var edit = e.target.closest("[data-editpillars]");
-    if (edit) {                                   // toggle inline pillar-editing for this day
-      var card = edit.closest(".day-card");
-      var on = card.classList.toggle("editing");
-      edit.textContent = on ? "Done" : "Edit";
-      buzz(6);
-      return;
-    }
     var ntk = e.target.closest("[data-daynottracked]");
     if (ntk) {                                    // mark this whole day "not tracked" (with a confirm)
       var d1 = ntk.getAttribute("data-day");
@@ -9201,20 +9253,7 @@
     journalTab = "notes"; setView("journal"); renderJournalTab();
     openWriterEdit(nt);            // opens the same note in Notes — no duplicate storage
   });
-  // adjust a past day's pillar score (correct a mistake) — writes back to db.ratings[day], live
-  $("daysBody").addEventListener("input", function (e) {
-    var sl = e.target.closest(".day-pillar-edit"); if (!sl) return;
-    var key = sl.getAttribute("data-editkey"), day = sl.getAttribute("data-editday"), val = Number(sl.value);
-    if (!db.ratings[day]) db.ratings[day] = {};
-    var r = db.ratings[day][key] || (db.ratings[day][key] = { score: val, why: "", deep: false, facets: null });
-    r.score = val; r.rated = true; r.deep = false; r.facets = null;   // rating (or correcting) a day is a simple score
-    save();
-    var sc = $("dscore-" + key); if (sc) sc.textContent = val + "/10";
-    var row = sl.previousElementSibling; if (row && row.classList) row.classList.remove("day-pillar-unrated");  // now rated → keep it visible
-    var empty = document.querySelector("#daysBody .day-pillar-empty"); if (empty) empty.remove();
-    var iv = document.querySelector("#daysBody .day-integ-val");
-    if (iv) { var ni = entryIntegration(day); iv.textContent = ni != null ? ni : "—"; }
-  });
+  // (Days pillars are read-only now — the only edit is "mark not tracked" above.)
   // swipe between days (left → older, right → newer)
   (function () {
     var x0 = null, y0 = null;
@@ -9350,7 +9389,7 @@
   });
   if (window.matchMedia) { try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { if (db.theme === "auto") applyTheme("auto"); }); } catch (e) {} }
 
-  var APP_VERSION = "v61.31-dev";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v61.32-dev";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
