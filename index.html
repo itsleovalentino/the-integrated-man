@@ -8691,7 +8691,7 @@
   });
   if (window.matchMedia) { try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { if (db.theme === "auto") applyTheme("auto"); }); } catch (e) {} }
 
-  var APP_VERSION = "v61.14-dev";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v61.15-dev";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
@@ -8703,7 +8703,8 @@
     { key: "nt",       name: "New Testament",   desc: "Matthew → Revelation" },
     { key: "ot",       name: "Old Testament",   desc: "Genesis → Malachi" },
     { key: "bible",    name: "The whole Bible",  desc: "Genesis → Revelation" },
-    { key: "custom",   name: "Build your own",  desc: "Any book, your pace" }
+    { key: "custom",   name: "Build your own",  desc: "Any book, your pace" },
+    { key: "none",     name: "No reading",      desc: "Skip the daily reading plan" }
   ];
   // a reusable multi-select plan picker bound to the ob… / set… element ids
   function makePicker(prefix) {
@@ -8714,6 +8715,7 @@
     function customPlan() { for (var i = 0; i < st.plans.length; i++) if (st.plans[i].key === "custom") return st.plans[i]; return null; }
     function hasKey(k) { return st.plans.some(function (p) { return p.key === k; }); }
     function togglePlan(key) {
+      if (key === "none") { st.plans = []; render(); return; }   // "No reading" = no plans at all
       var idx = -1;
       for (var i = 0; i < st.plans.length; i++) if (st.plans[i].key === key) { idx = i; break; }
       if (idx >= 0) st.plans.splice(idx, 1);
@@ -8737,7 +8739,8 @@
       PLAN_OPTIONS.forEach(function (o) {
         var b = document.createElement("button");
         b.type = "button";
-        b.className = "ob-plan" + (o.key === "custom" ? " ob-plan-custom" : "") + (hasKey(o.key) ? " sel" : "");
+        var isSel = (o.key === "none") ? (st.plans.length === 0) : hasKey(o.key);
+        b.className = "ob-plan" + (o.key === "custom" ? " ob-plan-custom" : "") + (isSel ? " sel" : "");
         b.innerHTML = '<div class="op-name">' + o.name + '</div><div class="op-desc">' + o.desc + '</div>';
         b.addEventListener("click", function () { togglePlan(o.key); });
         plansEl.appendChild(b);
@@ -8763,7 +8766,7 @@
       load: function () {
         ensurePlans();
         var src = (db.profile && db.profile.plans) || [];
-        st.plans = src.length ? JSON.parse(JSON.stringify(src)) : [{ key: "proverbs", seqIndex: 0 }];
+        st.plans = JSON.parse(JSON.stringify(src));   // empty stays empty = "No reading" (no misleading Proverbs pre-select)
         render();
       },
       state: st
@@ -8882,8 +8885,16 @@
     }, 90);
   }
   $("setReadingToggle").addEventListener("click", function () {
-    var w = $("setReadingWrap"); w.hidden = !w.hidden;
+    var w = $("setReadingWrap"), opening = w.hidden;
+    w.hidden = !w.hidden;
     this.querySelector(".srt-action").textContent = w.hidden ? "Change" : "Done";
+    if (!opening) {   // closing = "Done" → commit the reading choice right now (no need to hunt for Save)
+      db.profile = db.profile || {};
+      db.profile.plans = JSON.parse(JSON.stringify(setPicker.state.plans));
+      save();
+      $("setReadingSummary").textContent = plansSummary();
+      if (typeof dailyRefresh === "function") dailyRefresh();
+    }
   });
   $("settingsBtn").addEventListener("click", openSettings);
   $("settingsClose").addEventListener("click", function () { $("settings").hidden = true; });
