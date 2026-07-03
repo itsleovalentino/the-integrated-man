@@ -2148,6 +2148,12 @@
   .cov-cer-field { margin-top: 34px; width: 100%; }
   .cov-cer-input { width: 100%; text-align: center; font-family: inherit; font-size: 17.5px; line-height: 1.5; color: var(--ink-high); background: transparent; border: none; border-bottom: 1px solid var(--gold-line); padding: 14px 6px; resize: none; overflow: hidden; }
   .cov-cer-input::placeholder { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .cov-cadence { margin-top: 28px; width: 100%; }
+  .cov-cadence-label { font-family: "Spline Sans Mono", ui-monospace, monospace; font-size: 10.5px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 13px; }
+  .cov-cadence-chips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+  .cad-chip { padding: 9px 15px; border-radius: 999px; border: 1px solid var(--field-edge); background: var(--field); color: var(--ink-soft); font-family: inherit; font-size: 14px; cursor: pointer; transition: all 0.2s ease; }
+  .cad-chip.on { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+  .cov-cadence-hint { margin-top: 13px; font-size: 12.5px; color: var(--ink-faint); font-style: italic; }
   .cov-cer-input:focus { outline: none; border-bottom-color: var(--accent); }
   .cov-cer-input::placeholder { color: var(--ink-faint); font-style: italic; }
   .cov-cer-hint { margin-top: 12px; font-size: 12.5px; color: var(--ink-faint); }
@@ -2189,7 +2195,11 @@
   .cov-card-name .you-tag { font-size: 10px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); background: var(--accent-soft); padding: 2px 7px; border-radius: 999px; }
   .cov-card-action { font-size: 15px; line-height: 1.4; color: var(--ink-high); font-style: italic; margin-top: 3px; word-wrap: break-word; }
   .cov-card-preparing { font-size: 14px; color: var(--ink-faint); font-style: italic; margin-top: 3px; }
-  /* the today control / state */
+  .cov-card-cadence { font-size: 11.5px; letter-spacing: 0.02em; color: var(--ink-faint); margin-top: 5px; text-transform: uppercase; }
+  /* the today control / state — a clearly labelled tap target so it's never confused with the week dots */
+  .cov-today-wrap { flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .cov-today-cap { font-family: "Spline Sans Mono", ui-monospace, monospace; font-size: 8.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); }
+  .cov-today-btn.done + .cov-today-cap, .cov-today-wrap .cov-today-btn.done ~ .cov-today-cap { color: var(--accent); }
   .cov-today-btn { flex: 0 0 auto; width: 46px; height: 46px; border-radius: 50%; border: 1.5px solid var(--field-edge); background: var(--field); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; transition: all 0.25s ease; }
   .cov-today-btn svg { width: 22px; height: 22px; fill: none; stroke: var(--ink-faint); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
   .cov-today-btn.done { background: var(--accent); border-color: var(--accent); }
@@ -3501,8 +3511,7 @@
 
   <!-- Fellowship (prayer wall) destination -->
   <div class="appview" id="fellowshipView" hidden>
-    <div class="fellow-chrome">
-      <div class="fellow-title serif">Fellowship</div>
+    <div class="fellow-chrome" style="justify-content:flex-end;">
       <button class="profile-btn" id="profileBtn" aria-label="Your profile"></button>
     </div>
     <div class="fellow-body" id="circleBody"></div>
@@ -3517,7 +3526,20 @@
         <div class="cov-cer-lead serif">What is your<br>becoming action?</div>
         <div class="cov-cer-sub">One action. Small enough for today, true enough to build a man.</div>
         <div class="cov-cer-field">
-          <textarea class="cov-cer-input serif" id="cerInput" rows="1" maxlength="90" placeholder="In the Word before my phone, daily" autocapitalize="sentences"></textarea>
+          <textarea class="cov-cer-input serif" id="cerInput" rows="1" maxlength="90" placeholder="In the Word before my phone" autocapitalize="sentences"></textarea>
+        </div>
+        <div class="cov-cadence" id="cerCadence">
+          <div class="cov-cadence-label">How often?</div>
+          <div class="cov-cadence-chips" id="cerCadenceChips">
+            <button type="button" class="cad-chip on" data-freq="7">Daily</button>
+            <button type="button" class="cad-chip" data-freq="6">6×</button>
+            <button type="button" class="cad-chip" data-freq="5">5×</button>
+            <button type="button" class="cad-chip" data-freq="4">4×</button>
+            <button type="button" class="cad-chip" data-freq="3">3×</button>
+            <button type="button" class="cad-chip" data-freq="2">2×</button>
+            <button type="button" class="cad-chip" data-freq="1">1×</button>
+          </div>
+          <div class="cov-cadence-hint" id="cerCadenceHint">Every day this week</div>
         </div>
         <button class="cov-cer-next" id="cerNext" disabled>Continue</button>
       </div>
@@ -6250,6 +6272,9 @@
         var profs = {}; (res[2].data || []).forEach(function (p) { profs[p.id] = p; });
         var cov = {}; (res[3].data || []).forEach(function (c) { cov[c.user_id] = c; });   // asc order → latest wins
         var checks = {}; (res[4].data || []).forEach(function (c) { (checks[c.user_id] = checks[c.user_id] || {})[c.day] = c.done; });
+        // my own marks win: a just-made tap (mirrored in db.covChecks) can't be un-filled
+        // by a cloud read that hasn't caught up yet
+        if (db.covChecks) { checks[uid] = checks[uid] || {}; for (var _d in db.covChecks) { var _c = db.covChecks[_d]; if (_c && _c.circleId === cid) checks[uid][_d] = _c.done; } }
         var sentBack = {}, fireCounts = {}, received = [];
         (res[5].data || []).forEach(function (n) {
           if (n.from_id === uid && n.day === today) sentBack[n.to_id + ":" + n.kind] = true;
@@ -6320,16 +6345,18 @@
     var url = prof.avatar_url || (mine && db.profile && db.profile.avatarUrl) || null;
     var cov = circleState.covenants[m.user_id];
     var head = '<div class="cov-card-top">' + pwAvatar(name, url, "lg") +
-      '<div class="cov-card-who"><div class="cov-card-name">' + escapeHtml(name) + (mine ? '<span class="you-tag">You</span>' : "") + '</div>';
+      '<div class="cov-card-who"><div class="cov-card-name">' + escapeHtml(name) + '</div>';
     if (!cov) {
       head += '<div class="cov-card-preparing">preparing his covenant…</div></div></div>';
       return '<div class="cov-card' + (mine ? " mine" : "") + '">' + head + '</div>';
     }
-    head += '<div class="cov-card-action">“' + escapeHtml(cov.body) + '”</div></div>';
+    var freq = +cov.freq || 7, daily = freq >= 7;
+    head += '<div class="cov-card-action">“' + escapeHtml(cov.body) + '”</div>' +
+      '<div class="cov-card-cadence">' + covCadenceLabel(freq) + '</div></div>';
     var renewing = cov.signed_day < weekKey;
     var doneToday = !!(circleState.checks[m.user_id] && circleState.checks[m.user_id][today]);
     if (mine && !renewing) {
-      head += '<button class="cov-today-btn' + (doneToday ? " done" : "") + '" data-act="' + (doneToday ? "unmarkToday" : "markToday") + '" aria-label="Mark today"><svg viewBox="0 0 24 24"><polyline points="5 12 10 17 19 7"/></svg></button>';
+      head += '<div class="cov-today-wrap"><button class="cov-today-btn' + (doneToday ? " done" : "") + '" data-act="' + (doneToday ? "unmarkToday" : "markToday") + '" aria-label="Mark today"><svg viewBox="0 0 24 24"><polyline points="5 12 10 17 19 7"/></svg></button><span class="cov-today-cap">Today</span></div>';
     } else if (renewing) {
       head += '<span class="cov-state-pill renewing">renewing</span>';
     } else {
@@ -6337,20 +6364,27 @@
     }
     head += '</div>';
     var baseline = cov.signed_day; if (m.joined_day && m.joined_day > baseline) baseline = m.joined_day;
+    var doneCount = 0;
     var dots = days.map(function (day) {
       var cls = "neutral";
+      var did = !!(circleState.checks[m.user_id] && circleState.checks[m.user_id][day]);
+      if (did && day >= baseline) doneCount++;
       if (!renewing) {
         if (day < baseline) cls = "neutral";
+        else if (did) cls = "done";
         else if (day > today) cls = "future";
-        else if (circleState.checks[m.user_id] && circleState.checks[m.user_id][day]) cls = "done";
-        else cls = "missed";
+        // past/today unmarked: a "missed" day only stings for a DAILY vow; for an
+        // N-days-a-week vow the man chooses which days, so unmarked = simply open
+        else cls = daily ? "missed" : "neutral";
       }
       return '<span class="cov-dot ' + cls + (day === today ? " today-ring" : "") + '"></span>';
     }).join("");
-    var dotRow = '<div class="cov-dots">' + dots + '<span class="cov-dot-label">this week</span></div>';
+    var progress = renewing ? "renewing" : (daily ? "this week" : (doneCount + " of " + freq + " this week"));
+    var dotRow = '<div class="cov-dots">' + dots + '<span class="cov-dot-label">' + progress + '</span></div>';
     var foot = "";
     if (mine && !renewing) {
-      foot = '<div class="cov-card-foot"><span class="cov-mark-hint">' + (doneToday ? "Held today. Well done." : "Tap the circle when you’ve lived it.") + '</span></div>';
+      var hitGoal = !daily && doneCount >= freq;
+      foot = '<div class="cov-card-foot"><span class="cov-mark-hint">' + (hitGoal ? "This week’s covenant, kept. 🔥" : (doneToday ? "Held today. Well done." : "Tap “Today” when you’ve lived it.")) + '</span></div>';
     } else if (!mine && !renewing) {
       if (doneToday) {
         var fc = circleState.fireCounts[m.user_id] || 0;
@@ -6448,10 +6482,18 @@
   function warmCircle() { if (sb && session) loadCircle(function () { refreshCircleBadge(); }); }
 
   // ---- the signing ceremony ----
-  var cerKind = "first", sealTimer = null, sealDone = false;
+  var cerKind = "first", sealTimer = null, sealDone = false, cerFreq = 7;
+  function covCadenceLabel(freq) { freq = +freq || 7; return freq >= 7 ? "Daily" : (freq + "× a week"); }
+  function covCadenceHint(freq) { freq = +freq || 7; return freq >= 7 ? "Every day this week" : (freq + " day" + (freq === 1 ? "" : "s") + " this week — your pick which"); }
+  function setCerFreq(freq) {
+    cerFreq = +freq || 7;
+    Array.prototype.forEach.call($("cerCadenceChips").querySelectorAll(".cad-chip"), function (ch) { ch.classList.toggle("on", +ch.getAttribute("data-freq") === cerFreq); });
+    $("cerCadenceHint").textContent = covCadenceHint(cerFreq);
+  }
+  $("cerCadenceChips").addEventListener("click", function (e) { var ch = e.target.closest(".cad-chip"); if (ch) { setCerFreq(ch.getAttribute("data-freq")); buzz(6); } });
   function openCeremony(kind) {
     cerKind = kind || "first"; sealDone = false;
-    $("cerInput").value = ""; growCer();
+    $("cerInput").value = ""; growCer(); setCerFreq(7);
     $("cerStep1").hidden = false; $("cerStep2").hidden = true; $("cerNext").disabled = true;
     $("cerEyebrow").textContent = cerKind === "new" ? "A new covenant" : "Step One";
     resetSeal();
@@ -6489,15 +6531,16 @@
     var s = $("cerSeal"); s.classList.remove("holding"); s.classList.add("sealed");
     $("cerSealText").textContent = "Sealed.";
     var body = $("cerInput").value.trim();
-    doSign(body, cerKind === "new" ? "new" : (circleState.covenants[myId()] ? "continue" : "first"));
+    doSign(body, cerKind === "new" ? "new" : (circleState.covenants[myId()] ? "continue" : "first"), cerFreq);
   }
-  function doSign(body, kind) {
+  function doSign(body, kind, freq) {
     if (!body || !circleState.circle) return;
+    freq = +freq || 7;
     var uid = myId(), c = circleState.circle, day = todayLocal();
-    var rec = { id: newId("cov"), circleId: c.id, body: body, kind: kind, signed_day: day, signed_at: new Date().toISOString() };
+    var rec = { id: newId("cov"), circleId: c.id, body: body, kind: kind, freq: freq, signed_day: day, signed_at: new Date().toISOString() };
     db.covenants = db.covenants || []; db.covenants.push(rec); save();               // durable append-only mirror
-    circleState.covenants[uid] = { id: rec.id, user_id: uid, body: body, kind: kind, signed_day: day, circle_id: c.id };
-    if (sb) sb.from("covenants").insert({ circle_id: c.id, user_id: uid, body: body, kind: kind, signed_day: day })
+    circleState.covenants[uid] = { id: rec.id, user_id: uid, body: body, kind: kind, freq: freq, signed_day: day, circle_id: c.id };
+    if (sb) sb.from("covenants").insert({ circle_id: c.id, user_id: uid, body: body, kind: kind, freq: freq, signed_day: day })
       .then(function (res) { if (res && res.error) console.error("covenant insert failed:", res.error); else loadCircle(function () { renderBoard(); }); });
     playChime(); buzzPattern([0, 30, 60, 30, 130]);
     closeCeremony(); renderBoard();
@@ -6534,7 +6577,7 @@
     else if (act === "unmarkToday") { confirmDialog("Unmark today?", "Unmark", function () { setCheck(false); }); }
     else if (act === "gotBack") { sendNudge(uid, "back"); showToastMsg("He’ll know you’re with him."); buzz(10); }
     else if (act === "fire") { sendNudge(uid, "fire"); buzz(10); }
-    else if (act === "renewContinue") { var pc = circleState.covenants[myId()]; if (pc) { doSign(pc.body, "continue"); } }
+    else if (act === "renewContinue") { var pc = circleState.covenants[myId()]; if (pc) { doSign(pc.body, "continue", pc.freq); } }
     else if (act === "renewNew") { openCeremony("new"); }
     else if (act === "editFocus") { openFocusEdit(); }
     else if (act === "saveFocus") { saveFocusEdit(); }
@@ -6767,10 +6810,10 @@
     db.profile = db.profile || {}; db.profile.name = n; save();
     var sn = $("setName"); if (sn) sn.value = n;
     if (typeof dailyRefresh === "function") dailyRefresh();               // refresh greeting
-    upsertProfile().then(function () { renderProfileBtn(); if (currentView === "fellowship") loadWall(); }, function () { renderProfileBtn(); });
+    upsertProfile().then(function () { renderProfileBtn(); if (currentView === "fellowship") loadCircle(renderCircle); }, function () { renderProfileBtn(); });
     return true;
   }
-  function closeProfile() { commitProfileName(); $("profileSheet").hidden = true; renderProfileBtn(); if (currentView === "fellowship") renderWall(); }
+  function closeProfile() { commitProfileName(); $("profileSheet").hidden = true; renderProfileBtn(); if (currentView === "fellowship") loadCircle(renderCircle); }
   $("profileBtn").addEventListener("click", openProfile);
   $("profileSheetX").addEventListener("click", closeProfile);
   $("profileSheet").addEventListener("click", function (e) { if (e.target === this) closeProfile(); });
@@ -6788,7 +6831,7 @@
       db.profile = db.profile || {}; db.profile.avatarUrl = url; save();
       sb.from("profiles").upsert({ id: myId(), display_name: myName(), avatar_url: url, updated_at: new Date().toISOString() }).then(function () {
         $("profileMsg").textContent = "Updated."; playChime(); buzz(12);
-        renderProfileBtn(); openProfile(); if (currentView === "fellowship") loadWall();
+        renderProfileBtn(); openProfile(); if (currentView === "fellowship") loadCircle(renderCircle);
       });
     }, function () { $("profileMsg").textContent = "Upload failed — is the avatars bucket set up?"; });
   });
@@ -8525,7 +8568,7 @@
   });
   if (window.matchMedia) { try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { if (db.theme === "auto") applyTheme("auto"); }); } catch (e) {} }
 
-  var APP_VERSION = "v61.2-dev";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v61.3-dev";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
