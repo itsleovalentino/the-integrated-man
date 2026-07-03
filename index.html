@@ -1456,29 +1456,27 @@
   }
   .save-mini-confirm.show { opacity: 1; }
 
-  /* ---- full-screen focus writing (reflection / end-of-day) ---- */
-  .panel.jp-focus {
-    position: fixed; inset: 0; z-index: 240;
-    border-radius: 0; border: none; box-shadow: none;
-    background: var(--bg);
-    padding: calc(env(safe-area-inset-top, 0px) + 22px) 20px calc(env(safe-area-inset-bottom, 0px) + 16px);
-    display: flex; flex-direction: column;
-    animation: jpFocusIn 0.26s cubic-bezier(.2,.7,.2,1);
-    overscroll-behavior: contain;
+  /* ---- reflection writer (full-screen, mirrors the note writer) ---- */
+  body.rw-open { overflow: hidden; }
+  .reflect-writer .writer-close svg { width: 22px; height: 22px; }
+  .reflect-writer .writer-scroll { padding: 6px 22px 40px; display: flex; flex-direction: column; }
+  .rw-prompt-row { display: flex; align-items: flex-start; gap: 12px; width: 100%; max-width: 660px; margin: 10px auto 0; flex: 0 0 auto; }
+  .rw-prompt {
+    flex: 1; min-width: 0; margin: 0;
+    font-size: calc(25px * var(--read-scale)); line-height: 1.36; font-weight: 400;
+    letter-spacing: -0.008em; color: var(--ink);
   }
-  @keyframes jpFocusIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
-  .panel.jp-focus .jp-edit { flex: 1; display: flex; flex-direction: column; min-height: 0; }
-  .panel.jp-focus .prompt-collapse { display: inline-flex !important; }
-  .panel.jp-focus .journal-answer {
-    flex: 1 1 auto; min-height: 0; height: auto !important;
-    margin-top: 20px; resize: none; overflow-y: auto;
-    font-size: 17px; line-height: 1.62;
-    border: none; background: transparent; padding-left: 0; padding-right: 0;
+  .rw-prompt::before { content: "“"; color: var(--accent); margin-right: 2px; }
+  .rw-prompt::after { content: "”"; color: var(--accent); }
+  .rw-switch { margin-top: 5px; }
+  .rw-body {
+    display: block; width: 100%; max-width: 660px; margin: 22px auto 0; flex: 1 1 auto;
+    background: transparent; border: none; outline: none; resize: none;
+    color: var(--ink); font-family: inherit; font-size: 17.5px; line-height: 1.66;
+    letter-spacing: 0.002em; caret-color: var(--accent);
+    min-height: 44vh; overflow: hidden;
   }
-  .panel.jp-focus .voice-bar { flex-shrink: 0; }
-  .panel.jp-focus .save-mini { width: 100%; text-align: center; padding: 15px; font-size: 13px; margin-top: 14px; }
-  body.jp-focus-open { overflow: hidden; }
-  @media (prefers-reduced-motion: reduce) { .panel.jp-focus { animation: none; } }
+  .rw-body::placeholder { color: var(--ink-faint); font-style: italic; }
 
   /* ---- save entry ---- */
   .save-entry {
@@ -3304,6 +3302,26 @@
         <svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><line x1="12" y1="18" x2="12" y2="22"/></svg>
         <span class="writer-mic-lbl">Voice memo</span>
       </button>
+    </div>
+  </div>
+
+  <!-- Reflection writer (full-screen, mirrors the note writer; bound to db.journal/db.evening) -->
+  <div class="writer reflect-writer" id="reflectWriter" hidden>
+    <div class="writer-bar">
+      <button class="writer-close" id="rwClose" aria-label="Close">
+        <svg viewBox="0 0 24 24"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>
+      </button>
+      <div class="writer-mid"><span class="writer-date" id="rwEyebrow"></span><span class="writer-status" id="rwStatus" aria-live="polite"></span></div>
+      <button class="writer-save" id="rwDone">Done</button>
+    </div>
+    <div class="writer-scroll">
+      <div class="rw-prompt-row">
+        <p class="rw-prompt serif" id="rwPrompt"></p>
+        <button class="prompt-switch rw-switch" id="rwSwitch" aria-label="Try a different prompt" title="Try a different prompt">
+          <svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+        </button>
+      </div>
+      <textarea class="rw-body" id="rwBody" placeholder="Write into it…" autocapitalize="sentences" spellcheck="true"></textarea>
     </div>
   </div>
 
@@ -5618,8 +5636,7 @@
   });
   document.addEventListener("keydown", function (e) {
     if (e.key !== "Escape") return;
-    var fp = document.querySelector(".panel.jp-focus");
-    if (fp) { var fc = JCARDS[fp.id === "eveningPanel" ? "evening" : "journal"]; if (fc) { jcardExitFocus(fc); return; } }
+    if (!$("reflectWriter").hidden) { closeReflectWriter(false); return; }
     if (!$("bibleView").hidden) $("bibleView").hidden = true;
     if (!$("anchorsView").hidden) $("anchorsView").hidden = true;
   });
@@ -5674,26 +5691,40 @@
     jcardSyncCollapseBtn(c);
     var t = $(c.textId); t.focus(); try { t.setSelectionRange(t.value.length, t.value.length); } catch (e) {} grow(t);
   }
-  // ----- full-screen focus writing (tap to expand, "Done" to finish) -----
-  function jcardInFocus(c) { return $(c.panelId).classList.contains("jp-focus"); }
-  function jcardEnterFocus(c) {
-    var p = $(c.panelId);
-    if (p.classList.contains("jp-focus")) return;
-    jcardCollapse(c, false);                    // ensure the editor (not the collapsed summary) is showing
-    p.classList.add("jp-focus");
-    document.body.classList.add("jp-focus-open");
-    buzz(6);
-    var t = $(c.textId);
-    requestAnimationFrame(function () { try { t.focus(); t.setSelectionRange(t.value.length, t.value.length); } catch (e) {} });
+  // ----- reflection writer: full-screen, mirrors the note writer (X · Done · live status) -----
+  // Bound to db.journal/db.evening (same store as the compact card) — no data migration.
+  var rwCard = null;
+  function rwStatusSaved() {
+    var s = $("rwStatus"); if (!s) return;
+    s.textContent = "Saved"; s.classList.add("ok");
+    clearTimeout(s._t); s._t = setTimeout(function () { s.classList.remove("ok"); s.textContent = ""; }, 1500);
   }
-  function jcardExitFocus(c) {
-    var p = $(c.panelId);
-    if (!p.classList.contains("jp-focus")) return;
-    p.classList.remove("jp-focus");
-    if (!document.querySelector(".panel.jp-focus")) document.body.classList.remove("jp-focus-open");
-    try { $(c.textId).blur(); } catch (e) {}
-    grow($(c.textId));                          // restore the compact auto-height on the home card
+  function openReflectWriter(c) {
+    if (!$("reflectWriter").hidden) return;            // already open
+    rwCard = c;
+    $("rwEyebrow").textContent = (c.data === "evening") ? "End of Day" : "Reflection";
+    $("rwPrompt").textContent = c.prompts[jcardIdx(c)];
+    var b = $("rwBody");
+    b.value = db[c.data][todayKey] || "";
+    var s = $("rwStatus"); s.textContent = ""; s.classList.remove("ok");
+    $("reflectWriter").hidden = false;
+    document.body.classList.add("rw-open");
+    grow(b);
+    buzz(6);
+    // focus synchronously so the mobile keyboard transfers from the tapped compact field without dropping
+    try { b.focus(); b.setSelectionRange(b.value.length, b.value.length); } catch (e) {}
+  }
+  function closeReflectWriter(committed) {
+    if (!rwCard || $("reflectWriter").hidden) return;
+    var c = rwCard;
+    db[c.data][todayKey] = $("rwBody").value;     // final write-through (input already persisted along the way)
     save();
+    $("reflectWriter").hidden = true;
+    document.body.classList.remove("rw-open");
+    jcardLoad(c);                                  // sync + collapse the compact home card to its saved state
+    if (typeof journalVisible === "function" && journalVisible()) renderJournal();
+    if (committed) { playTick(); buzz(12); } else { buzz(6); }
+    rwCard = null;
   }
   function jcardAnother(c) {
     jcardSwitch(c); // move to a fresh prompt
@@ -5705,8 +5736,9 @@
   Object.keys(JCARDS).forEach(function (k) {
     var c = JCARDS[k];
     $(c.switchId).addEventListener("click", function () { jcardSwitch(c); });
-    $(c.collapseId).addEventListener("click", function () { if (jcardInFocus(c)) { jcardExitFocus(c); buzz(8); } else { jcardCollapse(c, true); buzz(8); } });
-    $(c.textId).addEventListener("focus", function () { jcardEnterFocus(c); }); // tap to expand into full-screen writing
+    $(c.collapseId).addEventListener("click", function () { jcardCollapse(c, true); buzz(8); });
+    // tapping the compact field opens the full-screen writer; focus transfers so the keyboard stays up
+    $(c.textId).addEventListener("focus", function () { openReflectWriter(c); });
     $(c.textId).addEventListener("input", function () { jcardSyncCollapseBtn(c); });
     $(c.collapsedId).addEventListener("click", function (e) { if (!e.target.closest("#" + c.anotherId)) jcardReopen(c); });
     $(c.anotherId).addEventListener("click", function (e) { e.stopPropagation(); jcardAnother(c); });
@@ -5718,7 +5750,6 @@
       celebrate(this);
       (this.getAttribute("data-tone") === "chime") ? playChime() : playTick();
       buzz(14);
-      if (card && jcardInFocus(card)) jcardExitFocus(card);   // "Done" closes the full-screen writer
       var m = $(msgId);
       m.textContent = "Saved to your journal.";
       m.classList.add("show");
@@ -5730,6 +5761,20 @@
   }
   wireSaveMini("journalSave", "journalSaveMsg", JCARDS.journal);
   wireSaveMini("eveningSave", "eveningSaveMsg", JCARDS.evening);
+
+  // ----- reflection writer controls -----
+  $("rwBody").addEventListener("input", function () {
+    if (!rwCard) return;
+    db[rwCard.data][todayKey] = this.value;
+    save(); grow(this); rwStatusSaved();
+  });
+  $("rwSwitch").addEventListener("click", function () {
+    if (!rwCard) return;
+    jcardSwitch(rwCard);                                  // advance the stored prompt + page-turn sound
+    $("rwPrompt").textContent = rwCard.prompts[jcardIdx(rwCard)];
+  });
+  $("rwDone").addEventListener("click", function () { celebrate(this); closeReflectWriter(true); });
+  $("rwClose").addEventListener("click", function () { closeReflectWriter(false); });
 
   // ----- Gratitude widget (three rows to start, add as many as you like) -----
   var gratCount = 0;
@@ -8744,7 +8789,7 @@
   });
   if (window.matchMedia) { try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { if (db.theme === "auto") applyTheme("auto"); }); } catch (e) {} }
 
-  var APP_VERSION = "v61.17-dev";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v61.18-dev";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
