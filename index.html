@@ -826,6 +826,8 @@
     font-variant-numeric: tabular-nums;
   }
   .pillar-score .of { color: var(--ink-faint); font-size: 13px; }
+  .pillar-score .score-na { color: var(--ink-faint); font-weight: 400; }
+  .pillar.unrated .pillar-slider input[type="range"] { opacity: 0.5; }   /* neutral until they choose */
   .pillar-toggle {
     background: none; border: none; cursor: pointer;
     color: var(--ink-faint);
@@ -1111,6 +1113,17 @@
   }
   .pray-note::placeholder { color: var(--ink-faint); }
   .pray-note:focus { outline: none; border-color: var(--accent); }
+  .pray-note-row { display: flex; align-items: flex-end; gap: 8px; margin-top: 8px; }
+  .pray-note-row .pray-note { margin-top: 0; flex: 1; }
+  .pray-note-save {
+    flex: 0 0 auto; width: 36px; height: 36px; border-radius: 9px; cursor: pointer;
+    background: var(--accent-soft); border: 1px solid var(--accent); color: var(--accent);
+    display: inline-flex; align-items: center; justify-content: center;
+    transition: background 0.2s ease, color 0.2s ease, transform 0.1s ease;
+  }
+  .pray-note-save svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.4; }
+  .pray-note-save:hover { background: var(--accent); color: var(--bg); }
+  .pray-note-save.saved { background: var(--accent); color: var(--bg); transform: scale(1.08); }
 
   /* ---- keystone habits ---- */
   .habit-list { margin-bottom: 4px; }
@@ -1519,6 +1532,9 @@
   .day-pillar-name { flex: 1; font-size: 14.5px; color: var(--ink); }
   .day-pillar-score { font-size: 13px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
   .day-pillar-why { font-size: 13px; color: var(--ink-faint); line-height: 1.5; margin: 1px 0 6px 21px; font-style: italic; }
+  .day-pillar-edit { display: none; width: 100%; margin: -2px 0 12px; }
+  .day-card.editing .day-pillar-edit { display: block; }
+  .day-edit-toggle { background: none; border: none; color: var(--accent); font-family: inherit; font-size: 12.5px; letter-spacing: 0.02em; cursor: pointer; padding: 0; }
   .day-habit { display: flex; align-items: center; gap: 11px; padding: 5px 0; font-size: 14.5px; color: var(--ink); }
   .day-habit.is-miss { color: var(--ink-faint); }
   .day-habit-mk { width: 20px; height: 20px; border-radius: 50%; flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; }
@@ -1798,6 +1814,7 @@
   .pillar-skip.on { background: var(--field); color: var(--ink-soft); border-color: var(--field-edge); }
   /* pillars footer — View Trends (left) · Not tracking today (right), set lower so it's not glued to the header */
   .pillar-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--line); }
+  .pillar-foot-top { margin-top: 2px; margin-bottom: 8px; padding-top: 0; padding-bottom: 14px; border-top: none; border-bottom: 1px solid var(--line); }
   .pillar-foot-link {
     display: inline-flex; align-items: center; gap: 7px; background: none; border: none; cursor: pointer;
     color: var(--accent); font-family: inherit; font-size: 12.5px; letter-spacing: 0.02em; padding: 6px 2px;
@@ -3146,6 +3163,13 @@
         <svg class="pe-chev" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
       <div id="pillarsBody" hidden>
+        <div class="pillar-foot pillar-foot-top">
+          <button class="pillar-foot-link" id="viewTrends" type="button">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="15 7 21 7 21 13"/></svg>
+            View Trends
+          </button>
+          <button class="pillar-skip" id="pillarSkip" type="button">Not tracking today</button>
+        </div>
         <div class="weekly-note" id="weeklyNote"></div>
 
         <div class="gauge-wrap">
@@ -3167,14 +3191,6 @@
         <div class="focus" id="focus" hidden>
           <div class="focus-head">Where to focus</div>
           <div class="focus-body" id="focusBody"></div>
-        </div>
-
-        <div class="pillar-foot">
-          <button class="pillar-foot-link" id="viewTrends" type="button">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="15 7 21 7 21 13"/></svg>
-            View Trends
-          </button>
-          <button class="pillar-skip" id="pillarSkip" type="button">Not tracking today</button>
         </div>
       </div>
     </section>
@@ -4931,9 +4947,12 @@
   function ensureDay() { if (!db.ratings[todayKey]) db.ratings[todayKey] = {}; return db.ratings[todayKey]; }
   function rec(key) {
     var d = ensureDay();
-    if (!d[key]) d[key] = { score: DEFAULT_SCORE, why: "", deep: false, facets: null, open: false };
+    if (!d[key]) d[key] = { score: DEFAULT_SCORE, why: "", deep: false, facets: null, open: false, rated: false };
     return d[key];
   }
+  // A pillar is "rated" only once the user actually sets it. Old records (no `rated` field) count as
+  // rated for backward-compat; a record created just by opening the breakdown (rated:false) does not.
+  function pillarRated(rt, key) { var r = rt && rt[key]; return !!(r && r.rated !== false); }
   function effectiveScore(key) {
     var r = (db.ratings[todayKey] || {})[key];
     if (!r) return DEFAULT_SCORE;
@@ -4948,12 +4967,17 @@
   // paint one pillar card from its stored record (READ-ONLY — never creates a record)
   function applyPillar(key) {
     var p = pillarOf(key);
-    var r = (db.ratings[todayKey] || {})[key] || {};
+    var rt = db.ratings[todayKey] || {};
+    var r = rt[key] || {};
+    var rated = pillarRated(rt, key);
     var sc = effectiveScore(key);
-    $("score-" + key).innerHTML = sc + ' <span class="of">/ 10</span>';
+    // unrated → show "—" (N/A) with the slider resting in the middle as a neutral starting point,
+    // so no one is nudged toward a 5 or an accidental low score they didn't choose.
+    $("score-" + key).innerHTML = rated ? (sc + ' <span class="of">/ 10</span>') : '<span class="score-na">—</span>';
     var slider = $("slider-" + key);
-    slider.value = sc;
+    slider.value = rated ? sc : DEFAULT_SCORE;
     slider.disabled = !!r.deep;
+    $("card-" + key).classList.toggle("unrated", !rated);
     $("card-" + key).classList.toggle("derived", !!r.deep);
     $("card-" + key).classList.toggle("open", !!r.open);
     var note = $("derived-" + key);
@@ -4971,16 +4995,15 @@
   function refreshGauge() {
     renderTrends(); // history shows even when today isn't rated yet
     updatePillarsSummary();
-    var touched = !!db.ratings[todayKey] && !pillarsSkippedToday(); // resting today → N/A, no number
-    if (!touched) {
+    // Integration = the average of the pillars actually rated today (never padded with default 5s).
+    var rt = db.ratings[todayKey];
+    var avg = (rt && !pillarsSkippedToday()) ? dayIntegration(rt) : null;
+    if (avg == null) {
       $("gaugeNum").textContent = "—";
       $("gaugeFill").style.strokeDashoffset = CIRC;
       $("focus").hidden = true;
       return;
     }
-    var sum = 0;
-    pillars.forEach(function (p) { sum += effectiveScore(p.key); });
-    var avg = sum / pillars.length;
     $("gaugeNum").textContent = (Math.round(avg * 10) / 10).toFixed(1);
     $("gaugeFill").style.strokeDashoffset = CIRC * (1 - avg / 10);
     refreshFocus(avg);
@@ -5091,9 +5114,13 @@
   };
   function refreshFocus(avg) {
     var focus = $("focus"), body = $("focusBody");
-    focus.hidden = false;
-    var ranked = pillars.map(function (p) { return { p: p, s: effectiveScore(p.key) }; })
+    var rt = db.ratings[todayKey] || {};
+    // only weigh the pillars actually rated today — never suggest focus on something they didn't score
+    var ranked = pillars.filter(function (p) { return pillarRated(rt, p.key); })
+      .map(function (p) { return { p: p, s: effectiveScore(p.key) }; })
       .sort(function (a, b) { return a.s - b.s; });
+    if (!ranked.length) { focus.hidden = true; return; }
+    focus.hidden = false;
 
     var html = "";
     if (avg >= 8.5) {
@@ -5152,7 +5179,7 @@
   // ---------- Integration trend over time ----------
   function dayIntegration(rt) {
     var s = 0, n = 0;
-    pillars.forEach(function (p) { if (rt[p.key] && isNum(rt[p.key].score)) { s += rt[p.key].score; n++; } });
+    pillars.forEach(function (p) { if (rt[p.key] && rt[p.key].rated !== false && isNum(rt[p.key].score)) { s += rt[p.key].score; n++; } });
     return n ? s / n : null;
   }
   function trendLabel(k) {
@@ -5248,8 +5275,8 @@
 
   function pillarChanged(key) {
     rec(key).score = effectiveScore(key); // keep stored score in sync (incl. derived)
-    // engaging the check records all seven, so Integration reflects the whole, not just what you touched
-    pillars.forEach(function (p) { rec(p.key).score = effectiveScore(p.key); });
+    // NOTE: only the pillar the user actually touched is recorded. Untouched pillars stay
+    // unrated (N/A) — Integration is the average of what they chose to rate, never padded with 5s.
     applyPillar(key);
     save();
     refreshGauge();
@@ -8143,6 +8170,7 @@
       var r = rec(p.key);
       r.deep = false;
       r.score = Number(this.value);
+      r.rated = true;                 // the user has now consciously set this pillar
       pillarChanged(p.key);
     });
 
@@ -8175,6 +8203,7 @@
         }
         r.facets[f.key] = Number(this.value);
         r.deep = true;
+        r.rated = true;
         $("fscore-" + p.key + "-" + f.key).textContent = this.value;
         pillarChanged(p.key);
       });
@@ -8213,7 +8242,11 @@
     var who = it.who && it.who.trim() ? '<span class="pray-who">' + escapeHtml(it.who) + '</span> — ' : '';
     var meta = answered ? "Answered " + shortDate(it.answered) : "Since " + shortDate(it.created);
     var note = answered
-      ? '<textarea class="pray-note" data-note rows="1" placeholder="How was it answered? A thought of thanks…">' + escapeHtml(it.note || "") + '</textarea>'
+      ? '<div class="pray-note-row">' +
+          '<textarea class="pray-note" data-note rows="1" placeholder="How was it answered? A thought of thanks…">' + escapeHtml(it.note || "") + '</textarea>' +
+          '<button class="pray-note-save" data-act="saveNote" aria-label="Save this reflection" title="Save">' +
+            '<svg viewBox="0 0 24 24"><polyline points="5 12 10 17 19 7" stroke-linecap="round" stroke-linejoin="round"/></svg></button>' +
+        '</div>'
       : '';
     return '<div class="pray-item" data-id="' + it.id + '">' +
       '<button class="pray-check" data-act="toggle" aria-label="' + (answered ? "Reopen" : "Mark answered") + '">' +
@@ -8278,11 +8311,26 @@
     for (var i = 0; i < db.prayers.length; i++) { if (db.prayers[i].id === id) { it = db.prayers[i]; break; } }
     if (!it) return;
     var act = btn.getAttribute("data-act");
+    if (act === "saveNote") {                    // explicit save + confirmation for the answered reflection
+      var ta = row.querySelector("[data-note]");
+      if (ta) it.note = ta.value;
+      save();
+      btn.classList.add("saved"); playTick(); buzz(8);
+      setTimeout(function () { btn.classList.remove("saved"); }, 1400);
+      return;
+    }
     if (act === "toggle") {
       if (!it.answered) {
         confirmDialog("Move this to your Answered Prayers?", "Mark answered", function () {
-          it.answered = todayKey; save(); renderPrayers();
+          it.answered = todayKey; save();
+          $("prayAnswered").classList.add("open");    // reveal Answered so the reason is right there
+          renderPrayers();
           celebrate($("prayerHead")); playTick(); buzz(12);
+          // let them write why it was answered immediately
+          setTimeout(function () {
+            var note = $("prayAnswered").querySelector('.pray-item[data-id="' + it.id + '"] [data-note]');
+            if (note) { try { note.focus(); } catch (e) {} note.scrollIntoView({ block: "center", behavior: "smooth" }); }
+          }, 80);
         });
         return; // wait for confirmation
       }
@@ -8589,7 +8637,7 @@
     var rt = db.ratings[k];
     if (!rt) return null;
     var s = 0, n = 0;
-    pillars.forEach(function (p) { if (rt[p.key] && isNum(rt[p.key].score)) { s += rt[p.key].score; n++; } });
+    pillars.forEach(function (p) { if (rt[p.key] && rt[p.key].rated !== false && isNum(rt[p.key].score)) { s += rt[p.key].score; n++; } });
     return n ? (Math.round(s / n * 10) / 10).toFixed(1) : null;
   }
   function entryPreview(k) {
@@ -8886,14 +8934,16 @@
       body += dayCard("The Seven Pillars", '<div class="day-reflect-a" style="color:var(--ink-faint)">Not tracked — a resting day.</div>');
     } else if (db.ratings[k]) {
       var rt = db.ratings[k], integ = entryIntegration(k), ph = "";
-      if (integ) ph += '<div class="day-integ"><b>' + integ + '</b><span>Integration / 10</span></div>';
+      if (integ) ph += '<div class="day-integ"><b class="day-integ-val">' + integ + '</b><span>Integration / 10</span></div>';
       pillars.forEach(function (pl) {
-        var v = rt[pl.key]; if (!v || !isNum(v.score)) return;
+        var v = rt[pl.key]; if (!v || v.rated === false || !isNum(v.score)) return;
         ph += '<div class="day-pillar"><span class="day-pillar-dot" style="background:' + pl.color + ';color:' + pl.color + '"></span>' +
-          '<span class="day-pillar-name">' + pl.name + '</span><span class="day-pillar-score">' + v.score + '/10</span></div>';
+          '<span class="day-pillar-name">' + pl.name + '</span><span class="day-pillar-score" id="dscore-' + pl.key + '">' + v.score + '/10</span></div>' +
+          '<input type="range" class="day-pillar-edit" min="0" max="10" step="1" value="' + v.score + '" data-editkey="' + pl.key + '" data-editday="' + k + '" aria-label="Adjust ' + escapeHtml(pl.name) + '">';
         if (v.why && v.why.trim()) ph += '<div class="day-pillar-why">' + escapeHtml(v.why) + '</div>';
       });
-      body += dayCard("The Seven Pillars", ph);
+      // editable "for now" so anyone can fix a past mistake (e.g. a stray low score)
+      body += dayCard("The Seven Pillars", ph, '<button class="day-edit-toggle" data-editpillars>Edit</button>');
     }
 
     // Habits — only those scheduled that day and already created by then
@@ -9001,6 +9051,14 @@
   $("daysPrev").addEventListener("click", function () { var i = daysList.indexOf(daysKey); if (i > -1 && i < daysList.length - 1) { daysGo(daysList[i + 1]); playPage(); buzz(6); } });
   $("daysNext").addEventListener("click", function () { var i = daysList.indexOf(daysKey); if (i > 0) { daysGo(daysList[i - 1]); playPage(); buzz(6); } });
   $("daysBody").addEventListener("click", function (e) {
+    var edit = e.target.closest("[data-editpillars]");
+    if (edit) {                                   // toggle inline pillar-editing for this day
+      var card = edit.closest(".day-card");
+      var on = card.classList.toggle("editing");
+      edit.textContent = on ? "Done" : "Edit";
+      buzz(6);
+      return;
+    }
     var n = e.target.closest(".day-note"); if (!n) return;
     var id = n.getAttribute("data-note"), nt = null;
     for (var i = 0; i < (db.thoughts || []).length; i++) if (db.thoughts[i].id === id) { nt = db.thoughts[i]; break; }
@@ -9008,6 +9066,18 @@
     closeDays();
     journalTab = "notes"; setView("journal"); renderJournalTab();
     openWriterEdit(nt);            // opens the same note in Notes — no duplicate storage
+  });
+  // adjust a past day's pillar score (correct a mistake) — writes back to db.ratings[day], live
+  $("daysBody").addEventListener("input", function (e) {
+    var sl = e.target.closest(".day-pillar-edit"); if (!sl) return;
+    var key = sl.getAttribute("data-editkey"), day = sl.getAttribute("data-editday"), val = Number(sl.value);
+    if (!db.ratings[day] || !db.ratings[day][key]) return;
+    var r = db.ratings[day][key];
+    r.score = val; r.rated = true; r.deep = false; r.facets = null;   // a manual correction is a simple score
+    save();
+    var sc = $("dscore-" + key); if (sc) sc.textContent = val + "/10";
+    var iv = document.querySelector("#daysBody .day-integ-val");
+    if (iv) { var ni = entryIntegration(day); iv.textContent = ni != null ? ni : "—"; }
   });
   // swipe between days (left → older, right → newer)
   (function () {
@@ -9144,7 +9214,7 @@
   });
   if (window.matchMedia) { try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { if (db.theme === "auto") applyTheme("auto"); }); } catch (e) {} }
 
-  var APP_VERSION = "v61.20-dev";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v61.21-dev";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
