@@ -1508,6 +1508,7 @@
   /* ---- forge celebration (covenant kept) ---- */
   .forge-fx { position: fixed; inset: 0; z-index: 300; display: flex; align-items: center; justify-content: center; pointer-events: none; overflow: hidden; }
   .forge-fx[hidden] { display: none; }
+  .forge-fx.forge-out { opacity: 0; transition: opacity 0.6s ease; }   /* gentle fade after the hold */
   .forge-flash { position: absolute; top: 50%; left: 50%; width: 62vmin; height: 62vmin; transform: translate(-50%,-50%) scale(0.4); border-radius: 50%;
     background: radial-gradient(circle, rgba(255,240,205,0.95), rgba(203,178,126,0.4) 30%, rgba(203,178,126,0) 66%); opacity: 0; animation: forgeFlash 1.4s ease-out forwards; }
   .forge-sword { position: absolute; top: 50%; left: 50%; width: 46px; height: 220px; margin: -110px 0 0 -23px; transform-origin: 50% 42%; filter: drop-shadow(0 6px 15px rgba(0,0,0,0.55)); }
@@ -1521,16 +1522,16 @@
   @keyframes forgeLeft {
     0% { transform: translate(-68vw, 32vh) rotate(-64deg); opacity: 0; }
     10% { opacity: 1; } 40% { transform: translate(0, -3vh) rotate(40deg); }
-    47% { transform: translate(-7px, -3vh) rotate(35deg); } 55% { transform: translate(0, -3vh) rotate(40deg); }
-    82% { transform: translate(0, -3vh) rotate(40deg); opacity: 1; } 100% { transform: translate(0, -6vh) rotate(40deg); opacity: 0; }
+    47% { transform: translate(-7px, -3vh) rotate(35deg); }
+    55%, 100% { transform: translate(0, -3vh) rotate(40deg); opacity: 1; }   /* clash, then HOLD (JS fades the whole thing out) */
   }
   @keyframes forgeRight {
     0% { transform: translate(68vw, 32vh) rotate(64deg); opacity: 0; }
     10% { opacity: 1; } 40% { transform: translate(0, -3vh) rotate(-40deg); }
-    47% { transform: translate(7px, -3vh) rotate(-35deg); } 55% { transform: translate(0, -3vh) rotate(-40deg); }
-    82% { transform: translate(0, -3vh) rotate(-40deg); opacity: 1; } 100% { transform: translate(0, -6vh) rotate(-40deg); opacity: 0; }
+    47% { transform: translate(7px, -3vh) rotate(-35deg); }
+    55%, 100% { transform: translate(0, -3vh) rotate(-40deg); opacity: 1; }
   }
-  @keyframes forgeWord { 0%,45% { opacity: 0; transform: translateY(9px); } 58% { opacity: 1; transform: translateY(0); } 85% { opacity: 1; } 100% { opacity: 0; } }
+  @keyframes forgeWord { 0%,45% { opacity: 0; transform: translateY(9px); } 62%, 100% { opacity: 1; transform: translateY(0); } }
   @media (prefers-reduced-motion: reduce) { .forge-sword, .forge-flash, .forge-word { animation-duration: 0.55s; } }
 
   .pd-integration {
@@ -6890,6 +6891,7 @@
   var CLASH_MS = 430;
   function runForge() {
     var fx = $("forgeFx"); if (!fx) return;
+    fx.classList.remove("forge-out");     // reset any prior fade before re-triggering
     fx.hidden = false;
     ["forge-flash", "sw-left", "sw-right", "forge-word"].forEach(function (cls) {
       var el = fx.querySelector("." + cls); if (!el) return;
@@ -6909,7 +6911,9 @@
       }
     }
     setTimeout(function () { playForge(); buzzPattern([0, 34, 44, 22, 60, 90]); }, CLASH_MS);   // clang on contact
-    setTimeout(function () { fx.hidden = true; }, 1650);
+    // hold the crossed swords + "Covenant kept." long enough to read, then fade out gently
+    setTimeout(function () { fx.classList.add("forge-out"); }, 2700);
+    setTimeout(function () { fx.hidden = true; fx.classList.remove("forge-out"); }, 3350);
   }
   function covCelebrate(btn) {
     runForge();                                   // the forge: two blades meet, sparks, a clang — masculine, earned
@@ -9208,7 +9212,7 @@
   });
   if (window.matchMedia) { try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { if (db.theme === "auto") applyTheme("auto"); }); } catch (e) {} }
 
-  var APP_VERSION = "v61.24-dev";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v61.25-dev";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
