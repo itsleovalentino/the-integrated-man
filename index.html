@@ -1197,6 +1197,7 @@
     color: var(--accent); opacity: 0.85;
     font-variant-numeric: tabular-nums;
   }
+  .hab-rest { flex-shrink: 0; width: 26px; height: 26px; border-radius: 8px; border: 1px dashed var(--field-edge); background: none; color: var(--ink-faint); font-size: 15px; line-height: 1; cursor: default; display: inline-flex; align-items: center; justify-content: center; }
   .hab-check {
     flex-shrink: 0;
     width: 26px; height: 26px;
@@ -3098,10 +3099,6 @@
       <div class="panel" id="weatherPanel"></div>
     </section>
 
-    <section data-w="circle" data-w-title="Prayer Wall">
-      <p class="label">Prayer</p>
-      <div class="panel" id="circlePanel"></div>
-    </section>
 
     <section id="trendsSection" data-w="trends" data-w-title="Trends">
       <p class="label">Trends · Integration over time</p>
@@ -8137,8 +8134,9 @@
         '<span class="habit-icon"><svg viewBox="0 0 24 24">' + icon + '</svg></span>' +
         '<span class="habit-main"><span class="habit-name">' + escapeHtml(h.name) + '</span>' +
           '<span class="habit-cad">' + cadenceLabel(c) + streakPill(s, unit) + '</span></span>' +
-        '<button class="hab-check' + (done ? ' checked' : '') + '" data-act="check" aria-label="Mark done">' +
-          '<svg viewBox="0 0 24 24"><polyline points="5 12 10 17 19 7"/></svg></button>' +
+        ((expected || done)
+          ? '<button class="hab-check' + (done ? ' checked' : '') + '" data-act="check" aria-label="Mark done"><svg viewBox="0 0 24 24"><polyline points="5 12 10 17 19 7"/></svg></button>'
+          : '<button class="hab-rest" data-act="restDay" aria-label="Not scheduled today" title="Not scheduled today">–</button>') +
         '<button class="habit-edit" data-act="edit" aria-label="Edit">' +
           '<svg viewBox="0 0 24 24"><path d="M4 20l4-1 9-9-3-3-9 9-1 4z"/><line x1="14" y1="6" x2="17" y2="9"/></svg></button>' +
       '</div>';
@@ -8190,6 +8188,9 @@
           } else { playEmber(); buzzPattern([0, 15, 55]); }
         });
       }
+    } else if (act === "restDay") {
+      var hh = null; for (var qi = 0; qi < db.habits.length; qi++) if (db.habits[qi].id === id) { hh = db.habits[qi]; break; }
+      showToastMsg("Not scheduled today — this is " + cadenceLabel((hh && hh.cadence) || "daily").toLowerCase() + ".", 2400); buzz(6);
     } else if (act === "edit") {
       openHabitEdit(id);
     }
@@ -8686,7 +8687,7 @@
   });
   if (window.matchMedia) { try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { if (db.theme === "auto") applyTheme("auto"); }); } catch (e) {} }
 
-  var APP_VERSION = "v61.12-dev";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v61.13-dev";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
@@ -9434,7 +9435,6 @@
     habits:     { title: "Keystone Habits", core: true, desc: "The daily anchors that hold everything else together.", icon: '<polyline points="4 12 9 17 20 6"/>' },
     health:     { title: "Sleep & Readiness", core: false, desc: "Your Oura readiness and sleep, pulled in each day. Connect Oura in Settings.", icon: '<path d="M12 21s-7-4.6-9.3-8.4C1 9.5 2.6 6 6 6c2 0 3.2 1.2 4 2.4C10.8 7.2 12 6 14 6c3.4 0 5 3.5 3.3 6.6C19 16.4 12 21 12 21z"/>' },
     weather:    { title: "Local Weather", core: false, desc: "Today's weather in your city — set it once, then it just shows up.", icon: '<circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="4.2" y1="4.2" x2="6.3" y2="6.3"/><line x1="17.7" y1="17.7" x2="19.8" y2="19.8"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/><line x1="4.2" y1="19.8" x2="6.3" y2="17.7"/><line x1="17.7" y1="6.3" x2="19.8" y2="4.2"/>' },
-    circle:     { title: "Prayer Wall", core: false, desc: "The community prayer wall — ask for prayer, pray for others, and encourage one another.", icon: '<circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.3"/><path d="M3.5 19.5a5.5 5.5 0 0 1 11 0"/><path d="M15.5 14.5a4.6 4.6 0 0 1 5 5"/>' },
     trends:     { title: "Trends", core: false, desc: "Your Integration score over time.", icon: '<polyline points="3 17 9 11 13 15 21 6"/>' }
   };
   function widgetEls() { return Array.prototype.slice.call(document.querySelectorAll(".wrap > section[data-w]")); }
