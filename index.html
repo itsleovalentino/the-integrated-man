@@ -47,9 +47,20 @@
   // It still uses the real backend for circles/covenants (that's the point of testing here).
   window.TIM_DEV = /\/dev\//.test(location.pathname);
   // The production service worker's scope (/the-integrated-man/) reaches into /dev/ and can
-  // serve the wrong (prod) build here. In dev, evict any worker so /dev/ is truly SW-free.
+  // serve a STALE (old) build here — which would make every fix look like it "didn't work."
+  // In dev: unregister every worker, delete every cache, and if an old worker was controlling
+  // this page, reload ONCE so what you see is guaranteed to be the freshly deployed code.
   if (window.TIM_DEV && "serviceWorker" in navigator) {
-    try { navigator.serviceWorker.getRegistrations().then(function (rs) { rs.forEach(function (r) { try { r.unregister(); } catch (e) {} }); }); } catch (e) {}
+    try {
+      navigator.serviceWorker.getRegistrations().then(function (rs) {
+        if (!rs.length) return;
+        var wasControlled = !!navigator.serviceWorker.controller;
+        Promise.all(rs.map(function (r) { return r.unregister().catch(function () {}); })).then(function () {
+          var clr = (window.caches && caches.keys) ? caches.keys().then(function (ks) { return Promise.all(ks.map(function (k) { return caches.delete(k); })); }).catch(function () {}) : Promise.resolve();
+          clr.then(function () { if (wasControlled) location.reload(); });   // after reload there's no controller → no loop
+        });
+      });
+    } catch (e) {}
   }
   // offline support (only when served over http/https — not file://, and never in dev)
   if (!window.TIM_DEV && "serviceWorker" in navigator && location.protocol.indexOf("http") === 0) {
@@ -2218,7 +2229,7 @@
   /* right-side control */
   .cov-row-right { flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; gap: 3px; }
   /* MY tap-to-mark — the circle IS the button (fixes "tapping the circle does nothing") */
-  .cov-tap { width: 48px; height: 48px; border-radius: 50%; border: 2px solid var(--accent); background: var(--accent-soft); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.15s ease, background 0.2s ease, border-color 0.2s ease; -webkit-tap-highlight-color: transparent; position: relative; z-index: 1; will-change: transform, background; }
+  .cov-tap { width: 48px; height: 48px; border-radius: 50%; border: 2px solid var(--accent); background: var(--accent-soft); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; -webkit-tap-highlight-color: transparent; }
   .cov-tap svg { width: 22px; height: 22px; fill: none; stroke: var(--accent); stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; opacity: 0.85; }
   .cov-tap:active { transform: scale(0.9); }
   .cov-tap.done { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 16px -3px var(--accent); }
@@ -6422,12 +6433,42 @@
     html += '<div class="cov-board">' + circleState.members.map(function (m) { return covCardHtml(m, days, today, weekKey, uid); }).join("") + '</div>';
     // (no in-app invite controls — the invite link is shared by Leo outside the app)
     $("circleBody").innerHTML = html;
+    // paint my tap circle's persisted state inline too (so a reload shows gold without
+    // depending on the CSS class that may not render on some devices)
+    var myCov2 = circleState.covenants[uid];
+    if (myCov2 && !(myCov2.signed_day < weekKey)) {
+      var myTap = $("circleBody").querySelector(".cov-row.mine .cov-tap");
+      if (myTap) paintTap(myTap, !!(circleState.checks[uid] && circleState.checks[uid][today]));
+    }
   }
 
   // ---- marking your own covenant ----
-  // Mark today. CRITICAL: we update the exact circle you tapped IN PLACE and do NOT
-  // rebuild the whole board — a full re-render was what failed to show the gold fill
-  // on some devices. Directly toggling the tapped element's class can't be lost.
+  // Paint the tap circle filled/empty with DIRECT INLINE STYLES. This does not rely on a
+  // CSS class, a CSS variable resolving, specificity, a re-render, or GPU compositing —
+  // it sets the exact colors on the element itself with !important and forces a repaint.
+  // This is the bulletproof answer to "the circle won't fill."
+  function paintTap(btn, done) {
+    if (!btn) return;
+    var cs = getComputedStyle(document.documentElement);
+    var accent = (cs.getPropertyValue("--accent") || "#cbb27e").trim() || "#cbb27e";
+    var bg = (cs.getPropertyValue("--bg") || "#0a0a0b").trim() || "#0a0a0b";
+    var svg = btn.querySelector("svg");
+    if (done) {
+      btn.classList.add("done");
+      btn.style.setProperty("background-color", accent, "important");
+      btn.style.setProperty("border-color", accent, "important");
+      if (svg) { svg.style.setProperty("stroke", bg, "important"); svg.style.setProperty("opacity", "1", "important"); }
+    } else {
+      btn.classList.remove("done");
+      btn.style.removeProperty("background-color");
+      btn.style.removeProperty("border-color");
+      if (svg) { svg.style.removeProperty("stroke"); svg.style.removeProperty("opacity"); }
+    }
+    btn.setAttribute("data-act", done ? "unmarkToday" : "markToday");
+    void btn.offsetWidth;   // force a synchronous reflow/repaint of this element
+  }
+  // Mark today. We fill the exact circle you tapped, right now, with paintTap — and we do
+  // NOT rebuild the board (a full re-render was what silently dropped the fill before).
   function setCheck(makeDone, btn) {
     var uid = myId(), day = todayLocal(), c = circleState.circle;
     (circleState.checks[uid] = circleState.checks[uid] || {})[day] = makeDone;
@@ -6436,13 +6477,11 @@
     save();
     if (sb) sb.from("covenant_checks").upsert({ circle_id: c.id, user_id: uid, day: day, done: makeDone, updated_at: new Date().toISOString() }, { onConflict: "circle_id,user_id,day" })
       .then(function (res) { if (res && res.error) console.error("check failed:", res.error); });
-    // 1) the circle you tapped — fill/unfill it directly, right now
     if (!btn) { var r = $("circleBody").querySelector(".cov-row.mine .cov-tap"); if (r) btn = r; }
     var row = btn ? btn.closest(".cov-row") : $("circleBody").querySelector(".cov-row.mine");
-    if (btn) { btn.classList.toggle("done", makeDone); btn.setAttribute("data-act", makeDone ? "unmarkToday" : "markToday"); }
-    // 2) the week dots + progress for this row, in place
-    if (row) updateRowWeek(row, uid);
-    if (makeDone) covCelebrate();
+    paintTap(btn, makeDone);                 // fill the circle — inline, immediate, unmissable
+    if (row) updateRowWeek(row, uid);        // the week dots + progress, in place
+    if (makeDone) covCelebrate(btn);
   }
   // repaint one row's week strip + progress from state (no innerHTML rebuild of the board)
   function updateRowWeek(row, uid) {
@@ -6458,23 +6497,12 @@
     });
     var prog = row.querySelector(".cov-week-prog"); if (prog && !daily) prog.textContent = cnt + "/" + freq;
   }
-  function covCelebrate() {
+  // Celebration is purely additive particles AROUND the circle — it never touches the
+  // circle's own fill (so it can't interfere with it). Runs after the fill is painted.
+  function covCelebrate(btn) {
     playEmber(); buzzPattern([0, 15, 55]);
-    var card = $("circleBody").querySelector(".cov-row.mine");
-    if (!card) return;
-    var tap = card.querySelector(".cov-tap"), today = card.querySelector(".cov-mini.is-today");
-    if (tap) celebrate(tap);                         // ember burst on the circle you tapped
-    if (today && tap && typeof FLAME_SVG === "string") {
-      var a = tap.getBoundingClientRect(), b = today.getBoundingClientRect();
-      var f = document.createElement("div"); f.className = "flame-fly"; f.innerHTML = FLAME_SVG;
-      var x0 = a.left + a.width / 2 - 11, y0 = a.top + a.height / 2 - 11;
-      f.style.left = x0 + "px"; f.style.top = y0 + "px"; document.body.appendChild(f);
-      var xT = b.left + b.width / 2 - 11 - x0, yT = b.top + b.height / 2 - 11 - y0;
-      void f.offsetWidth;
-      f.style.transform = "translate(" + (xT * 0.4).toFixed(1) + "px,-26px) scale(1.3)";
-      setTimeout(function () { f.classList.add("dive"); f.style.transform = "translate(" + xT.toFixed(1) + "px," + yT.toFixed(1) + "px) scale(0.6)"; }, 280);
-      setTimeout(function () { f.remove(); if (today) celebrate(today); }, 480);
-    }
+    var tap = btn || $("circleBody").querySelector(".cov-row.mine .cov-tap");
+    if (tap && typeof celebrate === "function") { try { celebrate(tap); } catch (e) {} }
   }
 
   // ---- nudges ----
@@ -8608,7 +8636,7 @@
   });
   if (window.matchMedia) { try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { if (db.theme === "auto") applyTheme("auto"); }); } catch (e) {} }
 
-  var APP_VERSION = "v61.6-dev";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v61.7-dev";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
@@ -9518,7 +9546,7 @@
   // the OS evicting site data under disk pressure (iOS/Android honor this for
   // installed home-screen apps)
   try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) {}
-  if (window.TIM_DEV) { document.body.classList.add("tim-dev"); var _rb = document.createElement("div"); _rb.className = "dev-ribbon"; _rb.textContent = "Preview build · dev"; document.body.appendChild(_rb); }
+  if (window.TIM_DEV) { document.body.classList.add("tim-dev"); var _rb = document.createElement("div"); _rb.className = "dev-ribbon"; _rb.textContent = "Preview · dev · " + APP_VERSION; document.body.appendChild(_rb); }
   applyLayout();
   dailyRefresh();
   rehydrateAudio();   // pull voice memos back from IndexedDB after a reload, then re-render
