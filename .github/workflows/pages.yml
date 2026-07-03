@@ -1,0 +1,56 @@
+# Deploy the site to GitHub Pages: production (main) at the root, the dev
+# workshop (dev branch) under /dev/. Production bytes ALWAYS come from main.
+name: Deploy Pages (prod + dev)
+
+on:
+  push:
+    branches: [main, dev]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main (production → site root)
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: main
+      - name: Checkout dev (workshop → /dev/)
+        uses: actions/checkout@v4
+        with:
+          ref: dev
+          path: dev
+      - name: Assemble site
+        run: |
+          mkdir -p site
+          # production at root — everything from main except its own git/CI
+          rsync -a --exclude='.git' --exclude='.github' main/ site/
+          # dev workshop under /dev/
+          mkdir -p site/dev
+          rsync -a --exclude='.git' --exclude='.github' dev/ site/dev/
+          echo "Assembled: root=main, /dev/=dev"
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
