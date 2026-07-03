@@ -5,6 +5,9 @@
 -- so Postgres raised: column reference "circle_id" is ambiguous (42702).
 -- Result: NO invite code could ever be redeemed.
 -- Fix: rename the output columns so there is no collision. Run this once.
+-- (Renaming OUT columns changes the return type, so the old function must be dropped first.)
+
+drop function if exists public.join_circle(text, text);
 
 create or replace function public.join_circle(p_code text, p_day text)
 returns table (joined_circle uuid, joined_name text)

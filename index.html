@@ -2125,7 +2125,7 @@
   .chapel > *:not(.chapel-aura) { position: relative; z-index: 1; width: 100%; }
   /* three overlapping community circles (drop assets/face-1.jpg…face-3.jpg to use real photos) */
   .chapel-circles { position: relative; width: 158px; height: 122px; margin: 0 auto 30px; }
-  .cc { position: absolute; border-radius: 50%; background-size: cover; background-position: center; box-shadow: 0 10px 26px -8px rgba(0,0,0,0.6); border: 3px solid var(--bg); outline: 2px solid rgba(203,178,126,0.7); }
+  .cc { position: absolute; border-radius: 50%; background-size: cover; background-position: center 34%; box-shadow: 0 10px 26px -8px rgba(0,0,0,0.6); border: 3px solid var(--bg); outline: 2px solid rgba(203,178,126,0.7); }
   [data-theme="light"] .cc { box-shadow: 0 10px 26px -10px rgba(40,36,28,0.4); }
   .cc-1 { width: 84px; height: 84px; left: 4px; top: 0; background-image: url(assets/face-1.jpg), linear-gradient(140deg, #6f9bc0, #3a5a72); z-index: 2; }
   .cc-2 { width: 76px; height: 76px; left: 78px; top: 8px; background-image: url(assets/face-2.jpg), linear-gradient(140deg, #c39a5f, #7a5a32); z-index: 1; }
@@ -8639,7 +8639,7 @@
   });
   if (window.matchMedia) { try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { if (db.theme === "auto") applyTheme("auto"); }); } catch (e) {} }
 
-  var APP_VERSION = "v61.8-dev";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v61.9-dev";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------

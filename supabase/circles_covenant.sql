@@ -143,6 +143,7 @@ $$;
 -- Join a circle by code. Idempotent (re-join = no-op). joined_day is the caller's LOCAL day.
 -- OUT columns are named joined_* so they don't collide with circle_members.circle_id
 -- inside the INSERT/ON CONFLICT (that collision raised "column reference is ambiguous").
+drop function if exists public.join_circle(text, text);
 create or replace function public.join_circle(p_code text, p_day text)
 returns table (joined_circle uuid, joined_name text)
 language plpgsql security definer set search_path = public as $$
