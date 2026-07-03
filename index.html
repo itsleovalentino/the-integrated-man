@@ -157,7 +157,7 @@
   .wrap {
     max-width: 620px;
     margin: 0 auto;
-    padding: 56px 24px 96px;
+    padding: 56px 24px calc(128px + env(safe-area-inset-bottom, 0px));  /* clear the floating bottom nav */
   }
 
   /* ---- top bar ---- */
@@ -1543,6 +1543,8 @@
   .day-habit-mk svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
   .day-oura-rings { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
   .day-oura-steps { text-align: center; font-size: 13px; color: var(--ink-soft); margin-top: 12px; }
+  .day-steps { margin-top: 16px; }
+  .day-steps-pct { font-size: 12px; color: var(--ink-faint); letter-spacing: 0.02em; }
   .day-list-line { display: flex; gap: 9px; padding: 5px 0; font-size: 14.5px; line-height: 1.5; color: var(--ink); }
   .day-list-line.answered { color: var(--ink-soft); }
   .day-list-line .dll-mk { flex: 0 0 auto; color: var(--accent); }
@@ -1567,6 +1569,50 @@
   @keyframes tpFade { from { opacity: 0; } to { opacity: 1; } }
   @keyframes tpPop { from { opacity: 0; transform: translateY(12px) scale(0.98); } to { opacity: 1; transform: none; } }
   @media (prefers-reduced-motion: reduce) { .trends-pop, .trends-pop-card { animation: none; } }
+
+  /* ---- live voice-memo waveform HUD ---- */
+  .rec-hud { position: fixed; inset: 0; z-index: 98; display: flex; align-items: flex-end; justify-content: center;
+    padding: 0 14px calc(28px + env(safe-area-inset-bottom, 0px)); pointer-events: none;
+    background: linear-gradient(to top, rgba(0,0,0,0.6), rgba(0,0,0,0) 42%); animation: tpFade 0.2s ease; }
+  .rec-hud[hidden] { display: none; }
+  .rec-hud-card { pointer-events: auto; width: min(94vw, 460px); background: var(--panel); border: 1px solid var(--gold-line);
+    border-radius: 20px; padding: 15px 18px 17px; box-shadow: 0 26px 64px rgba(0,0,0,0.65); animation: tpPop 0.3s cubic-bezier(.2,.7,.2,1); }
+  .rec-hud-top { display: flex; align-items: center; gap: 9px; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-soft); margin-bottom: 6px; }
+  .rec-hud-dot { width: 9px; height: 9px; border-radius: 50%; background: #e0785f; animation: recPulse 1s ease-in-out infinite; }
+  .rec-hud-time { margin-left: auto; font-variant-numeric: tabular-nums; color: var(--ink); letter-spacing: 0.06em; font-size: 13px; }
+  .rec-hud-wave { display: block; width: 100%; height: 76px; }
+  .rec-hud-stop { width: 100%; margin-top: 12px; background: var(--accent); color: var(--bg); border: none; border-radius: 12px;
+    padding: 13px; font-family: inherit; font-size: 12.5px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; cursor: pointer; transition: opacity 0.2s ease; }
+  .rec-hud-stop:active { opacity: 0.8; }
+  @media (prefers-reduced-motion: reduce) { .rec-hud, .rec-hud-card { animation: none; } }
+
+  /* ---- forge celebration (covenant kept) ---- */
+  .forge-fx { position: fixed; inset: 0; z-index: 300; display: flex; align-items: center; justify-content: center; pointer-events: none; overflow: hidden; }
+  .forge-fx[hidden] { display: none; }
+  .forge-flash { position: absolute; top: 50%; left: 50%; width: 62vmin; height: 62vmin; transform: translate(-50%,-50%) scale(0.4); border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,240,205,0.95), rgba(203,178,126,0.4) 30%, rgba(203,178,126,0) 66%); opacity: 0; animation: forgeFlash 1.4s ease-out forwards; }
+  .forge-sword { position: absolute; top: 50%; left: 50%; width: 46px; height: 220px; margin: -110px 0 0 -23px; transform-origin: 50% 42%; filter: drop-shadow(0 6px 15px rgba(0,0,0,0.55)); }
+  .forge-sword svg { width: 100%; height: 100%; }
+  .sw-left { animation: forgeLeft 1.5s cubic-bezier(.15,.7,.25,1) forwards; }
+  .sw-right { animation: forgeRight 1.5s cubic-bezier(.15,.7,.25,1) forwards; }
+  .forge-word { position: absolute; top: 61%; left: 0; right: 0; text-align: center; font-size: 27px; color: var(--ink); letter-spacing: 0.005em; opacity: 0; text-shadow: 0 2px 20px rgba(0,0,0,0.7); animation: forgeWord 1.5s ease-out forwards; }
+  .forge-sparks { position: absolute; top: 50%; left: 50%; width: 0; height: 0; }
+  .forge-spark { position: absolute; width: 5px; height: 5px; border-radius: 50%; background: #ffd98a; box-shadow: 0 0 9px 1px #f0b64c; }
+  @keyframes forgeFlash { 0%,38% { opacity: 0; transform: translate(-50%,-50%) scale(0.4); } 46% { opacity: 1; transform: translate(-50%,-50%) scale(1); } 70%,100% { opacity: 0; transform: translate(-50%,-50%) scale(1.28); } }
+  @keyframes forgeLeft {
+    0% { transform: translate(-68vw, 32vh) rotate(-64deg); opacity: 0; }
+    10% { opacity: 1; } 40% { transform: translate(0, -3vh) rotate(40deg); }
+    47% { transform: translate(-7px, -3vh) rotate(35deg); } 55% { transform: translate(0, -3vh) rotate(40deg); }
+    82% { transform: translate(0, -3vh) rotate(40deg); opacity: 1; } 100% { transform: translate(0, -6vh) rotate(40deg); opacity: 0; }
+  }
+  @keyframes forgeRight {
+    0% { transform: translate(68vw, 32vh) rotate(64deg); opacity: 0; }
+    10% { opacity: 1; } 40% { transform: translate(0, -3vh) rotate(-40deg); }
+    47% { transform: translate(7px, -3vh) rotate(-35deg); } 55% { transform: translate(0, -3vh) rotate(-40deg); }
+    82% { transform: translate(0, -3vh) rotate(-40deg); opacity: 1; } 100% { transform: translate(0, -6vh) rotate(-40deg); opacity: 0; }
+  }
+  @keyframes forgeWord { 0%,45% { opacity: 0; transform: translateY(9px); } 58% { opacity: 1; transform: translateY(0); } 85% { opacity: 1; } 100% { opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) { .forge-sword, .forge-flash, .forge-word { animation-duration: 0.55s; } }
 
   .pd-integration {
     margin-top: 12px;
@@ -2983,7 +3029,7 @@
   .bv.has-note sup::after { content: "•"; color: var(--accent); font-size: 1.1em; margin-left: 1px; }
 
   @media (max-width: 480px) {
-    .wrap { padding: 36px 18px 80px; }
+    .wrap { padding: 36px 18px calc(120px + env(safe-area-inset-bottom, 0px)); }
     .greeting { font-size: 28px; }
     .question { font-size: 21px; }
     .scripture-card .ref { font-size: 17px; }
@@ -3457,6 +3503,28 @@
         <div>Your trend is still taking shape.<br><b>Rate your pillars a few more times</b> — after 3 or 4 check-ins, the pattern appears here.</div>
       </div>
     </div>
+  </div>
+
+  <!-- Live voice-memo waveform HUD (shown while recording) -->
+  <div class="rec-hud" id="recHud" hidden>
+    <div class="rec-hud-card">
+      <div class="rec-hud-top"><span class="rec-hud-dot"></span><span>Recording</span><span class="rec-hud-time" id="recHudTime">0:00</span></div>
+      <canvas class="rec-hud-wave" id="recHudWave"></canvas>
+      <button class="rec-hud-stop" id="recHudStop" type="button">Stop &amp; save</button>
+    </div>
+  </div>
+
+  <!-- Forge celebration — plays when a brother marks his covenant done for the day -->
+  <div class="forge-fx" id="forgeFx" hidden aria-hidden="true">
+    <div class="forge-flash"></div>
+    <div class="forge-sparks" id="forgeSparks"></div>
+    <div class="forge-sword sw-left">
+      <svg viewBox="0 0 44 210"><polygon points="22,6 29,44 26,150 18,150 15,44" fill="#d9dbe0"/><polygon points="22,6 29,44 26,150 22,150" fill="#f2f3f6"/><rect x="5" y="150" width="34" height="8" rx="2.5" fill="#b69256"/><rect x="17.5" y="158" width="9" height="34" rx="3.5" fill="#4a3d26"/><circle cx="22" cy="196" r="6.5" fill="#b69256"/></svg>
+    </div>
+    <div class="forge-sword sw-right">
+      <svg viewBox="0 0 44 210"><polygon points="22,6 29,44 26,150 18,150 15,44" fill="#d9dbe0"/><polygon points="22,6 29,44 26,150 22,150" fill="#f2f3f6"/><rect x="5" y="150" width="34" height="8" rx="2.5" fill="#b69256"/><rect x="17.5" y="158" width="9" height="34" rx="3.5" fill="#4a3d26"/><circle cx="22" cy="196" r="6.5" fill="#b69256"/></svg>
+    </div>
+    <div class="forge-word serif">Covenant kept.</div>
   </div>
 
   <!-- Full journal page (paper) -->
@@ -6852,8 +6920,54 @@
   }
   // Celebration is purely additive particles AROUND the circle — it never touches the
   // circle's own fill (so it can't interfere with it). Runs after the fill is painted.
+  // a forge clang: low anvil thud + inharmonic metallic partials + a bright strike transient
+  function playForge() {
+    var ac = audio(); if (!ac) return;
+    var t = ac.currentTime;
+    var o = ac.createOscillator(), g = ac.createGain();     // the anvil impact
+    o.type = "sine"; o.frequency.setValueAtTime(92, t); o.frequency.exponentialRampToValueAtTime(46, t + 0.25);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.15, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.42);
+    o.connect(g); g.connect(ac.destination); o.start(t); o.stop(t + 0.46);
+    [1840, 2490, 3160, 4230].forEach(function (f, i) {        // ringing steel
+      var mo = ac.createOscillator(), mg = ac.createGain(), bp = ac.createBiquadFilter();
+      mo.type = "square"; mo.frequency.value = f * (1 + Math.random() * 0.012);
+      bp.type = "bandpass"; bp.frequency.value = f; bp.Q.value = 7;
+      mg.gain.setValueAtTime(0.0001, t); mg.gain.exponentialRampToValueAtTime(0.032 / (i + 1), t + 0.006); mg.gain.exponentialRampToValueAtTime(0.0001, t + 0.55 + i * 0.12);
+      mo.connect(bp); bp.connect(mg); mg.connect(ac.destination); mo.start(t); mo.stop(t + 1.0);
+    });
+    var len = Math.floor(ac.sampleRate * 0.06), buf = ac.createBuffer(1, len, ac.sampleRate), d = buf.getChannelData(0);
+    for (var i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len);
+    var ns = ac.createBufferSource(); ns.buffer = buf;
+    var hp = ac.createBiquadFilter(); hp.type = "highpass"; hp.frequency.value = 2600;
+    var ng = ac.createGain(); ng.gain.value = 0.1;
+    ns.connect(hp); hp.connect(ng); ng.connect(ac.destination); ns.start(t);
+  }
+  var CLASH_MS = 430;
+  function runForge() {
+    var fx = $("forgeFx"); if (!fx) return;
+    fx.hidden = false;
+    ["forge-flash", "sw-left", "sw-right", "forge-word"].forEach(function (cls) {
+      var el = fx.querySelector("." + cls); if (!el) return;
+      el.style.animation = "none"; void el.offsetWidth; el.style.animation = "";   // restart the keyframes
+    });
+    // sparks fly outward at the moment of impact
+    var sp = $("forgeSparks"); if (sp) {
+      sp.innerHTML = "";
+      for (var i = 0; i < 20; i++) {
+        var s = document.createElement("div"); s.className = "forge-spark"; sp.appendChild(s);
+        var ang = Math.random() * Math.PI * 2, dist = 55 + Math.random() * 175;
+        var dx = Math.cos(ang) * dist, dy = Math.sin(ang) * dist - 24;
+        try {
+          s.animate([{ transform: "translate(0,0) scale(1)", opacity: 1 }, { transform: "translate(" + dx + "px," + dy + "px) scale(0.3)", opacity: 0 }],
+            { duration: 620 + Math.random() * 420, delay: CLASH_MS, easing: "cubic-bezier(.2,.6,.2,1)", fill: "forwards" });
+        } catch (e) {}
+      }
+    }
+    setTimeout(function () { playForge(); buzzPattern([0, 34, 44, 22, 60, 90]); }, CLASH_MS);   // clang on contact
+    setTimeout(function () { fx.hidden = true; }, 1650);
+  }
   function covCelebrate(btn) {
-    playEmber(); buzzPattern([0, 15, 55]);
+    runForge();                                   // the forge: two blades meet, sparks, a clang — masculine, earned
     var tap = btn || $("circleBody").querySelector(".cov-row.mine .cov-tap");
     if (tap && typeof celebrate === "function") { try { celebrate(tap); } catch (e) {} }
   }
@@ -7611,6 +7725,7 @@
       try { writerRec = new MediaRecorder(stream); } catch (e) { stream.getTracks().forEach(function (t) { t.stop(); }); showToastMsg("Couldn’t start recording."); return; }
       writerRec.ondataavailable = function (ev) { if (ev.data && ev.data.size) writerChunks.push(ev.data); };
       writerRec.onstop = function () {
+        recWaveStop();
         stream.getTracks().forEach(function (t) { t.stop(); });
         btn.classList.remove("recording");
         var l = btn.querySelector(".writer-mic-lbl"); if (l) l.textContent = "Voice memo";
@@ -7619,7 +7734,7 @@
         reader.onload = function () { writerVoice = reader.result; renderWriterMemo(); if (typeof playPop === "function") playPop(); buzz(12); };
         reader.readAsDataURL(blob);
       };
-      writerRec.start(); btn.classList.add("recording"); var sl = btn.querySelector(".writer-mic-lbl"); if (sl) sl.textContent = "Stop"; buzz(16);
+      writerRec.start(); recWaveStart(stream, writerRec); btn.classList.add("recording"); var sl = btn.querySelector(".writer-mic-lbl"); if (sl) sl.textContent = "Stop"; buzz(16);
     }, function () { showToastMsg("Couldn’t access the microphone."); });
   });
 
@@ -7712,6 +7827,60 @@
 
   // --- voice memo (record) ---
   var mediaRec = null, recChunks = [], recBtn = null, recTarget = null;
+  // ---- live recording waveform HUD (reacts to the mic; visual only, not gated by soundOn) ----
+  var recWave = { raf: 0, analyser: null, src: null, recorder: null, t0: 0, timer: 0, data: null };
+  function recWaveCtx() { try { if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)(); if (actx.state === "suspended") actx.resume(); return actx; } catch (e) { return null; } }
+  function recRoundBar(g, x, y, w, h, r) { r = Math.min(r, w / 2, h / 2); g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); g.fill(); }
+  function recWaveDraw() {
+    var cv = $("recHudWave"); if (!cv || $("recHud").hidden || !recWave.analyser) return;
+    var dpr = Math.min(window.devicePixelRatio || 1, 2), w = cv.clientWidth, h = cv.clientHeight;
+    if (cv.width !== Math.round(w * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); }
+    var g = cv.getContext("2d"); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, w, h);
+    recWave.analyser.getByteFrequencyData(recWave.data);
+    var bins = recWave.data, n = 44, mid = h / 2, bw = w / n;
+    var accent = (getComputedStyle(document.documentElement).getPropertyValue("--accent") || "#cbb27e").trim();
+    for (var i = 0; i < n; i++) {
+      var idx = Math.floor((i / n) * bins.length * 0.68);        // weight toward the voice range
+      var v = bins[idx] / 255;
+      var bh = Math.max(3, v * v * (h * 0.92));
+      g.fillStyle = accent; g.globalAlpha = 0.3 + v * 0.7;
+      recRoundBar(g, i * bw + bw * 0.22, mid - bh / 2, bw * 0.56, bh, bw * 0.28);
+    }
+    g.globalAlpha = 1;
+    recWave.raf = requestAnimationFrame(recWaveDraw);
+  }
+  function recWaveStart(stream, recorder) {
+    try {
+      var ac = recWaveCtx(); if (!ac) return;
+      recWave.recorder = recorder;
+      recWave.src = ac.createMediaStreamSource(stream);
+      recWave.analyser = ac.createAnalyser(); recWave.analyser.fftSize = 128; recWave.analyser.smoothingTimeConstant = 0.72;
+      recWave.src.connect(recWave.analyser);        // analyser only — never to destination (no mic echo)
+      recWave.data = new Uint8Array(recWave.analyser.frequencyBinCount);
+      $("recHud").hidden = false;
+      recWave.t0 = Date.now(); $("recHudTime").textContent = "0:00";
+      clearInterval(recWave.timer);
+      recWave.timer = setInterval(function () {
+        var s = Math.floor((Date.now() - recWave.t0) / 1000);
+        $("recHudTime").textContent = Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0");
+      }, 300);
+      cancelAnimationFrame(recWave.raf); recWaveDraw();
+    } catch (e) {}
+  }
+  function recWaveStop() {
+    cancelAnimationFrame(recWave.raf); recWave.raf = 0;
+    clearInterval(recWave.timer);
+    try { if (recWave.src) recWave.src.disconnect(); } catch (e) {}
+    try { if (recWave.analyser) recWave.analyser.disconnect(); } catch (e) {}
+    recWave.src = null; recWave.analyser = null; recWave.recorder = null;
+    var hud = $("recHud"); if (hud) hud.hidden = true;
+  }
+  $("recHudStop").addEventListener("click", function () {
+    if (recWave.recorder && recWave.recorder.state === "recording") { try { recWave.recorder.stop(); } catch (e) {} }
+    else recWaveStop();
+    buzz(12);
+  });
+
   function stopRecording() {
     if (mediaRec && mediaRec.state !== "inactive") { try { mediaRec.stop(); } catch (e) {} }
     if (recBtn) { recBtn.classList.remove("recording"); recBtn.querySelector(".rec-label").textContent = "Voice memo"; }
@@ -7723,6 +7892,7 @@
       try { mediaRec = new MediaRecorder(stream); } catch (e) { mediaRec = new MediaRecorder(stream, {}); }
       mediaRec.ondataavailable = function (e) { if (e.data && e.data.size) recChunks.push(e.data); };
       mediaRec.onstop = function () {
+        recWaveStop();
         stream.getTracks().forEach(function (t) { t.stop(); });
         var blob = new Blob(recChunks, { type: (mediaRec && mediaRec.mimeType) || "audio/webm" });
         var reader = new FileReader();
@@ -7734,7 +7904,7 @@
         reader.readAsDataURL(blob);
         mediaRec = null; recBtn = null; recTarget = null;
       };
-      mediaRec.start(); recBtn = btn; recTarget = target;
+      mediaRec.start(); recWaveStart(stream, mediaRec); recBtn = btn; recTarget = target;
       btn.classList.add("recording"); btn.querySelector(".rec-label").textContent = "Stop"; buzz(10);
     }).catch(function () { voiceMsg(target, "Microphone unavailable (allow mic access, and use https or localhost)."); });
   }
@@ -8910,6 +9080,17 @@
       (side ? '<span class="dch-side">' + side + '</span>' : '') + '</div>' + inner + '</div>';
   }
   var DAY_CHECK = '<svg viewBox="0 0 24 24"><polyline points="5 12 10 17 19 7"/></svg>';
+  // read-only steps block for Days — matches the live health widget (foot icon · big count · goal bar)
+  function dayStepsHtml(steps) {
+    if (steps == null) return "";
+    var goal = db.stepGoal || 8000, pct = Math.max(0, Math.min(100, Math.round(steps / goal * 100))), hit = steps >= goal;
+    return '<div class="steps-wrap day-steps' + (hit ? " hit" : "") + '">' +
+      '<div class="steps-head"><div class="steps-title">' + FOOT_ICON + ' Steps</div>' +
+        '<span class="day-steps-pct">' + (hit ? "Goal reached" : pct + "% there") + '</span></div>' +
+      '<div class="steps-count-row"><span class="steps-count">' + fmtNum(steps) + '</span><span class="steps-goal-lbl">/ ' + fmtNum(goal) + '</span></div>' +
+      '<div class="steps-bar"><div class="steps-fill" style="width:' + pct + '%"></div></div>' +
+    '</div>';
+  }
   function renderDay(k) {
     var p = k.split("-"), d = new Date(p[0], p[1] - 1, p[2]), isToday = (k === todayKey);
     $("daysEyebrow").textContent = isToday ? "Today" : "Looking back";
@@ -8925,8 +9106,8 @@
       if (ou.sl && isNum(ou.sl.score)) rings += healthRing(ou.sl.score, HR_MOON, "Sleep");
       if (ou.ac && isNum(ou.ac.score)) rings += healthRing(ou.ac.score, HR_ACTIVITY, "Activity");
       var steps = (ou.ac && isNum(ou.ac.steps)) ? ou.ac.steps : null;
-      if (rings) body += dayCard("Body · Oura", '<div class="day-oura-rings">' + rings + '</div>' +
-        (steps != null ? '<div class="day-oura-steps">Steps — ' + fmtNum(steps) + '</div>' : ''));
+      if (rings || steps != null) body += dayCard("Body · Oura",
+        (rings ? '<div class="day-oura-rings">' + rings + '</div>' : '') + dayStepsHtml(steps));
     }
 
     // The Seven Pillars
@@ -9214,7 +9395,7 @@
   });
   if (window.matchMedia) { try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { if (db.theme === "auto") applyTheme("auto"); }); } catch (e) {} }
 
-  var APP_VERSION = "v61.21-dev";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v61.22-dev";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
