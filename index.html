@@ -1454,6 +1454,12 @@
   .day-pillar-edit { display: none; width: 100%; margin: -2px 0 12px; }
   .day-card.editing .day-pillar-edit { display: block; }
   .day-edit-toggle { background: none; border: none; color: var(--accent); font-family: inherit; font-size: 12.5px; letter-spacing: 0.02em; cursor: pointer; padding: 0; }
+  /* unrated pillar rows only show while editing (so you can rate them too) */
+  .day-card:not(.editing) .day-pillar-unrated { display: none; }
+  .day-card.editing .day-pillar-empty { display: none; }
+  .day-pillar-actions { display: flex; justify-content: flex-end; gap: 14px; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line); }
+  .pillar-foot-link.danger { color: var(--ink-faint); }
+  .pillar-foot-link.danger:hover { color: #d08a72; opacity: 1; }
   .day-habit { display: flex; align-items: center; gap: 11px; padding: 5px 0; font-size: 14.5px; color: var(--ink); }
   .day-habit.is-miss { color: var(--ink-faint); }
   .day-habit-mk { width: 20px; height: 20px; border-radius: 50%; flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; }
@@ -5879,11 +5885,13 @@
   }
   function jcardSetPrompt(c) { $(c.promptId).textContent = c.prompts[jcardIdx(c)]; }
   function jcardCollapse(c, yes) { $(c.panelId).classList.toggle("collapsed", yes); $(c.collapsedId).hidden = !yes; }
+  function jcardHasVoice(c) { return !!(db.voice && db.voice[c.data] && db.voice[c.data][todayKey]); }
+  function jcardHasContent(c) { return !!($(c.textId).value.trim()) || jcardHasVoice(c); }  // a voice memo counts too
   function jcardLoad(c) {
     jcardSetPrompt(c);
     var t = $(c.textId), v = db[c.data][todayKey] || "";
     t.value = v; grow(t);
-    jcardCollapse(c, !!v.trim());
+    jcardCollapse(c, jcardHasContent(c));   // collapse for a saved text OR voice reflection
     jcardSyncCollapseBtn(c);
   }
   function jcardSwitch(c) {
@@ -5950,6 +5958,8 @@
 
   function wireSaveMini(btnId, msgId, card) {
     $(btnId).addEventListener("click", function () {
+      var wasRecording = !!(mediaRec && mediaRec.state !== "inactive");
+      if (typeof stopRecording === "function") stopRecording();   // Done finalizes any active memo + resets the "Stop" button
       save();
       celebrate(this);
       (this.getAttribute("data-tone") === "chime") ? playChime() : playTick();
@@ -5960,7 +5970,8 @@
       clearTimeout(m._t);
       m._t = setTimeout(function () { m.classList.remove("show"); }, 2400);
       if (journalVisible()) renderJournal();
-      if (card && $(card.textId).value.trim()) setTimeout(function () { jcardCollapse(card, true); }, 500); // collapse after the confirmation reads
+      // collapse for a text OR voice reflection (or one we just finished recording)
+      if (card && (jcardHasContent(card) || wasRecording)) setTimeout(function () { jcardCollapse(card, true); }, 600);
     });
   }
   wireSaveMini("journalSave", "journalSaveMsg", JCARDS.journal);
@@ -8927,20 +8938,25 @@
         (rings ? '<div class="day-oura-rings">' + rings + '</div>' : '') + dayStepsHtml(steps));
     }
 
-    // The Seven Pillars
+    // The Seven Pillars — looking back you can rate/fix a day, or mark it "not tracked"
     if (db.pillarSkip[k]) {
-      body += dayCard("The Seven Pillars", '<div class="day-reflect-a" style="color:var(--ink-faint)">Not tracked — a resting day.</div>');
-    } else if (db.ratings[k]) {
-      var rt = db.ratings[k], integ = entryIntegration(k), ph = "";
+      body += dayCard("The Seven Pillars",
+        '<div class="day-reflect-a" style="color:var(--ink-faint)">Not tracked — a resting day.</div>' +
+        '<div class="day-pillar-actions"><button class="pillar-foot-link" data-daytrack data-day="' + k + '">Track this day</button></div>');
+    } else {
+      var rt = db.ratings[k] || {}, integ = entryIntegration(k), ph = "", anyRated = false;
       if (integ) ph += '<div class="day-integ"><b class="day-integ-val">' + integ + '</b><span>Integration / 10</span></div>';
       pillars.forEach(function (pl) {
-        var v = rt[pl.key]; if (!v || v.rated === false || !isNum(v.score)) return;
-        ph += '<div class="day-pillar"><span class="day-pillar-dot" style="background:' + pl.color + ';color:' + pl.color + '"></span>' +
-          '<span class="day-pillar-name">' + pl.name + '</span><span class="day-pillar-score" id="dscore-' + pl.key + '">' + v.score + '/10</span></div>' +
-          '<input type="range" class="day-pillar-edit" min="0" max="10" step="1" value="' + v.score + '" data-editkey="' + pl.key + '" data-editday="' + k + '" aria-label="Adjust ' + escapeHtml(pl.name) + '">';
-        if (v.why && v.why.trim()) ph += '<div class="day-pillar-why">' + escapeHtml(v.why) + '</div>';
+        var v = rt[pl.key], rated = !!(v && v.rated !== false && isNum(v.score)), sc = rated ? v.score : 5;
+        if (rated) anyRated = true;
+        // rated rows always show; unrated rows appear only in Edit mode (so you can rate them too)
+        ph += '<div class="day-pillar' + (rated ? '' : ' day-pillar-unrated') + '"><span class="day-pillar-dot" style="background:' + pl.color + ';color:' + pl.color + '"></span>' +
+          '<span class="day-pillar-name">' + pl.name + '</span><span class="day-pillar-score" id="dscore-' + pl.key + '">' + (rated ? (v.score + '/10') : '—') + '</span></div>' +
+          '<input type="range" class="day-pillar-edit" min="0" max="10" step="1" value="' + sc + '" data-editkey="' + pl.key + '" data-editday="' + k + '" aria-label="Rate ' + escapeHtml(pl.name) + '">';
+        if (rated && v.why && v.why.trim()) ph += '<div class="day-pillar-why">' + escapeHtml(v.why) + '</div>';
       });
-      // editable "for now" so anyone can fix a past mistake (e.g. a stray low score)
+      if (!anyRated) ph = '<div class="day-reflect-a day-pillar-empty" style="color:var(--ink-faint)">Not rated this day — tap Edit to rate it.</div>' + ph;
+      ph += '<div class="day-pillar-actions"><button class="pillar-foot-link danger" data-daynottracked data-day="' + k + '">Mark not tracked</button></div>';
       body += dayCard("The Seven Pillars", ph, '<button class="day-edit-toggle" data-editpillars>Edit</button>');
     }
 
@@ -9057,6 +9073,26 @@
       buzz(6);
       return;
     }
+    var ntk = e.target.closest("[data-daynottracked]");
+    if (ntk) {                                    // mark this whole day "not tracked" (with a confirm)
+      var d1 = ntk.getAttribute("data-day");
+      confirmDialog("Mark this day as not tracked? Its pillar ratings won’t count toward your Integration (they’re kept, not deleted — you can track it again).", "Yes, not tracked", function () {
+        db.pillarSkip[d1] = true; save();
+        if (daysKey === d1) renderDay(d1);
+        if (typeof refreshGauge === "function") refreshGauge();
+        buzz(12);
+      });
+      return;
+    }
+    var trk = e.target.closest("[data-daytrack]");
+    if (trk) {                                    // reverse "not tracked" → track this day again
+      var d2 = trk.getAttribute("data-day");
+      delete db.pillarSkip[d2]; save();
+      if (daysKey === d2) renderDay(d2);
+      if (typeof refreshGauge === "function") refreshGauge();
+      buzz(8);
+      return;
+    }
     var n = e.target.closest(".day-note"); if (!n) return;
     var id = n.getAttribute("data-note"), nt = null;
     for (var i = 0; i < (db.thoughts || []).length; i++) if (db.thoughts[i].id === id) { nt = db.thoughts[i]; break; }
@@ -9069,11 +9105,13 @@
   $("daysBody").addEventListener("input", function (e) {
     var sl = e.target.closest(".day-pillar-edit"); if (!sl) return;
     var key = sl.getAttribute("data-editkey"), day = sl.getAttribute("data-editday"), val = Number(sl.value);
-    if (!db.ratings[day] || !db.ratings[day][key]) return;
-    var r = db.ratings[day][key];
-    r.score = val; r.rated = true; r.deep = false; r.facets = null;   // a manual correction is a simple score
+    if (!db.ratings[day]) db.ratings[day] = {};
+    var r = db.ratings[day][key] || (db.ratings[day][key] = { score: val, why: "", deep: false, facets: null });
+    r.score = val; r.rated = true; r.deep = false; r.facets = null;   // rating (or correcting) a day is a simple score
     save();
     var sc = $("dscore-" + key); if (sc) sc.textContent = val + "/10";
+    var row = sl.previousElementSibling; if (row && row.classList) row.classList.remove("day-pillar-unrated");  // now rated → keep it visible
+    var empty = document.querySelector("#daysBody .day-pillar-empty"); if (empty) empty.remove();
     var iv = document.querySelector("#daysBody .day-integ-val");
     if (iv) { var ni = entryIntegration(day); iv.textContent = ni != null ? ni : "—"; }
   });
@@ -9212,7 +9250,7 @@
   });
   if (window.matchMedia) { try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { if (db.theme === "auto") applyTheme("auto"); }); } catch (e) {} }
 
-  var APP_VERSION = "v61.25-dev";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v61.26-dev";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
