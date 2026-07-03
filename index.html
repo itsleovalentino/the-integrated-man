@@ -2647,6 +2647,19 @@
   }
   .modal-title { font-size: 28px; font-weight: 300; margin: 0 0 8px; letter-spacing: -0.01em; }
   .ob-reading-hint { font-size: 12.5px; color: var(--ink-faint); text-align: center; margin: 14px 0 0; }
+  /* onboarding: optional photo + code */
+  .ob-opt { font-weight: 400; color: var(--ink-faint); font-size: 11px; letter-spacing: 0; text-transform: none; font-style: italic; margin-left: 4px; }
+  .ob-photo-row { display: flex; align-items: center; gap: 14px; margin-bottom: 4px; }
+  .ob-avatar { flex: 0 0 auto; width: 56px; height: 56px; border-radius: 50%; background: var(--field); border: 1px solid var(--field-edge); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; overflow: hidden; padding: 0; background-size: cover; background-position: center; transition: border-color 0.2s ease; }
+  .ob-avatar:hover { border-color: var(--accent); }
+  .ob-avatar svg { width: 26px; height: 26px; fill: none; stroke: var(--ink-faint); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  .ob-avatar.has-photo svg { display: none; }
+  .ob-photo-meta { font-size: 13px; color: var(--ink-faint); line-height: 1.4; }
+  /* welcome card */
+  .welcome-list { list-style: none; margin: 4px 0 24px; padding: 0; display: flex; flex-direction: column; gap: 13px; text-align: left; }
+  .welcome-list li { font-size: 14.5px; line-height: 1.5; color: var(--ink-soft); padding-left: 16px; position: relative; }
+  .welcome-list li::before { content: ""; position: absolute; left: 0; top: 8px; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+  .welcome-list li b { color: var(--ink); font-weight: 500; }
   /* ===== Welcome / landing (the one screen styled in the brand design system) ===== */
   .welcome-overlay { background: #0a0908; backdrop-filter: none; z-index: 90; }
   .welcome-card {
@@ -3507,9 +3520,41 @@
       <label class="field-label">Your name</label>
       <input type="text" id="obName" placeholder="Your name" autocomplete="off" maxlength="40" />
 
+      <label class="field-label">Add a photo <span class="ob-opt">optional</span></label>
+      <div class="ob-photo-row">
+        <button class="ob-avatar" id="obPhotoBtn" type="button" aria-label="Add a photo">
+          <svg viewBox="0 0 24 24" id="obAvatarIcon"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"/><path d="M4 20c0-3.3 3.6-5 8-5s8 1.7 8 5"/></svg>
+        </button>
+        <div class="ob-photo-meta"><span id="obPhotoLabel">A face makes your circle personal.</span></div>
+        <input type="file" id="obPhotoFile" accept="image/*" hidden />
+      </div>
+
+      <label class="field-label">Have an invite code? <span class="ob-opt">optional</span></label>
+      <input type="text" id="obCode" placeholder="Enter code to join your circle" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" maxlength="12" />
+
       <div class="settings-msg" id="obMsg"></div>
       <button class="modal-primary" id="obStart">Begin</button>
       <p class="ob-reading-hint">You'll choose your daily reading right on your home screen.</p>
+    </div>
+  </div>
+
+  <!-- One-time welcome / orientation (first run) -->
+  <div class="modal-overlay" id="welcomeCard" hidden>
+    <div class="modal">
+      <div class="wordmark" style="margin-bottom:18px;justify-content:center;">
+        <svg class="cross" viewBox="0 0 24 36" aria-hidden="true"><line x1="12" y1="2" x2="12" y2="34"/><line x1="3" y1="12" x2="21" y2="12"/></svg>
+        <span>The Integrated Man</span>
+      </div>
+      <h2 class="modal-title serif" id="welcomeTitle">Welcome.</h2>
+      <p class="modal-sub">Here's your daily rhythm — take it at your own pace.</p>
+      <ul class="welcome-list">
+        <li><b>The Seven Pillars</b> — a weekly check on how you're really doing.</li>
+        <li><b>Daily Reading</b> — Scripture, your plan, your pace.</li>
+        <li><b>Keystone Habits</b> — the small anchors that hold a day together.</li>
+        <li><b>Your Journal</b> — reflections that gather into Days you can look back on.</li>
+        <li><b>Fellowship</b> — your circle, and the covenant you keep together.</li>
+      </ul>
+      <button class="modal-primary" id="welcomeBegin">Begin</button>
     </div>
   </div>
 
@@ -7109,13 +7154,14 @@
   function rememberJoin(code) { pendingJoinCode = code || null; try { if (code) localStorage.setItem(JOIN_KEY, code); else localStorage.removeItem(JOIN_KEY); } catch (e) {} }
   function currentJoinCode() { if (pendingJoinCode) return pendingJoinCode; try { var c = localStorage.getItem(JOIN_KEY); return c ? c.trim().toUpperCase() : null; } catch (e) { return null; } }
   function clearJoin() { pendingJoinCode = null; try { localStorage.removeItem(JOIN_KEY); } catch (e) {} }
-  function doJoin(code, cb) {
+  function doJoin(code, cb, stayPut) {
     if (!sb || !session) { if (cb) cb(false); return; }
     sb.rpc("join_circle", { p_code: code, p_day: todayLocal() }).then(function (res) {
       if (res && res.error) { console.error("join failed:", res.error); if (cb) cb(false); return; }
       clearJoin();
       if (cb) cb(true);
-      loadCircle(function () { setView("fellowship"); });   // → the room (ceremony opens for a new member)
+      // stayPut = joined during onboarding → load the circle quietly and let the welcome card land first
+      loadCircle(function () { if (!stayPut) setView("fellowship"); });   // → the room (ceremony opens for a new member)
     }, function (e) { console.error("join failed:", e); if (cb) cb(false); });
   }
   // Auto-join is DISABLED on purpose. A stored invite code (from a `?join=` link visited once)
@@ -9304,7 +9350,7 @@
   });
   if (window.matchMedia) { try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { if (db.theme === "auto") applyTheme("auto"); }); } catch (e) {} }
 
-  var APP_VERSION = "v61.30-dev";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v61.31-dev";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
@@ -9415,11 +9461,40 @@
 
   function openOnboarding() {
     $("obName").value = (db.profile && db.profile.name) || "";
+    $("obCode").value = "";
+    $("obPhotoLabel").textContent = "A face makes your circle personal.";
+    var oa = $("obPhotoBtn"); if (oa) { oa.classList.remove("has-photo"); oa.style.backgroundImage = ""; }
     $("obMsg").textContent = "";
     $("welcome").hidden = true; $("authModal").hidden = true;
     $("onboard").hidden = false;
     setTimeout(function () { $("obName").focus(); }, 50);
   }
+  // optional profile photo, right in onboarding
+  $("obPhotoBtn").addEventListener("click", function () { $("obPhotoFile").click(); });
+  $("obPhotoFile").addEventListener("change", function () {
+    var file = this.files && this.files[0]; if (!file) return;
+    if (!sb || !session) { $("obPhotoLabel").textContent = "Sign in to add a photo."; return; }
+    try { var rd = new FileReader(); rd.onload = function () { var a = $("obPhotoBtn"); a.classList.add("has-photo"); a.style.backgroundImage = "url(" + rd.result + ")"; }; rd.readAsDataURL(file); } catch (e) {}  // instant preview
+    $("obPhotoLabel").textContent = "Uploading…";
+    var path = myId() + "/" + Date.now() + ".jpg";
+    sb.storage.from("avatars").upload(path, file, { upsert: true, contentType: file.type || "image/jpeg" }).then(function (res) {
+      if (res.error) { $("obPhotoLabel").textContent = "Couldn't upload — you can add it later."; return; }
+      var pub = sb.storage.from("avatars").getPublicUrl(path), url = pub && pub.data && pub.data.publicUrl;
+      db.profile = db.profile || {}; db.profile.avatarUrl = url; save();
+      if (sb) sb.from("profiles").upsert({ id: myId(), display_name: myName(), avatar_url: url, updated_at: new Date().toISOString() }).then(function () {});
+      $("obPhotoLabel").textContent = "Looking good.";
+      if (typeof renderProfileBtn === "function") renderProfileBtn();
+    }, function () { $("obPhotoLabel").textContent = "Couldn't upload — you can add it later."; });
+  });
+  function showWelcome(name) {
+    if (db.profile && db.profile.welcomed) return;
+    $("welcomeTitle").textContent = name ? ("Welcome, " + name + ".") : "Welcome.";
+    $("welcomeCard").hidden = false;
+  }
+  $("welcomeBegin").addEventListener("click", function () {
+    db.profile = db.profile || {}; db.profile.welcomed = true; save();
+    $("welcomeCard").hidden = true; if (typeof playChime === "function") playChime(); buzz(10);
+  });
   $("obStart").addEventListener("click", function () {
     if (!session) { openWelcome(); return; }             // must be signed in
     var name = $("obName").value.trim();
@@ -9432,11 +9507,14 @@
     db.lastThreshold = todayKey;
     save();
     if (typeof upsertProfile === "function") upsertProfile();   // register the name in the community profile from the start
+    clearJoin();                                                // never rely on a stale auto-join code
     $("onboard").hidden = true;
     $("bottomNav").hidden = false; $("journalBubble").hidden = false; setView("home"); renderProfileBtn();
     dailyRefresh();
-    // arrived via an invite link → drop them straight into the circle they were invited to
-    setTimeout(maybeAutoJoin, 300);
+    // explicit invite code → join their circle quietly; the welcome card lands first
+    var code = ($("obCode").value || "").trim().toUpperCase();
+    if (code) doJoin(code, function (ok) { if (!ok) showToastMsg("That code didn’t match a circle — you can join later from Fellowship."); }, true);
+    showWelcome(name);
   });
 
   function renderSoundToggle() {
