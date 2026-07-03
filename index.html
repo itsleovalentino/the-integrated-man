@@ -2103,22 +2103,38 @@
   .profile-btn { width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--field-edge); background: var(--field); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; color: var(--accent); overflow: hidden; background-size: cover; background-position: center; flex: 0 0 auto; }
 
   /* ===== Fellowship: circles + covenant board ===== */
-  /* State 1 — the chapel door (an invitation, not a locked page) */
-  .chapel { max-width: 560px; margin: 0 auto; padding: 8vh 26px 120px; text-align: center; display: flex; flex-direction: column; align-items: center; }
-  .chapel-eyebrow { font-family: "Spline Sans Mono", ui-monospace, monospace; font-size: 11px; letter-spacing: 0.28em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 22px; }
+  /* State 1 — the chapel door (an invitation, not a login form) */
+  .chapel { position: relative; max-width: 440px; margin: 0 auto; min-height: 82vh; padding: 9vh 26px 100px; text-align: center; display: flex; flex-direction: column; align-items: center; }
+  /* ambient framing: a soft gold glow behind the headline so the dark feels intentional */
+  .chapel-aura { position: absolute; top: 8%; left: 50%; width: min(88vw, 440px); height: min(88vw, 440px); transform: translateX(-50%); background: radial-gradient(circle, rgba(203,178,126,0.055), rgba(203,178,126,0) 66%); pointer-events: none; z-index: 0; }
+  .chapel > *:not(.chapel-aura) { position: relative; z-index: 1; width: 100%; }
+  /* tight group: eyebrow + headline + subline */
+  .chapel-eyebrow { font-family: "Spline Sans Mono", ui-monospace, monospace; font-size: 11px; letter-spacing: 0.3em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 20px; }
   .chapel-title { font-size: clamp(34px, 9vw, 46px); line-height: 1.08; color: var(--ink-high); font-weight: 500; letter-spacing: -0.01em; }
-  .chapel-line { margin-top: 18px; font-size: 16px; line-height: 1.6; color: var(--ink-soft); max-width: 30ch; }
-  .chapel-verse { margin-top: 30px; padding-top: 26px; border-top: 1px solid var(--gold-line); max-width: 34ch; }
-  .chapel-verse-txt { font-size: 17px; line-height: 1.65; color: var(--ink); font-style: italic; }
-  .chapel-verse-ref { margin-top: 12px; font-family: "Spline Sans Mono", ui-monospace, monospace; font-size: 10.5px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--accent); }
-  .chapel-cta { margin-top: 42px; width: 100%; max-width: 320px; padding: 16px; border-radius: 14px; border: 1px solid var(--accent); background: var(--accent-soft); color: var(--accent); font-family: inherit; font-size: 15.5px; font-weight: 600; cursor: pointer; transition: background 0.2s ease; }
+  .chapel-line { margin: 16px auto 0; font-size: 16px; line-height: 1.6; color: var(--ink-soft); max-width: 28ch; }
+  /* generous space, then the scripture as its own quiet moment — smaller, more air, no divider */
+  .chapel-verse { margin: clamp(48px, 13vh, 104px) auto 0; max-width: 30ch; }
+  .chapel-verse-txt { font-size: 15px; line-height: 1.7; color: var(--ink-soft); font-style: italic; }
+  .chapel-verse-ref { margin-top: 16px; font-family: "Spline Sans Mono", ui-monospace, monospace; font-size: 10px; letter-spacing: 0.24em; text-transform: uppercase; color: var(--accent); opacity: 0.85; }
+  /* generous space, then the single action */
+  .chapel-action { margin: clamp(48px, 13vh, 104px) auto 0; max-width: 340px; }
+  .chapel-cta { width: 100%; padding: 16px 20px; border-radius: 14px; border: 1px solid var(--accent); background: var(--accent-soft); color: var(--accent); font-family: inherit; font-size: 15.5px; font-weight: 600; cursor: pointer; transition: background 0.2s ease; }
   .chapel-cta:active { background: rgba(203,178,126,0.2); }
-  .chapel-soon { margin-top: 16px; font-size: 13px; color: var(--ink-faint); opacity: 0.6; }
-  .chapel-code-wrap { margin-top: 24px; width: 100%; max-width: 320px; display: none; }
-  .chapel-code-wrap.show { display: block; }
-  .chapel-code-input { width: 100%; text-align: center; text-transform: uppercase; letter-spacing: 0.3em; font-family: "Spline Sans Mono", ui-monospace, monospace; font-size: 18px; padding: 15px; border-radius: 12px; border: 1px solid var(--field-edge); background: var(--field); color: var(--ink); }
-  .chapel-code-msg { margin-top: 10px; font-size: 13px; min-height: 16px; color: var(--ink-soft); }
+  .chapel-code { display: flex; gap: 9px; width: 100%; animation: chapelCodeIn 0.3s cubic-bezier(0.2,0.7,0.2,1); }
+  .chapel-code[hidden] { display: none; }
+  @keyframes chapelCodeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+  .chapel-code-input { flex: 1; min-width: 0; text-align: left; text-transform: none; letter-spacing: normal; font-family: inherit; font-size: 16px; padding: 15px 16px; border-radius: 12px; border: 1px solid var(--field-edge); background: var(--field); color: var(--ink); }
+  .chapel-code-input:focus { outline: none; border-color: var(--accent); }
+  .chapel-code-input::placeholder { color: var(--ink-faint); }
+  .chapel-go { flex: 0 0 auto; width: 52px; border-radius: 12px; border: 1px solid var(--accent); background: var(--accent-soft); color: var(--accent); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; transition: background 0.2s ease; }
+  .chapel-go:active { background: rgba(203,178,126,0.2); }
+  .chapel-go svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .chapel-code-msg { margin-top: 12px; font-size: 13px; min-height: 16px; color: var(--ink-soft); text-align: left; }
   .chapel-code-msg.err { color: #d0806a; }
+  .chapel-soon { margin-top: 22px; font-size: 13px; color: var(--ink-faint); }
+  /* dev workshop: keep content clear of the fixed PREVIEW ribbon */
+  body.tim-dev { padding-top: 20px; }
+  body.tim-dev .fellow-chrome { top: 20px; }
 
   /* the signing ceremony — full-screen, sacred, deliberate */
   .cov-cer { position: fixed; inset: 0; z-index: 260; background: var(--bg); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 28px calc(40px + env(safe-area-inset-bottom)); text-align: center; overflow-y: auto; }
@@ -6262,13 +6278,20 @@
   function renderChapelDoor() {
     $("circleBody").innerHTML =
       '<div class="chapel">' +
+        '<div class="chapel-aura"></div>' +
         '<div class="chapel-eyebrow">Fellowship</div>' +
         '<div class="chapel-title serif">Fellowship happens<br>in circles.</div>' +
         '<div class="chapel-line">A few brothers who carry each other — seen, known, and held to their becoming.</div>' +
         '<div class="chapel-verse"><div class="chapel-verse-txt serif">"Two are better than one, because they have a good reward for their toil. For if they fall, one will lift up his fellow."</div><div class="chapel-verse-ref">Ecclesiastes 4:9–10</div></div>' +
-        '<button class="chapel-cta" data-act="showCode">Have an invite? Enter your code</button>' +
-        '<div class="chapel-code-wrap" id="chapelCodeWrap"><input class="chapel-code-input" id="chapelCodeInput" maxlength="8" placeholder="CODE" autocapitalize="characters" autocomplete="off" /><div class="chapel-code-msg" id="chapelCodeMsg"></div></div>' +
-        '<div class="chapel-soon">Starting your own circle is coming soon.</div>' +
+        '<div class="chapel-action">' +
+          '<button class="chapel-cta" id="chapelCta" data-act="showCode">Have an invite? Enter your code</button>' +
+          '<div class="chapel-code" id="chapelCode" hidden>' +
+            '<input class="chapel-code-input" id="chapelCodeInput" maxlength="12" placeholder="Enter your invite code" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" />' +
+            '<button class="chapel-go" data-act="submitCode" aria-label="Join"><svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="13 6 19 12 13 18"/></svg></button>' +
+          '</div>' +
+          '<div class="chapel-code-msg" id="chapelCodeMsg"></div>' +
+          '<div class="chapel-soon">Starting your own circle is coming soon.</div>' +
+        '</div>' +
       '</div>';
     var inp = $("chapelCodeInput");
     if (inp) inp.addEventListener("keydown", function (e) { if (e.key === "Enter") submitCode(); });
@@ -6512,7 +6535,8 @@
     var el = e.target.closest("[data-act]"); if (!el) return;
     var act = el.getAttribute("data-act"), uid = el.getAttribute("data-uid");
     if (act === "retryCircle") { circleState.error = false; openCircle(); }
-    else if (act === "showCode") { var w = $("chapelCodeWrap"); if (w) { w.classList.add("show"); var i = $("chapelCodeInput"); if (i) i.focus(); } }
+    else if (act === "showCode") { var cta = $("chapelCta"), cd = $("chapelCode"); if (cta) cta.hidden = true; if (cd) { cd.hidden = false; var i = $("chapelCodeInput"); if (i) i.focus(); } }
+    else if (act === "submitCode") { submitCode(); }
     else if (act === "markToday") { confirmDialog("Mark today’s covenant as lived?", "Yes, lived it", function () { setCheck(true); }); }
     else if (act === "unmarkToday") { confirmDialog("Unmark today?", "Unmark", function () { setCheck(false); }); }
     else if (act === "gotBack") { sendNudge(uid, "back"); showToastMsg("He’ll know you’re with him."); buzz(10); }
@@ -8518,7 +8542,7 @@
   });
   if (window.matchMedia) { try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { if (db.theme === "auto") applyTheme("auto"); }); } catch (e) {} }
 
-  var APP_VERSION = "v61-dev";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v61.1-dev";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
@@ -9428,7 +9452,7 @@
   // the OS evicting site data under disk pressure (iOS/Android honor this for
   // installed home-screen apps)
   try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) {}
-  if (window.TIM_DEV) { var _rb = document.createElement("div"); _rb.className = "dev-ribbon"; _rb.textContent = "Preview build · dev"; document.body.appendChild(_rb); }
+  if (window.TIM_DEV) { document.body.classList.add("tim-dev"); var _rb = document.createElement("div"); _rb.className = "dev-ribbon"; _rb.textContent = "Preview build · dev"; document.body.appendChild(_rb); }
   applyLayout();
   dailyRefresh();
   rehydrateAudio();   // pull voice memos back from IndexedDB after a reload, then re-render
