@@ -6815,7 +6815,7 @@
     } else if (doneToday) {
       var fc = circleState.fireCounts[m.user_id] || 0;
       var firedByMe = circleState.sentBack[m.user_id + ":fire"];
-      right = '<button class="cov-nudge' + (firedByMe ? " sent" : "") + '" data-act="fire" data-uid="' + m.user_id + '" aria-label="Celebrate">🔥' + (fc ? '<span class="cf-count">' + fc + '</span>' : "") + '</button>';
+      right = '<button class="cov-nudge' + (firedByMe ? " sent" : "") + '" data-act="fire" data-uid="' + m.user_id + '" aria-label="Celebrate">🔥' + (fc ? '<span class="cf-count">' + (fc > 9 ? "9+" : fc) + '</span>' : "") + '</button>';
     } else {
       var sent = circleState.sentBack[m.user_id + ":back"];
       right = '<button class="cov-nudge' + (sent ? " sent" : "") + '" data-act="gotBack" data-uid="' + m.user_id + '" aria-label="Got your back">' + HANDS_SVG + '</button>';
@@ -6873,14 +6873,20 @@
   }
   // Mark today. We fill the exact circle you tapped, right now, with paintTap — and we do
   // NOT rebuild the board (a full re-render was what silently dropped the fill before).
+  var checkPushTimer = null;
   function setCheck(makeDone, btn) {
     var uid = myId(), day = todayLocal(), c = circleState.circle;
     (circleState.checks[uid] = circleState.checks[uid] || {})[day] = makeDone;
     db.covChecks = db.covChecks || {};
     db.covChecks[day] = { done: makeDone, circleId: c.id, ts: new Date().toISOString() };   // durable personal mirror
     save();
-    if (sb) sb.from("covenant_checks").upsert({ circle_id: c.id, user_id: uid, day: day, done: makeDone, updated_at: new Date().toISOString() }, { onConflict: "circle_id,user_id,day" })
-      .then(function (res) { if (res && res.error) console.error("check failed:", res.error); });
+    // debounce the cloud write so rapid done↔undo taps only send the FINAL state (last-write-wins, no race)
+    clearTimeout(checkPushTimer);
+    checkPushTimer = setTimeout(function () {
+      var latest = db.covChecks[day];
+      if (sb && latest && latest.circleId === c.id) sb.from("covenant_checks").upsert({ circle_id: c.id, user_id: uid, day: day, done: latest.done, updated_at: new Date().toISOString() }, { onConflict: "circle_id,user_id,day" })
+        .then(function (res) { if (res && res.error) console.error("check failed:", res.error); });
+    }, 450);
     if (!btn) { var r = $("circleBody").querySelector(".cov-row.mine .cov-tap"); if (r) btn = r; }
     var row = btn ? btn.closest(".cov-row") : $("circleBody").querySelector(".cov-row.mine");
     paintTap(btn, makeDone);                 // fill the circle — inline, immediate, unmissable
@@ -6942,8 +6948,8 @@
       var el = fx.querySelector("." + cls); if (!el) return;
       el.style.animation = "none"; void el.offsetWidth; el.style.animation = "";   // restart the keyframes
     });
-    // sparks fly outward at the moment of impact
-    var sp = $("forgeSparks"); if (sp) {
+    // sparks fly outward at the moment of impact (skipped when the user prefers reduced motion)
+    var sp = $("forgeSparks"); if (sp && !REDUCED) {
       sp.innerHTML = "";
       for (var i = 0; i < 20; i++) {
         var s = document.createElement("div"); s.className = "forge-spark"; sp.appendChild(s);
@@ -6978,7 +6984,16 @@
     if (kind === "fire") circleState.fireCounts[toUid] = (circleState.fireCounts[toUid] || 0) + 1;
     if (sb) sb.from("nudges").insert({ circle_id: c.id, from_id: myId(), to_id: toUid, day: day, kind: kind })
       .then(function (res) { if (res && res.error && res.error.code !== "23505") console.error("nudge failed:", res.error); });
-    renderBoard();
+    // update just this brother's button in place — no full board re-render, no flash/scroll-jump
+    var nb = $("circleBody").querySelector('.cov-nudge[data-uid="' + toUid + '"][data-act="' + (kind === "fire" ? "fire" : "gotBack") + '"]');
+    if (nb) {
+      nb.classList.add("sent");
+      if (kind === "fire") {
+        var fc = circleState.fireCounts[toUid] || 0, cap = fc > 9 ? "9+" : String(fc), badge = nb.querySelector(".cf-count");
+        if (badge) badge.textContent = cap;
+        else if (fc) nb.insertAdjacentHTML("beforeend", '<span class="cf-count">' + cap + '</span>');
+      }
+    } else { renderBoard(); }   // fallback only if the row wasn't found
   }
   function showReceivedNudges() {
     var r = circleState.received || [];
@@ -7059,6 +7074,10 @@
     s.addEventListener("pointerup", cancel);
     s.addEventListener("pointerleave", cancel);
     s.addEventListener("pointercancel", cancel);
+    // keyboard / switch access: focusable, and hold Enter or Space to sign
+    s.setAttribute("tabindex", "0"); s.setAttribute("role", "button"); s.setAttribute("aria-label", "Press and hold to sign your covenant");
+    s.addEventListener("keydown", function (e) { if ((e.key === "Enter" || e.key === " " || e.key === "Spacebar") && !e.repeat) { start(e); } });
+    s.addEventListener("keyup", function (e) { if (e.key === "Enter" || e.key === " " || e.key === "Spacebar") { e.preventDefault(); cancel(); } });
   })();
   function sealComplete() {
     sealDone = true;
@@ -9286,7 +9305,7 @@
   });
   if (window.matchMedia) { try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { if (db.theme === "auto") applyTheme("auto"); }); } catch (e) {} }
 
-  var APP_VERSION = "v61.28-dev";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v61.29-dev";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
