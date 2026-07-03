@@ -2119,35 +2119,34 @@
   .profile-btn { width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--field-edge); background: var(--field); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; color: var(--accent); overflow: hidden; background-size: cover; background-position: center; flex: 0 0 auto; }
 
   /* ===== Fellowship: circles + covenant board ===== */
-  /* State 1 — the chapel door (an invitation, not a login form) */
-  .chapel { position: relative; max-width: 440px; margin: 0 auto; min-height: 82vh; padding: 9vh 26px 100px; text-align: center; display: flex; flex-direction: column; align-items: center; }
-  /* ambient framing: a soft gold glow behind the headline so the dark feels intentional */
-  .chapel-aura { position: absolute; top: 8%; left: 50%; width: min(88vw, 440px); height: min(88vw, 440px); transform: translateX(-50%); background: radial-gradient(circle, rgba(203,178,126,0.055), rgba(203,178,126,0) 66%); pointer-events: none; z-index: 0; }
+  /* State 1 — the chapel door: a community graphic, one headline, the verse, a code field */
+  .chapel { position: relative; max-width: 430px; margin: 0 auto; min-height: 80vh; padding: 7vh 26px 90px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .chapel-aura { position: absolute; top: 4%; left: 50%; width: min(90vw, 460px); height: min(90vw, 460px); transform: translateX(-50%); background: radial-gradient(circle, rgba(203,178,126,0.07), rgba(203,178,126,0) 64%); pointer-events: none; z-index: 0; }
   .chapel > *:not(.chapel-aura) { position: relative; z-index: 1; width: 100%; }
-  /* tight group: eyebrow + headline + subline */
-  .chapel-eyebrow { font-family: "Spline Sans Mono", ui-monospace, monospace; font-size: 11px; letter-spacing: 0.3em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 20px; }
-  .chapel-title { font-size: clamp(34px, 9vw, 46px); line-height: 1.08; color: var(--ink-high); font-weight: 500; letter-spacing: -0.01em; }
-  .chapel-line { margin: 16px auto 0; font-size: 16px; line-height: 1.6; color: var(--ink-soft); max-width: 28ch; }
-  /* generous space, then the scripture as its own quiet moment — smaller, more air, no divider */
-  .chapel-verse { margin: clamp(48px, 13vh, 104px) auto 0; max-width: 30ch; }
+  /* three overlapping community circles (drop assets/face-1.jpg…face-3.jpg to use real photos) */
+  .chapel-circles { position: relative; width: 158px; height: 122px; margin: 0 auto 30px; }
+  .cc { position: absolute; border-radius: 50%; background-size: cover; background-position: center; box-shadow: 0 10px 26px -8px rgba(0,0,0,0.6); border: 3px solid var(--bg); outline: 2px solid rgba(203,178,126,0.7); }
+  [data-theme="light"] .cc { box-shadow: 0 10px 26px -10px rgba(40,36,28,0.4); }
+  .cc-1 { width: 84px; height: 84px; left: 4px; top: 0; background-image: url(assets/face-1.jpg), linear-gradient(140deg, #6f9bc0, #3a5a72); z-index: 2; }
+  .cc-2 { width: 76px; height: 76px; left: 78px; top: 8px; background-image: url(assets/face-2.jpg), linear-gradient(140deg, #c39a5f, #7a5a32); z-index: 1; }
+  .cc-3 { width: 72px; height: 72px; left: 44px; top: 50px; background-image: url(assets/face-3.jpg), linear-gradient(140deg, #94ab63, #5b6f38); z-index: 3; }
+  .chapel-title { font-size: clamp(26px, 7.2vw, 33px); line-height: 1.15; color: var(--ink-high); font-weight: 500; letter-spacing: -0.005em; }
+  .chapel-verse { margin: 34px auto 0; max-width: 30ch; padding-top: 26px; border-top: 1px solid var(--gold-line); }
   .chapel-verse-txt { font-size: 15px; line-height: 1.7; color: var(--ink-soft); font-style: italic; }
-  .chapel-verse-ref { margin-top: 16px; font-family: "Spline Sans Mono", ui-monospace, monospace; font-size: 10px; letter-spacing: 0.24em; text-transform: uppercase; color: var(--accent); opacity: 0.85; }
-  /* generous space, then the single action */
-  .chapel-action { margin: clamp(48px, 13vh, 104px) auto 0; max-width: 340px; }
-  .chapel-cta { width: 100%; padding: 16px 20px; border-radius: 14px; border: 1px solid var(--accent); background: var(--accent-soft); color: var(--accent); font-family: inherit; font-size: 15.5px; font-weight: 600; cursor: pointer; transition: background 0.2s ease; }
-  .chapel-cta:active { background: rgba(203,178,126,0.2); }
-  .chapel-code { display: flex; gap: 9px; width: 100%; animation: chapelCodeIn 0.3s cubic-bezier(0.2,0.7,0.2,1); }
-  .chapel-code[hidden] { display: none; }
-  @keyframes chapelCodeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
-  .chapel-code-input { flex: 1; min-width: 0; text-align: left; text-transform: none; letter-spacing: normal; font-family: inherit; font-size: 16px; padding: 15px 16px; border-radius: 12px; border: 1px solid var(--field-edge); background: var(--field); color: var(--ink); }
+  .chapel-verse-ref { margin-top: 14px; font-family: "Spline Sans Mono", ui-monospace, monospace; font-size: 10px; letter-spacing: 0.24em; text-transform: uppercase; color: var(--accent); opacity: 0.85; }
+  /* the invite code field — always visible, the way in */
+  .chapel-action { margin: 34px auto 0; max-width: 340px; }
+  .chapel-code { display: flex; gap: 9px; width: 100%; }
+  .chapel-code-input { flex: 1; min-width: 0; text-align: center; text-transform: uppercase; letter-spacing: 0.18em; font-family: "Spline Sans Mono", ui-monospace, monospace; font-size: 16px; padding: 15px 14px; border-radius: 13px; border: 1px solid var(--field-edge); background: var(--field); color: var(--ink); }
   .chapel-code-input:focus { outline: none; border-color: var(--accent); }
-  .chapel-code-input::placeholder { color: var(--ink-faint); }
-  .chapel-go { flex: 0 0 auto; width: 52px; border-radius: 12px; border: 1px solid var(--accent); background: var(--accent-soft); color: var(--accent); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; transition: background 0.2s ease; }
+  .chapel-code-input::placeholder { color: var(--ink-faint); letter-spacing: 0.08em; }
+  .chapel-go { flex: 0 0 auto; width: 54px; border-radius: 13px; border: 1px solid var(--accent); background: var(--accent-soft); color: var(--accent); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; transition: background 0.2s ease; }
   .chapel-go:active { background: rgba(203,178,126,0.2); }
   .chapel-go svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-  .chapel-code-msg { margin-top: 12px; font-size: 13px; min-height: 16px; color: var(--ink-soft); text-align: left; }
+  .chapel-code-label { font-family: "Spline Sans Mono", ui-monospace, monospace; font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 11px; }
+  .chapel-code-msg { margin-top: 12px; font-size: 13px; min-height: 16px; color: var(--ink-soft); }
   .chapel-code-msg.err { color: #d0806a; }
-  .chapel-soon { margin-top: 22px; font-size: 13px; color: var(--ink-faint); }
+  .chapel-soon { margin-top: 20px; font-size: 12.5px; color: var(--ink-faint); }
   /* dev workshop: keep content clear of the fixed PREVIEW ribbon */
   body.tim-dev { padding-top: 20px; }
   body.tim-dev .fellow-chrome { top: 20px; }
@@ -6332,14 +6331,13 @@
     $("circleBody").innerHTML =
       '<div class="chapel">' +
         '<div class="chapel-aura"></div>' +
-        '<div class="chapel-eyebrow">Fellowship</div>' +
+        '<div class="chapel-circles"><span class="cc cc-1"></span><span class="cc cc-2"></span><span class="cc cc-3"></span></div>' +
         '<div class="chapel-title serif">Fellowship happens<br>in circles.</div>' +
-        '<div class="chapel-line">A few brothers who carry each other — seen, known, and held to their becoming.</div>' +
         '<div class="chapel-verse"><div class="chapel-verse-txt serif">"Two are better than one, because they have a good reward for their toil. For if they fall, one will lift up his fellow."</div><div class="chapel-verse-ref">Ecclesiastes 4:9–10</div></div>' +
         '<div class="chapel-action">' +
-          '<button class="chapel-cta" id="chapelCta" data-act="showCode">Have an invite? Enter your code</button>' +
-          '<div class="chapel-code" id="chapelCode" hidden>' +
-            '<input class="chapel-code-input" id="chapelCodeInput" maxlength="12" placeholder="Enter your invite code" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" />' +
+          '<div class="chapel-code-label">Have an invite code?</div>' +
+          '<div class="chapel-code">' +
+            '<input class="chapel-code-input" id="chapelCodeInput" maxlength="12" placeholder="Enter code" autocapitalize="characters" autocorrect="off" autocomplete="off" spellcheck="false" />' +
             '<button class="chapel-go" data-act="submitCode" aria-label="Join"><svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="13 6 19 12 13 18"/></svg></button>' +
           '</div>' +
           '<div class="chapel-code-msg" id="chapelCodeMsg"></div>' +
@@ -6616,22 +6614,27 @@
   }
 
   // ---- join (invites are shared by Leo outside the app; no in-app invite UI) ----
+  // The invite code is remembered in localStorage too, so it survives the whole
+  // signup ride (email-confirm redirect, reloads) — not just this page's memory.
+  var JOIN_KEY = "tim_join_code";
+  function rememberJoin(code) { pendingJoinCode = code || null; try { if (code) localStorage.setItem(JOIN_KEY, code); else localStorage.removeItem(JOIN_KEY); } catch (e) {} }
+  function currentJoinCode() { if (pendingJoinCode) return pendingJoinCode; try { var c = localStorage.getItem(JOIN_KEY); return c ? c.trim().toUpperCase() : null; } catch (e) { return null; } }
+  function clearJoin() { pendingJoinCode = null; try { localStorage.removeItem(JOIN_KEY); } catch (e) {} }
   function doJoin(code, cb) {
-    pendingJoinCode = null;
+    if (!sb || !session) { if (cb) cb(false); return; }
     sb.rpc("join_circle", { p_code: code, p_day: todayLocal() }).then(function (res) {
-      if (res && res.error) { if (cb) cb(false); return; }
+      if (res && res.error) { console.error("join failed:", res.error); if (cb) cb(false); return; }
+      clearJoin();
       if (cb) cb(true);
-      loadCircle(function () { setView("fellowship"); });
-    }, function () { if (cb) cb(false); });
+      loadCircle(function () { setView("fellowship"); });   // → the room (ceremony opens for a new member)
+    }, function (e) { console.error("join failed:", e); if (cb) cb(false); });
   }
-  function handlePendingJoin() {
-    if (!pendingJoinCode || !sb || !session) return;
-    var code = pendingJoinCode;
-    sb.rpc("circle_preview", { p_code: code }).then(function (res) {
-      var row = res && res.data && res.data[0];
-      if (!row) { pendingJoinCode = null; return; }
-      confirmDialog((row.inviter_name || "A brother") + " invited you to " + (row.circle_name || "the circle") + ".", "Join", function () { doJoin(code); });
-    }, function () { pendingJoinCode = null; });
+  // After sign-in / onboarding, if they arrived via an invite link, drop them
+  // straight into the circle — no confirm dialog (clicking the link is consent).
+  function maybeAutoJoin() {
+    var code = currentJoinCode();
+    if (!code || !sb || !session || !(db.profile && db.profile.onboarded)) return;
+    doJoin(code);
   }
 
   // ---- covenant-board delegated actions (separate from the wall handler) ----
@@ -8636,7 +8639,7 @@
   });
   if (window.matchMedia) { try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { if (db.theme === "auto") applyTheme("auto"); }); } catch (e) {} }
 
-  var APP_VERSION = "v61.7-dev";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v61.8-dev";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
@@ -8738,8 +8741,8 @@
     }
     if (typeof upsertProfile === "function") upsertProfile();       // ensure a community profile row exists
     if (typeof warmCircle === "function") warmCircle();            // warm the circle badge in the background
-    // an existing signed-in user who followed an invite link → confirm + join
-    if (pendingJoinCode && db.profile && db.profile.onboarded && typeof handlePendingJoin === "function") setTimeout(handlePendingJoin, 400);
+    // followed an invite link → auto-join straight into the circle
+    if (typeof maybeAutoJoin === "function") setTimeout(maybeAutoJoin, 500);
   }
 
   function openOnboarding() {
@@ -8765,7 +8768,7 @@
     $("bottomNav").hidden = false; $("journalBubble").hidden = false; setView("home"); renderProfileBtn();
     dailyRefresh();
     // arrived via an invite link → drop them straight into the circle they were invited to
-    if (pendingJoinCode) { var jc = pendingJoinCode; pendingJoinCode = null; setTimeout(function () { doJoin(jc); }, 300); }
+    setTimeout(maybeAutoJoin, 300);
   });
 
   function renderSoundToggle() {
@@ -9568,7 +9571,7 @@
     try {
       var m = (location.search || "").match(/[?&]join=([^&]+)/);
       if (!m) return;
-      pendingJoinCode = decodeURIComponent(m[1]).trim().toUpperCase();
+      rememberJoin(decodeURIComponent(m[1]).trim().toUpperCase());   // persist across the whole signup ride
       // if signed out, name the inviter on the welcome screen so it reads as a doorway, not a form
       if (sb && !hasStoredSession()) sb.rpc("circle_preview", { p_code: pendingJoinCode }).then(function (res) {
         var row = res && res.data && res.data[0]; if (!row) return;
