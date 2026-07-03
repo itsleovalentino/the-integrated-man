@@ -2159,7 +2159,7 @@
   @keyframes cerIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
   .cov-cer-eyebrow { font-family: "Spline Sans Mono", ui-monospace, monospace; font-size: 11px; letter-spacing: 0.3em; text-transform: uppercase; color: var(--accent); margin-bottom: 26px; }
   .cov-cer-lead { font-size: clamp(24px, 6.5vw, 30px); line-height: 1.28; color: var(--ink-high); font-weight: 500; letter-spacing: -0.01em; }
-  .cov-cer-sub { margin-top: 16px; font-size: 15px; line-height: 1.6; color: var(--ink-soft); max-width: 32ch; }
+  .cov-cer-sub { margin: 16px auto 0; font-size: 15px; line-height: 1.6; color: var(--ink-soft); max-width: 32ch; text-align: center; }
   .cov-cer-field { margin-top: 34px; width: 100%; }
   .cov-cer-input { width: 100%; text-align: center; font-family: inherit; font-size: 17.5px; line-height: 1.5; color: var(--ink-high); background: transparent; border: none; border-bottom: 1px solid var(--gold-line); padding: 14px 6px; resize: none; overflow: hidden; }
   .cov-cer-input::placeholder { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -6195,7 +6195,7 @@
     // cache is stale after a migration; this is bulletproof.
     Promise.all([
       sb.from("prayers").select("*").order("created_at", { ascending: false }),
-      sb.from("profiles").select("id, display_name, avatar_url")
+      sb.from("profiles").select("*")
     ]).then(function (pr) {
       if (pr[0] && pr[0].error) { console.error("wall read failed:", pr[0].error); showToastMsg(pr[0].error.message || "Couldn’t load the wall."); }
       if (pr[1] && pr[1].error) { console.error("profiles read failed:", pr[1].error); }
@@ -6290,7 +6290,7 @@
       Promise.all([
         sb.from("circles").select("*").eq("id", cid).maybeSingle(),
         sb.from("circle_members").select("user_id, role, joined_day, joined_at").eq("circle_id", cid),
-        sb.from("profiles").select("id, display_name, avatar_url"),
+        sb.from("profiles").select("*"),
         sb.from("covenants").select("*").eq("circle_id", cid).order("signed_at", { ascending: true }),
         sb.from("covenant_checks").select("user_id, day, done").eq("circle_id", cid).in("day", days),
         sb.from("nudges").select("*").eq("circle_id", cid).in("day", days)
@@ -6480,6 +6480,14 @@
     paintTap(btn, makeDone);                 // fill the circle — inline, immediate, unmissable
     if (row) updateRowWeek(row, uid);        // the week dots + progress, in place
     if (makeDone) covCelebrate(btn);
+    // re-assert from state after any async re-render (e.g. a loadCircle right after
+    // signing, the solo/first-member case) could have rebuilt & un-filled the circle
+    reassertMyMark(); setTimeout(reassertMyMark, 500); setTimeout(reassertMyMark, 1400);
+  }
+  function reassertMyMark() {
+    var uid = myId(), today = todayLocal();
+    var t = $("circleBody").querySelector(".cov-row.mine .cov-tap");
+    if (t) paintTap(t, !!(circleState.checks[uid] && circleState.checks[uid][today]));
   }
   // repaint one row's week strip + progress from state (no innerHTML rebuild of the board)
   function updateRowWeek(row, uid) {
@@ -8639,7 +8647,7 @@
   });
   if (window.matchMedia) { try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { if (db.theme === "auto") applyTheme("auto"); }); } catch (e) {} }
 
-  var APP_VERSION = "v61.9-dev";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v61.10-dev";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
