@@ -1478,6 +1478,57 @@
   }
   .rw-body::placeholder { color: var(--ink-faint); font-style: italic; }
 
+  /* ---- Days recall dashboard (read-only, glassy) ---- */
+  .days-view { position: fixed; inset: 0; z-index: 72; background: var(--bg); display: flex; flex-direction: column; animation: viewIn 0.32s cubic-bezier(.2,.7,.2,1); }
+  .days-view[hidden] { display: none; }
+  .days-bar { display: flex; align-items: center; gap: 6px; padding: calc(10px + env(safe-area-inset-top, 0px)) 8px 8px; }
+  .days-bar .writer-close { flex: 0 0 auto; }
+  .days-bar-mid { flex: 1; display: flex; flex-direction: column; align-items: center; min-width: 0; }
+  .days-eyebrow { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-faint); }
+  .days-nav { flex: 0 0 auto; display: flex; gap: 0; }
+  .days-arrow { width: 42px; height: 42px; border-radius: 50%; background: none; border: none; color: var(--ink-soft); font-size: 24px; line-height: 1; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; transition: color .2s ease, opacity .2s ease; }
+  .days-arrow:disabled { opacity: 0.22; cursor: default; }
+  .days-arrow:not(:disabled):active { color: var(--accent); }
+  .days-scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 2px 18px calc(46px + env(safe-area-inset-bottom)); }
+  .days-inner { max-width: 640px; margin: 0 auto; }
+  .days-head { text-align: center; margin: 6px 0 22px; }
+  .days-date { font-size: 30px; line-height: 1.12; letter-spacing: -0.01em; color: var(--ink); }
+  .days-readonly { display: inline-flex; align-items: center; gap: 7px; margin-top: 13px; font-size: 10.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); border: 1px solid var(--line); border-radius: 999px; padding: 5px 13px; }
+  .days-readonly::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: var(--accent); opacity: 0.7; }
+  .day-card { background: rgba(255,255,255,0.028); border: 1px solid var(--panel-edge); border-radius: 16px; padding: 15px 17px; margin-bottom: 13px; -webkit-backdrop-filter: blur(9px); backdrop-filter: blur(9px); }
+  [data-theme="light"] .day-card { background: rgba(0,0,0,0.02); }
+  .day-card-h { font-size: 10.5px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .day-card-h .dch-side { letter-spacing: 0.02em; text-transform: none; font-size: 12.5px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+  .day-reflect + .day-reflect { margin-top: 13px; padding-top: 13px; border-top: 1px solid var(--line); }
+  .day-reflect-q { font-size: 15.5px; line-height: 1.4; color: var(--ink-soft); margin-bottom: 6px; }
+  .day-reflect-a { font-size: 15.5px; line-height: 1.62; color: var(--ink); white-space: pre-wrap; word-wrap: break-word; }
+  .day-integ { display: flex; align-items: baseline; gap: 9px; margin-bottom: 14px; }
+  .day-integ b { font-size: 27px; font-weight: 300; color: var(--accent); letter-spacing: -0.01em; line-height: 1; }
+  .day-integ span { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); }
+  .day-pillar { display: flex; align-items: center; gap: 11px; padding: 5px 0; }
+  .day-pillar-dot { width: 10px; height: 10px; border-radius: 50%; flex: 0 0 auto; box-shadow: 0 0 8px -2px currentColor; }
+  .day-pillar-name { flex: 1; font-size: 14.5px; color: var(--ink); }
+  .day-pillar-score { font-size: 13px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+  .day-pillar-why { font-size: 13px; color: var(--ink-faint); line-height: 1.5; margin: 1px 0 6px 21px; font-style: italic; }
+  .day-habit { display: flex; align-items: center; gap: 11px; padding: 5px 0; font-size: 14.5px; color: var(--ink); }
+  .day-habit.is-miss { color: var(--ink-faint); }
+  .day-habit-mk { width: 20px; height: 20px; border-radius: 50%; flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; }
+  .day-habit-mk.done { background: var(--accent-soft); color: var(--accent); }
+  .day-habit-mk.miss { border: 1px dashed var(--line); }
+  .day-habit-mk svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+  .day-oura-rings { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+  .day-oura-steps { text-align: center; font-size: 13px; color: var(--ink-soft); margin-top: 12px; }
+  .day-list-line { display: flex; gap: 9px; padding: 5px 0; font-size: 14.5px; line-height: 1.5; color: var(--ink); }
+  .day-list-line.answered { color: var(--ink-soft); }
+  .day-list-line .dll-mk { flex: 0 0 auto; color: var(--accent); }
+  .day-list-line .dll-tag { color: var(--accent); font-size: 12px; letter-spacing: 0.02em; }
+  .day-note { display: block; width: 100%; text-align: left; background: none; border: none; border-top: 1px solid var(--line); padding: 11px 0; cursor: pointer; font-family: inherit; }
+  .day-note:first-child { border-top: none; padding-top: 2px; }
+  .day-note-t { font-size: 14.5px; color: var(--ink); margin-bottom: 2px; }
+  .day-note-p { font-size: 13px; color: var(--ink-faint); line-height: 1.45; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .days-empty { text-align: center; color: var(--ink-faint); font-style: italic; font-size: 15px; padding: 54px 0; }
+  @media (prefers-reduced-motion: reduce) { .days-view { animation: none; } }
+
   /* ---- save entry ---- */
   .save-entry {
     width: 100%;
@@ -3325,6 +3376,23 @@
     </div>
   </div>
 
+  <!-- Days recall dashboard (read-only, glassy; reads existing stores only) -->
+  <div class="days-view" id="daysView" hidden>
+    <div class="days-bar">
+      <button class="writer-close" id="daysClose" aria-label="Close">
+        <svg viewBox="0 0 24 24"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>
+      </button>
+      <div class="days-bar-mid"><span class="days-eyebrow" id="daysEyebrow"></span></div>
+      <div class="days-nav">
+        <button class="days-arrow" id="daysPrev" aria-label="Older day">‹</button>
+        <button class="days-arrow" id="daysNext" aria-label="Newer day">›</button>
+      </div>
+    </div>
+    <div class="days-scroll" id="daysScroll">
+      <div class="days-inner" id="daysBody"></div>
+    </div>
+  </div>
+
   <!-- Full journal page (paper) -->
   <div class="page-overlay" id="pageView" hidden>
     <button class="page-nav" id="pagePrev" aria-label="Older entry">‹</button>
@@ -3563,7 +3631,7 @@
     <div class="fellow-chrome"><div class="fellow-title serif">Journal</div></div>
     <div class="journal-page">
       <div class="seg jt-seg" id="journalSeg">
-        <button class="seg-btn active" data-jt="days">Reflections</button>
+        <button class="seg-btn active" data-jt="days">Days</button>
         <button class="seg-btn" data-jt="notes">Notes</button>
       </div>
       <div id="jtDays">
@@ -5637,6 +5705,7 @@
   document.addEventListener("keydown", function (e) {
     if (e.key !== "Escape") return;
     if (!$("reflectWriter").hidden) { closeReflectWriter(false); return; }
+    if (!$("daysView").hidden) { closeDays(); return; }
     if (!$("bibleView").hidden) $("bibleView").hidden = true;
     if (!$("anchorsView").hidden) $("anchorsView").hidden = true;
   });
@@ -7105,7 +7174,7 @@
     var el = $("journalDays"); if (!el) return;
     var keys = journalKeys();
     if (!keys.length) {
-      el.innerHTML = '<div class="jp-empty">No reflections yet.<br>Your daily prompt, gratitude, and pillar check-ins gather here.</div>';
+      el.innerHTML = '<div class="jp-empty">No days yet.<br>Your reflections, gratitude, and pillar check-ins gather here as you fill each day.</div>';
       return;
     }
     var pinned = keys.filter(function (k) { return db.pinned[k]; });
@@ -7124,7 +7193,7 @@
     var item = e.target.closest(".je"); if (!item) return;
     var k = item.getAttribute("data-k");
     if (e.target.closest('[data-act="menu"]')) { openJeMenu(e.target.closest('[data-act="menu"]'), k); return; }
-    openPage(k);   // the full compiled day page (pillars, gratitude, prompts…)
+    openDays(k);   // the glassy read-only Days dashboard for that day
   });
   // Journal tab segmented control: Days (records) / Notes (freeform)
   var journalTab = "days";
@@ -8666,8 +8735,188 @@
   $("chainGrid").addEventListener("click", function (e) {
     var d = e.target.closest(".wk-day"); if (!d) return;
     var k = d.getAttribute("data-k"); if (!k || k > todayKey) return;
-    openDay(k); buzz(8);
+    openDays(k); buzz(8);
   });
+
+  // ===== Days recall dashboard (read-only, glassy) — reads existing stores only, never writes =====
+  var daysKey = null, daysList = [];
+  function widgetOn(key) {
+    var lay = db.layout;
+    if (Array.isArray(lay)) { for (var i = 0; i < lay.length; i++) if (lay[i].key === key) return !!lay[i].on; }
+    return false;
+  }
+  function ouraDayData(k) {
+    if (!ouraCache) return null;
+    function fd(a) { if (!a) return null; for (var i = 0; i < a.length; i++) if (a[i].day === k) return a[i]; return null; }
+    return { rd: fd(ouraCache.readiness), sl: fd(ouraCache.sleep), ac: fd(ouraCache.activity) };
+  }
+  function dayCard(title, inner, side) {
+    if (!inner) return "";
+    return '<div class="day-card"><div class="day-card-h"><span>' + title + '</span>' +
+      (side ? '<span class="dch-side">' + side + '</span>' : '') + '</div>' + inner + '</div>';
+  }
+  var DAY_CHECK = '<svg viewBox="0 0 24 24"><polyline points="5 12 10 17 19 7"/></svg>';
+  function renderDay(k) {
+    var p = k.split("-"), d = new Date(p[0], p[1] - 1, p[2]), isToday = (k === todayKey);
+    $("daysEyebrow").textContent = isToday ? "Today" : "Looking back";
+    var html = '<div class="days-head"><div class="days-date serif">' + days[d.getDay()] + '<br>' + months[d.getMonth()] + " " + d.getDate() + '</div>' +
+      (isToday ? '' : '<div class="days-readonly">Read-only</div>') + '</div>';
+    var body = "";
+
+    // Body · Oura
+    var ou = ouraDayData(k);
+    if (ou && (ou.rd || ou.sl || ou.ac)) {
+      var rings = "";
+      if (ou.rd && isNum(ou.rd.score)) rings += healthRing(ou.rd.score, HR_LEAF, "Readiness");
+      if (ou.sl && isNum(ou.sl.score)) rings += healthRing(ou.sl.score, HR_MOON, "Sleep");
+      if (ou.ac && isNum(ou.ac.score)) rings += healthRing(ou.ac.score, HR_ACTIVITY, "Activity");
+      var steps = (ou.ac && isNum(ou.ac.steps)) ? ou.ac.steps : null;
+      if (rings) body += dayCard("Body · Oura", '<div class="day-oura-rings">' + rings + '</div>' +
+        (steps != null ? '<div class="day-oura-steps">Steps — ' + fmtNum(steps) + '</div>' : ''));
+    }
+
+    // The Seven Pillars
+    if (db.pillarSkip[k]) {
+      body += dayCard("The Seven Pillars", '<div class="day-reflect-a" style="color:var(--ink-faint)">Not tracked — a resting day.</div>');
+    } else if (db.ratings[k]) {
+      var rt = db.ratings[k], integ = entryIntegration(k), ph = "";
+      if (integ) ph += '<div class="day-integ"><b>' + integ + '</b><span>Integration / 10</span></div>';
+      pillars.forEach(function (pl) {
+        var v = rt[pl.key]; if (!v || !isNum(v.score)) return;
+        ph += '<div class="day-pillar"><span class="day-pillar-dot" style="background:' + pl.color + ';color:' + pl.color + '"></span>' +
+          '<span class="day-pillar-name">' + pl.name + '</span><span class="day-pillar-score">' + v.score + '/10</span></div>';
+        if (v.why && v.why.trim()) ph += '<div class="day-pillar-why">' + escapeHtml(v.why) + '</div>';
+      });
+      body += dayCard("The Seven Pillars", ph);
+    }
+
+    // Habits — only those scheduled that day and already created by then
+    var dn = dnum(d);
+    var hh = (db.habits || []).filter(function (h) { return expectedOn(h, d) && createdDnum(h) <= dn; });
+    if (hh.length) {
+      var done = 0, hHtml = hh.map(function (h) {
+        var ok = habitDoneOn(h, k); if (ok) done++;
+        return '<div class="day-habit' + (ok ? '' : ' is-miss') + '"><span class="day-habit-mk ' + (ok ? 'done' : 'miss') + '">' +
+          (ok ? DAY_CHECK : '') + '</span>' + escapeHtml(h.name) + '</div>';
+      }).join("");
+      body += dayCard("Habits", hHtml, done + " / " + hh.length);
+    }
+
+    // Reflections
+    var refl = "";
+    function reflBlock(q, a) {
+      return '<div class="day-reflect">' + (q ? '<div class="day-reflect-q">' + escapeHtml(q) + '</div>' : '') +
+        '<div class="day-reflect-a">' + escapeHtml(a.trim()) + '</div></div>';
+    }
+    var m = db.morning[k]; if (m && m.trim()) refl += reflBlock("Morning", m);
+    var j = db.journal[k]; if (j && j.trim()) refl += reflBlock(morningPromptFor(k), j);
+    var ev = db.evening[k]; if (ev && ev.trim()) refl += reflBlock(eveningPromptFor(k), ev);
+    var lr = db.reflections[k];
+    if (lr) {
+      var ls = "";
+      if (lr.win && lr.win.trim()) ls += "Win — " + lr.win.trim() + "\n";
+      if (lr.release && lr.release.trim()) ls += "Released — " + lr.release.trim() + "\n";
+      if (lr.tomorrow && lr.tomorrow.trim()) ls += "For tomorrow — " + lr.tomorrow.trim();
+      if (ls.trim()) refl += reflBlock("", ls.trim());
+    }
+    if (refl) body += dayCard("Reflections", refl);
+
+    // Gratitude — only if the widget is enabled
+    if (widgetOn("gratitude")) {
+      var gr = db.gratitude[k];
+      if (gr && gr.some(function (x) { return (x || "").trim(); })) {
+        var gh = gr.filter(function (x) { return (x || "").trim(); })
+          .map(function (x) { return '<div class="day-list-line"><span class="dll-mk">•</span>' + escapeHtml(x.trim()) + '</div>'; }).join("");
+        body += dayCard("Gratitude", gh);
+      }
+    }
+
+    // Prayers lifted that day
+    var pr = (db.prayers || []).filter(function (x) { return x.created === k; });
+    if (pr.length) {
+      var prh = pr.map(function (x) {
+        return '<div class="day-list-line' + (x.answered ? ' answered' : '') + '"><span class="dll-mk">' + (x.answered ? '✓' : '•') + '</span>' +
+          '<span style="flex:1">' + escapeHtml(x.text || x.who || "") + '</span>' + (x.answered ? '<span class="dll-tag">answered</span>' : '') + '</div>';
+      }).join("");
+      body += dayCard("Prayers", prh);
+    }
+
+    // Scripture notes
+    var sn = db.scriptureNoteLog[k];
+    if (sn) {
+      var snl = Object.keys(sn).filter(function (ref) { return (sn[ref] || "").trim(); })
+        .map(function (ref) { return reflBlock(ref, sn[ref]); }).join("");
+      if (snl) body += dayCard("Scripture Notes", snl);
+    }
+
+    // Voice memos
+    var vh = "";
+    ["journal", "evening"].forEach(function (sec) {
+      var url = db.voice[sec] && db.voice[sec][k];
+      if (vsrc(url)) vh += '<div style="margin-bottom:10px"><div class="day-reflect-q">' + (sec === "journal" ? "Journaling" : "End of day") +
+        '</div><audio controls src="' + url + '" style="width:100%"></audio></div>';
+      else if (url) vh += '<div class="day-reflect-a" style="color:var(--ink-faint)">' + (sec === "journal" ? "Journaling" : "End of day") + ' voice — recorded on another device.</div>';
+    });
+    if (vh) body += dayCard("Voice", vh);
+
+    // Notes written that day (preview → tap opens in Notes; no duplicate storage)
+    var notes = (db.thoughts || []).filter(function (t) { return t.dateKey === k && ((t.text && t.text.trim()) || t.voice); });
+    if (notes.length) {
+      var nh = notes.map(function (t) {
+        var lines = (t.text || "").split("\n"), title = (t.title && t.title.trim()) || (lines[0] || "").trim() || "Untitled note";
+        var prev = (t.html ? t.html.replace(/<[^>]+>/g, " ") : lines.slice(1).join(" ")).replace(/\s+/g, " ").trim();
+        return '<button class="day-note" data-note="' + t.id + '"><div class="day-note-t">' + escapeHtml(title) + '</div>' +
+          (prev ? '<div class="day-note-p">' + escapeHtml(prev) + '</div>' : '') + '</button>';
+      }).join("");
+      body += dayCard("Notes", nh);
+    }
+
+    if (!body) body = '<div class="days-empty">A quiet day.</div>';
+    $("daysBody").innerHTML = html + body;
+    $("daysScroll").scrollTop = 0;
+  }
+  function daysGo(k) {
+    daysKey = k;
+    renderDay(k);
+    var i = daysList.indexOf(k);
+    $("daysPrev").disabled = (i < 0 || i >= daysList.length - 1);  // list is newest-first; ‹ = older = i+1
+    $("daysNext").disabled = (i <= 0);                             // › = newer = i-1
+  }
+  function openDays(k) {
+    daysList = journalKeys();
+    if (daysList.indexOf(k) < 0) { daysList = daysList.concat([k]).sort().reverse(); }
+    $("daysView").hidden = false;
+    document.body.classList.add("rw-open");
+    daysGo(k);
+    if (typeof playPage === "function") playPage();
+  }
+  function closeDays() { $("daysView").hidden = true; document.body.classList.remove("rw-open"); daysKey = null; }
+  $("daysClose").addEventListener("click", function () { closeDays(); buzz(6); });
+  $("daysPrev").addEventListener("click", function () { var i = daysList.indexOf(daysKey); if (i > -1 && i < daysList.length - 1) { daysGo(daysList[i + 1]); playPage(); buzz(6); } });
+  $("daysNext").addEventListener("click", function () { var i = daysList.indexOf(daysKey); if (i > 0) { daysGo(daysList[i - 1]); playPage(); buzz(6); } });
+  $("daysBody").addEventListener("click", function (e) {
+    var n = e.target.closest(".day-note"); if (!n) return;
+    var id = n.getAttribute("data-note"), nt = null;
+    for (var i = 0; i < (db.thoughts || []).length; i++) if (db.thoughts[i].id === id) { nt = db.thoughts[i]; break; }
+    if (!nt) return;
+    closeDays();
+    journalTab = "notes"; setView("journal"); renderJournalTab();
+    openWriterEdit(nt);            // opens the same note in Notes — no duplicate storage
+  });
+  // swipe between days (left → older, right → newer)
+  (function () {
+    var x0 = null, y0 = null;
+    var sc = $("daysScroll");
+    sc.addEventListener("touchstart", function (e) { var t = e.changedTouches[0]; x0 = t.clientX; y0 = t.clientY; }, { passive: true });
+    sc.addEventListener("touchend", function (e) {
+      if (x0 == null) return;
+      var t = e.changedTouches[0], dx = t.clientX - x0, dy = t.clientY - y0; x0 = null;
+      if (Math.abs(dx) < 55 || Math.abs(dx) < Math.abs(dy) * 1.4) return;   // mostly-horizontal only
+      var i = daysList.indexOf(daysKey);
+      if (dx < 0) { if (i > -1 && i < daysList.length - 1) { daysGo(daysList[i + 1]); playPage(); buzz(6); } }   // swipe left → older
+      else { if (i > 0) { daysGo(daysList[i - 1]); playPage(); buzz(6); } }                                     // swipe right → newer
+    }, { passive: true });
+  })();
 
   // ===== Full journal page (paper) =====
   function dayNumOf(k) { var p = k.split("-"); return Math.floor(Date.UTC(p[0], p[1] - 1, p[2]) / 86400000); }
@@ -8789,7 +9038,7 @@
   });
   if (window.matchMedia) { try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { if (db.theme === "auto") applyTheme("auto"); }); } catch (e) {} }
 
-  var APP_VERSION = "v61.18-dev";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v61.19-dev";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
