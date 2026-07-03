@@ -2146,7 +2146,8 @@
   .cov-cer-lead { font-size: clamp(24px, 6.5vw, 30px); line-height: 1.28; color: var(--ink-high); font-weight: 500; letter-spacing: -0.01em; }
   .cov-cer-sub { margin-top: 16px; font-size: 15px; line-height: 1.6; color: var(--ink-soft); max-width: 32ch; }
   .cov-cer-field { margin-top: 34px; width: 100%; }
-  .cov-cer-input { width: 100%; text-align: center; font-family: inherit; font-size: 20px; line-height: 1.5; color: var(--ink-high); background: transparent; border: none; border-bottom: 1px solid var(--gold-line); padding: 14px 6px; resize: none; overflow: hidden; }
+  .cov-cer-input { width: 100%; text-align: center; font-family: inherit; font-size: 17.5px; line-height: 1.5; color: var(--ink-high); background: transparent; border: none; border-bottom: 1px solid var(--gold-line); padding: 14px 6px; resize: none; overflow: hidden; }
+  .cov-cer-input::placeholder { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .cov-cer-input:focus { outline: none; border-bottom-color: var(--accent); }
   .cov-cer-input::placeholder { color: var(--ink-faint); font-style: italic; }
   .cov-cer-hint { margin-top: 12px; font-size: 12.5px; color: var(--ink-faint); }
@@ -3512,12 +3513,11 @@
     <div class="cov-cer-inner">
       <!-- movement 1: write the becoming action -->
       <div id="cerStep1">
-        <div class="cov-cer-eyebrow" id="cerEyebrow">Your covenant</div>
-        <div class="cov-cer-lead serif">What is the one thing<br>you will become?</div>
+        <div class="cov-cer-eyebrow" id="cerEyebrow">Step One</div>
+        <div class="cov-cer-lead serif">What is your<br>becoming action?</div>
         <div class="cov-cer-sub">One action. Small enough for today, true enough to build a man.</div>
         <div class="cov-cer-field">
           <textarea class="cov-cer-input serif" id="cerInput" rows="1" maxlength="90" placeholder="In the Word before my phone, daily" autocapitalize="sentences"></textarea>
-          <div class="cov-cer-hint">Kept short on purpose — a vow you can carry.</div>
         </div>
         <button class="cov-cer-next" id="cerNext" disabled>Continue</button>
       </div>
@@ -3525,7 +3525,7 @@
       <div id="cerStep2" hidden>
         <div class="cov-cer-eyebrow">Before God and these brothers</div>
         <div class="cov-vow-echo serif" id="cerEcho"></div>
-        <div class="cov-cer-sub" id="cerCommitLine">I commit to become.</div>
+        <div class="cov-cer-sub" id="cerCommitLine">I commit to this becoming action.</div>
         <div class="cov-seal" id="cerSeal">
           <svg viewBox="0 0 132 132"><circle class="seal-track" cx="66" cy="66" r="61"></circle><circle class="seal-fill" cx="66" cy="66" r="61"></circle></svg>
           <div class="cov-seal-label">
@@ -6362,12 +6362,6 @@
     }
     return '<div class="cov-card' + (mine ? " mine" : "") + '">' + head + dotRow + foot + '</div>';
   }
-  function inviteRowHtml(c) {
-    return '<div class="cov-invite"><div class="cov-invite-title">Invite brothers</div>' +
-      '<div class="cov-invite-row"><button class="cov-invite-btn primary" data-act="copyInvite">Copy invite link</button>' +
-      '<button class="cov-invite-btn" data-act="regenCode">New code</button></div>' +
-      '<div class="cov-invite-msg" id="inviteMsg">Invite code: <b>' + escapeHtml(c.code) + '</b></div></div>';
-  }
   function renderBoard() {
     var c = circleState.circle, uid = myId(), days = weekDaysSat(), weekKey = days[0], today = todayLocal();
     var isLeader = circleState.myRole === "leader" || (c && c.created_by === uid);
@@ -6381,7 +6375,7 @@
         '<button class="cov-renew-btn ghost" data-act="renewNew">Set a new covenant</button></div></div>';
     }
     html += '<div class="cov-board">' + circleState.members.map(function (m) { return covCardHtml(m, days, today, weekKey, uid); }).join("") + '</div>';
-    if (isLeader) html += inviteRowHtml(c);
+    // (no in-app invite controls — the invite link is shared by Leo outside the app)
     $("circleBody").innerHTML = html;
   }
 
@@ -6459,7 +6453,7 @@
     cerKind = kind || "first"; sealDone = false;
     $("cerInput").value = ""; growCer();
     $("cerStep1").hidden = false; $("cerStep2").hidden = true; $("cerNext").disabled = true;
-    $("cerEyebrow").textContent = cerKind === "new" ? "A new covenant" : "Your covenant";
+    $("cerEyebrow").textContent = cerKind === "new" ? "A new covenant" : "Step One";
     resetSeal();
     $("covCeremony").hidden = false;
     setTimeout(function () { $("cerInput").focus(); }, 320);
@@ -6510,8 +6504,7 @@
     showToastMsg("Your covenant is sealed. Welcome, brother.", 3000);
   }
 
-  // ---- invite / join ----
-  function inviteLink(code) { return location.origin + location.pathname + "?join=" + code; }
+  // ---- join (invites are shared by Leo outside the app; no in-app invite UI) ----
   function doJoin(code, cb) {
     pendingJoinCode = null;
     sb.rpc("join_circle", { p_code: code, p_day: todayLocal() }).then(function (res) {
@@ -6546,8 +6539,6 @@
     else if (act === "editFocus") { openFocusEdit(); }
     else if (act === "saveFocus") { saveFocusEdit(); }
     else if (act === "cancelFocus") { renderBoard(); }
-    else if (act === "copyInvite") { var link = inviteLink(circleState.circle.code); (navigator.clipboard ? navigator.clipboard.writeText(link) : Promise.reject()).then(function () { var m = $("inviteMsg"); if (m) m.innerHTML = "Copied! <b>" + escapeHtml(link) + "</b>"; }, function () { var m = $("inviteMsg"); if (m) m.textContent = link; }); buzz(8); }
-    else if (act === "regenCode") { confirmDialog("Make a new invite code? The old link stops working.", "New code", regenCode); }
   });
   function openFocusEdit() {
     var c = circleState.circle, card = $("focusCard"); if (!card) return;
@@ -6564,14 +6555,6 @@
     sb.from("circles").update({ focus_ref: ref, focus_note: note }).eq("id", c.id).then(function (res) { if (res && res.error) console.error("focus update failed:", res.error); });
     renderBoard();
   }
-  function regenCode() {
-    var c = circleState.circle;
-    sb.rpc("regenerate_code", { p_circle: c.id }).then(function (res) {
-      if (res && res.error) { showToastMsg("Couldn’t make a new code."); return; }
-      c.code = res.data; renderBoard(); showToastMsg("New invite code ready.");
-    });
-  }
-
   // enable a widget on the home without opening customize mode
   function ensureWidgetOn(key) {
     var lay = (typeof widgetLayout === "function") ? widgetLayout() : (db.layout || []);
@@ -8542,7 +8525,7 @@
   });
   if (window.matchMedia) { try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { if (db.theme === "auto") applyTheme("auto"); }); } catch (e) {} }
 
-  var APP_VERSION = "v61.1-dev";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v61.2-dev";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
