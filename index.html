@@ -1454,6 +1454,12 @@
   .day-pillar-edit { display: none; width: 100%; margin: -2px 0 12px; }
   .day-card.editing .day-pillar-edit { display: block; }
   .day-edit-toggle { background: none; border: none; color: var(--accent); font-family: inherit; font-size: 12.5px; letter-spacing: 0.02em; cursor: pointer; padding: 0; }
+  /* unrated pillar rows only show while editing (so you can rate them too) */
+  .day-card:not(.editing) .day-pillar-unrated { display: none; }
+  .day-card.editing .day-pillar-empty { display: none; }
+  .day-pillar-actions { display: flex; justify-content: flex-end; gap: 14px; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line); }
+  .pillar-foot-link.danger { color: var(--ink-faint); }
+  .pillar-foot-link.danger:hover { color: #d08a72; opacity: 1; }
   .day-habit { display: flex; align-items: center; gap: 11px; padding: 5px 0; font-size: 14.5px; color: var(--ink); }
   .day-habit.is-miss { color: var(--ink-faint); }
   .day-habit-mk { width: 20px; height: 20px; border-radius: 50%; flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; }
@@ -1508,6 +1514,7 @@
   /* ---- forge celebration (covenant kept) ---- */
   .forge-fx { position: fixed; inset: 0; z-index: 300; display: flex; align-items: center; justify-content: center; pointer-events: none; overflow: hidden; }
   .forge-fx[hidden] { display: none; }
+  .forge-fx.forge-out { opacity: 0; transition: opacity 0.6s ease; }   /* gentle fade after the hold */
   .forge-flash { position: absolute; top: 50%; left: 50%; width: 62vmin; height: 62vmin; transform: translate(-50%,-50%) scale(0.4); border-radius: 50%;
     background: radial-gradient(circle, rgba(255,240,205,0.95), rgba(203,178,126,0.4) 30%, rgba(203,178,126,0) 66%); opacity: 0; animation: forgeFlash 1.4s ease-out forwards; }
   .forge-sword { position: absolute; top: 50%; left: 50%; width: 46px; height: 220px; margin: -110px 0 0 -23px; transform-origin: 50% 42%; filter: drop-shadow(0 6px 15px rgba(0,0,0,0.55)); }
@@ -1521,16 +1528,16 @@
   @keyframes forgeLeft {
     0% { transform: translate(-68vw, 32vh) rotate(-64deg); opacity: 0; }
     10% { opacity: 1; } 40% { transform: translate(0, -3vh) rotate(40deg); }
-    47% { transform: translate(-7px, -3vh) rotate(35deg); } 55% { transform: translate(0, -3vh) rotate(40deg); }
-    82% { transform: translate(0, -3vh) rotate(40deg); opacity: 1; } 100% { transform: translate(0, -6vh) rotate(40deg); opacity: 0; }
+    47% { transform: translate(-7px, -3vh) rotate(35deg); }
+    55%, 100% { transform: translate(0, -3vh) rotate(40deg); opacity: 1; }   /* clash, then HOLD (JS fades the whole thing out) */
   }
   @keyframes forgeRight {
     0% { transform: translate(68vw, 32vh) rotate(64deg); opacity: 0; }
     10% { opacity: 1; } 40% { transform: translate(0, -3vh) rotate(-40deg); }
-    47% { transform: translate(7px, -3vh) rotate(-35deg); } 55% { transform: translate(0, -3vh) rotate(-40deg); }
-    82% { transform: translate(0, -3vh) rotate(-40deg); opacity: 1; } 100% { transform: translate(0, -6vh) rotate(-40deg); opacity: 0; }
+    47% { transform: translate(7px, -3vh) rotate(-35deg); }
+    55%, 100% { transform: translate(0, -3vh) rotate(-40deg); opacity: 1; }
   }
-  @keyframes forgeWord { 0%,45% { opacity: 0; transform: translateY(9px); } 58% { opacity: 1; transform: translateY(0); } 85% { opacity: 1; } 100% { opacity: 0; } }
+  @keyframes forgeWord { 0%,45% { opacity: 0; transform: translateY(9px); } 62%, 100% { opacity: 1; transform: translateY(0); } }
   @media (prefers-reduced-motion: reduce) { .forge-sword, .forge-flash, .forge-word { animation-duration: 0.55s; } }
 
   .pd-integration {
@@ -2640,6 +2647,19 @@
   }
   .modal-title { font-size: 28px; font-weight: 300; margin: 0 0 8px; letter-spacing: -0.01em; }
   .ob-reading-hint { font-size: 12.5px; color: var(--ink-faint); text-align: center; margin: 14px 0 0; }
+  /* onboarding: optional photo + code */
+  .ob-opt { font-weight: 400; color: var(--ink-faint); font-size: 11px; letter-spacing: 0; text-transform: none; font-style: italic; margin-left: 4px; }
+  .ob-photo-row { display: flex; align-items: center; gap: 14px; margin-bottom: 4px; }
+  .ob-avatar { flex: 0 0 auto; width: 56px; height: 56px; border-radius: 50%; background: var(--field); border: 1px solid var(--field-edge); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; overflow: hidden; padding: 0; background-size: cover; background-position: center; transition: border-color 0.2s ease; }
+  .ob-avatar:hover { border-color: var(--accent); }
+  .ob-avatar svg { width: 26px; height: 26px; fill: none; stroke: var(--ink-faint); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  .ob-avatar.has-photo svg { display: none; }
+  .ob-photo-meta { font-size: 13px; color: var(--ink-faint); line-height: 1.4; }
+  /* welcome card */
+  .welcome-list { list-style: none; margin: 4px 0 24px; padding: 0; display: flex; flex-direction: column; gap: 13px; text-align: left; }
+  .welcome-list li { font-size: 14.5px; line-height: 1.5; color: var(--ink-soft); padding-left: 16px; position: relative; }
+  .welcome-list li::before { content: ""; position: absolute; left: 0; top: 8px; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+  .welcome-list li b { color: var(--ink); font-weight: 500; }
   /* ===== Welcome / landing (the one screen styled in the brand design system) ===== */
   .welcome-overlay { background: #0a0908; backdrop-filter: none; z-index: 90; }
   .welcome-card {
@@ -2999,7 +3019,7 @@
     <section data-w="reading" data-w-title="Today's Reading">
       <div class="label-row">
         <p class="label">Today's Reading</p>
-        <button class="label-btn open-bible-link" id="openBibleBtn">Open your Bible <span class="obl-chev">→</span></button>
+        <button class="label-btn open-bible-link" id="openBibleBtn">Change your reading plan <span class="obl-chev">→</span></button>
       </div>
       <div class="scripture-grid" id="readingCards"></div>
     </section>
@@ -3500,9 +3520,41 @@
       <label class="field-label">Your name</label>
       <input type="text" id="obName" placeholder="Your name" autocomplete="off" maxlength="40" />
 
+      <label class="field-label">Add a photo <span class="ob-opt">optional</span></label>
+      <div class="ob-photo-row">
+        <button class="ob-avatar" id="obPhotoBtn" type="button" aria-label="Add a photo">
+          <svg viewBox="0 0 24 24" id="obAvatarIcon"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"/><path d="M4 20c0-3.3 3.6-5 8-5s8 1.7 8 5"/></svg>
+        </button>
+        <div class="ob-photo-meta"><span id="obPhotoLabel">A face makes your circle personal.</span></div>
+        <input type="file" id="obPhotoFile" accept="image/*" hidden />
+      </div>
+
+      <label class="field-label">Have an invite code? <span class="ob-opt">optional</span></label>
+      <input type="text" id="obCode" placeholder="Enter code to join your circle" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" maxlength="12" />
+
       <div class="settings-msg" id="obMsg"></div>
       <button class="modal-primary" id="obStart">Begin</button>
       <p class="ob-reading-hint">You'll choose your daily reading right on your home screen.</p>
+    </div>
+  </div>
+
+  <!-- One-time welcome / orientation (first run) -->
+  <div class="modal-overlay" id="welcomeCard" hidden>
+    <div class="modal">
+      <div class="wordmark" style="margin-bottom:18px;justify-content:center;">
+        <svg class="cross" viewBox="0 0 24 36" aria-hidden="true"><line x1="12" y1="2" x2="12" y2="34"/><line x1="3" y1="12" x2="21" y2="12"/></svg>
+        <span>The Integrated Man</span>
+      </div>
+      <h2 class="modal-title serif" id="welcomeTitle">Welcome.</h2>
+      <p class="modal-sub">Here's your daily rhythm — take it at your own pace.</p>
+      <ul class="welcome-list">
+        <li><b>The Seven Pillars</b> — a weekly check on how you're really doing.</li>
+        <li><b>Daily Reading</b> — Scripture, your plan, your pace.</li>
+        <li><b>Keystone Habits</b> — the small anchors that hold a day together.</li>
+        <li><b>Your Journal</b> — reflections that gather into Days you can look back on.</li>
+        <li><b>Fellowship</b> — your circle, and the covenant you keep together.</li>
+      </ul>
+      <button class="modal-primary" id="welcomeBegin">Begin</button>
     </div>
   </div>
 
@@ -5790,7 +5842,14 @@
     $("biblePicker").hidden = false;
     playPage();
   }
-  $("openBibleBtn").addEventListener("click", openBiblePicker);
+  // The Today's-Reading link now jumps to the reading-plan chooser (the Bible itself lives in the nav bar).
+  function openReadingPlanSettings() {
+    if (typeof openSettings === "function") openSettings();
+    var w = $("setReadingWrap");
+    if (w && w.hidden) $("setReadingToggle").click();   // reveal the plan picker (opening = no commit)
+    setTimeout(function () { try { $("setReadingToggle").scrollIntoView({ block: "center" }); } catch (e) {} }, 90);
+  }
+  $("openBibleBtn").addEventListener("click", openReadingPlanSettings);
   $("bpTestaments").addEventListener("click", function (e) {
     var b = e.target.closest("[data-t]"); if (!b) return;
     bpTestament = b.getAttribute("data-t"); bpSyncTabs(); bpRenderBooks(); bpShowBooks(); buzz(8);
@@ -5878,11 +5937,13 @@
   }
   function jcardSetPrompt(c) { $(c.promptId).textContent = c.prompts[jcardIdx(c)]; }
   function jcardCollapse(c, yes) { $(c.panelId).classList.toggle("collapsed", yes); $(c.collapsedId).hidden = !yes; }
+  function jcardHasVoice(c) { return !!(db.voice && db.voice[c.data] && db.voice[c.data][todayKey]); }
+  function jcardHasContent(c) { return !!($(c.textId).value.trim()) || jcardHasVoice(c); }  // a voice memo counts too
   function jcardLoad(c) {
     jcardSetPrompt(c);
     var t = $(c.textId), v = db[c.data][todayKey] || "";
     t.value = v; grow(t);
-    jcardCollapse(c, !!v.trim());
+    jcardCollapse(c, jcardHasContent(c));   // collapse for a saved text OR voice reflection
     jcardSyncCollapseBtn(c);
   }
   function jcardSwitch(c) {
@@ -5949,6 +6010,8 @@
 
   function wireSaveMini(btnId, msgId, card) {
     $(btnId).addEventListener("click", function () {
+      var wasRecording = !!(mediaRec && mediaRec.state !== "inactive");
+      if (typeof stopRecording === "function") stopRecording();   // Done finalizes any active memo + resets the "Stop" button
       save();
       celebrate(this);
       (this.getAttribute("data-tone") === "chime") ? playChime() : playTick();
@@ -5959,7 +6022,8 @@
       clearTimeout(m._t);
       m._t = setTimeout(function () { m.classList.remove("show"); }, 2400);
       if (journalVisible()) renderJournal();
-      if (card && $(card.textId).value.trim()) setTimeout(function () { jcardCollapse(card, true); }, 500); // collapse after the confirmation reads
+      // collapse for a text OR voice reflection (or one we just finished recording)
+      if (card && (jcardHasContent(card) || wasRecording)) setTimeout(function () { jcardCollapse(card, true); }, 600);
     });
   }
   wireSaveMini("journalSave", "journalSaveMsg", JCARDS.journal);
@@ -6628,6 +6692,33 @@
         // my own marks win: a just-made tap (mirrored in db.covChecks) can't be un-filled
         // by a cloud read that hasn't caught up yet
         if (db.covChecks) { checks[uid] = checks[uid] || {}; for (var _d in db.covChecks) { var _c = db.covChecks[_d]; if (_c && _c.circleId === cid) checks[uid][_d] = _c.done; } }
+        // re-push my own marks that never reached the cloud (a tap made offline) so brothers see them
+        if (sb && db.covChecks) {
+          var cloudMineChk = {}; (res[4].data || []).forEach(function (c) { if (c.user_id === uid) cloudMineChk[c.day] = c.done; });
+          for (var _pd in db.covChecks) {
+            var _pc = db.covChecks[_pd];
+            if (_pc && _pc.circleId === cid && cloudMineChk[_pd] !== _pc.done) {
+              sb.from("covenant_checks").upsert({ circle_id: cid, user_id: uid, day: _pd, done: _pc.done, updated_at: new Date().toISOString() }, { onConflict: "circle_id,user_id,day" }).then(function () {});
+            }
+          }
+        }
+        // my own VOW wins the same way, and is re-pushed if it never reached the cloud.
+        // This is what makes signing offline safe: the covenant is saved locally (db.covenants),
+        // shown on the board from local, and synced up whenever the network returns — no false
+        // "sealed", no vanished vow, and no friction for the man.
+        if (db.covenants && db.covenants.length) {
+          var myLocalCov = null;
+          db.covenants.forEach(function (r) { if (r.circleId === cid && (!myLocalCov || (r.signed_at || "") > (myLocalCov.signed_at || ""))) myLocalCov = r; });
+          if (myLocalCov && !myLocalCov.synced && (!cov[uid] || (myLocalCov.signed_at || "") > (cov[uid].signed_at || ""))) {
+            cov[uid] = { id: myLocalCov.id, user_id: uid, body: myLocalCov.body, kind: myLocalCov.kind, freq: myLocalCov.freq, signed_day: myLocalCov.signed_day, signed_at: myLocalCov.signed_at, circle_id: cid };
+          }
+          if (sb) db.covenants.forEach(function (r) {   // retry any of my vows that never landed
+            if (r.circleId === cid && !r.synced) {
+              sb.from("covenants").insert({ circle_id: cid, user_id: uid, body: r.body, kind: r.kind, freq: r.freq, signed_day: r.signed_day })
+                .then(function (res) { if (!(res && res.error)) { r.synced = true; save(); } });
+            }
+          });
+        }
         var sentBack = {}, fireCounts = {}, received = [];
         (res[5].data || []).forEach(function (n) {
           if (n.from_id === uid && n.day === today) sentBack[n.to_id + ":" + n.kind] = true;
@@ -6769,7 +6860,7 @@
     } else if (doneToday) {
       var fc = circleState.fireCounts[m.user_id] || 0;
       var firedByMe = circleState.sentBack[m.user_id + ":fire"];
-      right = '<button class="cov-nudge' + (firedByMe ? " sent" : "") + '" data-act="fire" data-uid="' + m.user_id + '" aria-label="Celebrate">🔥' + (fc ? '<span class="cf-count">' + fc + '</span>' : "") + '</button>';
+      right = '<button class="cov-nudge' + (firedByMe ? " sent" : "") + '" data-act="fire" data-uid="' + m.user_id + '" aria-label="Celebrate">🔥' + (fc ? '<span class="cf-count">' + (fc > 9 ? "9+" : fc) + '</span>' : "") + '</button>';
     } else {
       var sent = circleState.sentBack[m.user_id + ":back"];
       right = '<button class="cov-nudge' + (sent ? " sent" : "") + '" data-act="gotBack" data-uid="' + m.user_id + '" aria-label="Got your back">' + HANDS_SVG + '</button>';
@@ -6827,14 +6918,20 @@
   }
   // Mark today. We fill the exact circle you tapped, right now, with paintTap — and we do
   // NOT rebuild the board (a full re-render was what silently dropped the fill before).
+  var checkPushTimer = null;
   function setCheck(makeDone, btn) {
     var uid = myId(), day = todayLocal(), c = circleState.circle;
     (circleState.checks[uid] = circleState.checks[uid] || {})[day] = makeDone;
     db.covChecks = db.covChecks || {};
     db.covChecks[day] = { done: makeDone, circleId: c.id, ts: new Date().toISOString() };   // durable personal mirror
     save();
-    if (sb) sb.from("covenant_checks").upsert({ circle_id: c.id, user_id: uid, day: day, done: makeDone, updated_at: new Date().toISOString() }, { onConflict: "circle_id,user_id,day" })
-      .then(function (res) { if (res && res.error) console.error("check failed:", res.error); });
+    // debounce the cloud write so rapid done↔undo taps only send the FINAL state (last-write-wins, no race)
+    clearTimeout(checkPushTimer);
+    checkPushTimer = setTimeout(function () {
+      var latest = db.covChecks[day];
+      if (sb && latest && latest.circleId === c.id) sb.from("covenant_checks").upsert({ circle_id: c.id, user_id: uid, day: day, done: latest.done, updated_at: new Date().toISOString() }, { onConflict: "circle_id,user_id,day" })
+        .then(function (res) { if (res && res.error) console.error("check failed:", res.error); });
+    }, 450);
     if (!btn) { var r = $("circleBody").querySelector(".cov-row.mine .cov-tap"); if (r) btn = r; }
     var row = btn ? btn.closest(".cov-row") : $("circleBody").querySelector(".cov-row.mine");
     paintTap(btn, makeDone);                 // fill the circle — inline, immediate, unmissable
@@ -6890,13 +6987,14 @@
   var CLASH_MS = 430;
   function runForge() {
     var fx = $("forgeFx"); if (!fx) return;
+    fx.classList.remove("forge-out");     // reset any prior fade before re-triggering
     fx.hidden = false;
     ["forge-flash", "sw-left", "sw-right", "forge-word"].forEach(function (cls) {
       var el = fx.querySelector("." + cls); if (!el) return;
       el.style.animation = "none"; void el.offsetWidth; el.style.animation = "";   // restart the keyframes
     });
-    // sparks fly outward at the moment of impact
-    var sp = $("forgeSparks"); if (sp) {
+    // sparks fly outward at the moment of impact (skipped when the user prefers reduced motion)
+    var sp = $("forgeSparks"); if (sp && !REDUCED) {
       sp.innerHTML = "";
       for (var i = 0; i < 20; i++) {
         var s = document.createElement("div"); s.className = "forge-spark"; sp.appendChild(s);
@@ -6909,7 +7007,9 @@
       }
     }
     setTimeout(function () { playForge(); buzzPattern([0, 34, 44, 22, 60, 90]); }, CLASH_MS);   // clang on contact
-    setTimeout(function () { fx.hidden = true; }, 1650);
+    // hold the crossed swords + "Covenant kept." long enough to read, then fade out gently
+    setTimeout(function () { fx.classList.add("forge-out"); }, 2700);
+    setTimeout(function () { fx.hidden = true; fx.classList.remove("forge-out"); }, 3350);
   }
   function covCelebrate(btn) {
     runForge();                                   // the forge: two blades meet, sparks, a clang — masculine, earned
@@ -6929,7 +7029,16 @@
     if (kind === "fire") circleState.fireCounts[toUid] = (circleState.fireCounts[toUid] || 0) + 1;
     if (sb) sb.from("nudges").insert({ circle_id: c.id, from_id: myId(), to_id: toUid, day: day, kind: kind })
       .then(function (res) { if (res && res.error && res.error.code !== "23505") console.error("nudge failed:", res.error); });
-    renderBoard();
+    // update just this brother's button in place — no full board re-render, no flash/scroll-jump
+    var nb = $("circleBody").querySelector('.cov-nudge[data-uid="' + toUid + '"][data-act="' + (kind === "fire" ? "fire" : "gotBack") + '"]');
+    if (nb) {
+      nb.classList.add("sent");
+      if (kind === "fire") {
+        var fc = circleState.fireCounts[toUid] || 0, cap = fc > 9 ? "9+" : String(fc), badge = nb.querySelector(".cf-count");
+        if (badge) badge.textContent = cap;
+        else if (fc) nb.insertAdjacentHTML("beforeend", '<span class="cf-count">' + cap + '</span>');
+      }
+    } else { renderBoard(); }   // fallback only if the row wasn't found
   }
   function showReceivedNudges() {
     var r = circleState.received || [];
@@ -7010,6 +7119,10 @@
     s.addEventListener("pointerup", cancel);
     s.addEventListener("pointerleave", cancel);
     s.addEventListener("pointercancel", cancel);
+    // keyboard / switch access: focusable, and hold Enter or Space to sign
+    s.setAttribute("tabindex", "0"); s.setAttribute("role", "button"); s.setAttribute("aria-label", "Press and hold to sign your covenant");
+    s.addEventListener("keydown", function (e) { if ((e.key === "Enter" || e.key === " " || e.key === "Spacebar") && !e.repeat) { start(e); } });
+    s.addEventListener("keyup", function (e) { if (e.key === "Enter" || e.key === " " || e.key === "Spacebar") { e.preventDefault(); cancel(); } });
   })();
   function sealComplete() {
     sealDone = true;
@@ -7025,8 +7138,10 @@
     var rec = { id: newId("cov"), circleId: c.id, body: body, kind: kind, freq: freq, signed_day: day, signed_at: new Date().toISOString() };
     db.covenants = db.covenants || []; db.covenants.push(rec); save();               // durable append-only mirror
     circleState.covenants[uid] = { id: rec.id, user_id: uid, body: body, kind: kind, freq: freq, signed_day: day, circle_id: c.id };
+    // the vow is already saved locally + on the board above; the cloud insert just propagates it.
+    // On success we mark it synced; on failure it stays pending and loadCircle re-pushes it later.
     if (sb) sb.from("covenants").insert({ circle_id: c.id, user_id: uid, body: body, kind: kind, freq: freq, signed_day: day })
-      .then(function (res) { if (res && res.error) console.error("covenant insert failed:", res.error); else loadCircle(function () { renderBoard(); }); });
+      .then(function (res) { if (res && res.error) { console.error("covenant insert failed (kept locally, will retry):", res.error); } else { rec.synced = true; save(); loadCircle(function () { renderBoard(); }); } });
     playChime(); buzzPattern([0, 30, 60, 30, 130]);
     closeCeremony(); renderBoard();
     showToastMsg("Your covenant is sealed. Welcome, brother.", 3000);
@@ -7039,22 +7154,22 @@
   function rememberJoin(code) { pendingJoinCode = code || null; try { if (code) localStorage.setItem(JOIN_KEY, code); else localStorage.removeItem(JOIN_KEY); } catch (e) {} }
   function currentJoinCode() { if (pendingJoinCode) return pendingJoinCode; try { var c = localStorage.getItem(JOIN_KEY); return c ? c.trim().toUpperCase() : null; } catch (e) { return null; } }
   function clearJoin() { pendingJoinCode = null; try { localStorage.removeItem(JOIN_KEY); } catch (e) {} }
-  function doJoin(code, cb) {
+  function doJoin(code, cb, stayPut) {
     if (!sb || !session) { if (cb) cb(false); return; }
     sb.rpc("join_circle", { p_code: code, p_day: todayLocal() }).then(function (res) {
       if (res && res.error) { console.error("join failed:", res.error); if (cb) cb(false); return; }
       clearJoin();
       if (cb) cb(true);
-      loadCircle(function () { setView("fellowship"); });   // → the room (ceremony opens for a new member)
+      // stayPut = joined during onboarding → load the circle quietly and let the welcome card land first
+      loadCircle(function () { if (!stayPut) setView("fellowship"); });   // → the room (ceremony opens for a new member)
     }, function (e) { console.error("join failed:", e); if (cb) cb(false); });
   }
-  // After sign-in / onboarding, if they arrived via an invite link, drop them
-  // straight into the circle — no confirm dialog (clicking the link is consent).
-  function maybeAutoJoin() {
-    var code = currentJoinCode();
-    if (!code || !sb || !session || !(db.profile && db.profile.onboarded)) return;
-    doJoin(code);
-  }
+  // Auto-join is DISABLED on purpose. A stored invite code (from a `?join=` link visited once)
+  // must NEVER silently drop a new signup into a circle — that was putting fresh accounts into
+  // The Circle and popping the covenant ceremony before they'd joined anything. Joining is always
+  // explicit now: the man enters the code at the chapel door. We also clear any lingering code so
+  // it can't auto-join on a shared/reused device.
+  function maybeAutoJoin() { clearJoin(); }
 
   // ---- covenant-board delegated actions (separate from the wall handler) ----
   $("circleBody").addEventListener("click", function (e) {
@@ -8923,20 +9038,25 @@
         (rings ? '<div class="day-oura-rings">' + rings + '</div>' : '') + dayStepsHtml(steps));
     }
 
-    // The Seven Pillars
+    // The Seven Pillars — looking back you can rate/fix a day, or mark it "not tracked"
     if (db.pillarSkip[k]) {
-      body += dayCard("The Seven Pillars", '<div class="day-reflect-a" style="color:var(--ink-faint)">Not tracked — a resting day.</div>');
-    } else if (db.ratings[k]) {
-      var rt = db.ratings[k], integ = entryIntegration(k), ph = "";
+      body += dayCard("The Seven Pillars",
+        '<div class="day-reflect-a" style="color:var(--ink-faint)">Not tracked — a resting day.</div>' +
+        '<div class="day-pillar-actions"><button class="pillar-foot-link" data-daytrack data-day="' + k + '">Track this day</button></div>');
+    } else {
+      var rt = db.ratings[k] || {}, integ = entryIntegration(k), ph = "", anyRated = false;
       if (integ) ph += '<div class="day-integ"><b class="day-integ-val">' + integ + '</b><span>Integration / 10</span></div>';
       pillars.forEach(function (pl) {
-        var v = rt[pl.key]; if (!v || v.rated === false || !isNum(v.score)) return;
-        ph += '<div class="day-pillar"><span class="day-pillar-dot" style="background:' + pl.color + ';color:' + pl.color + '"></span>' +
-          '<span class="day-pillar-name">' + pl.name + '</span><span class="day-pillar-score" id="dscore-' + pl.key + '">' + v.score + '/10</span></div>' +
-          '<input type="range" class="day-pillar-edit" min="0" max="10" step="1" value="' + v.score + '" data-editkey="' + pl.key + '" data-editday="' + k + '" aria-label="Adjust ' + escapeHtml(pl.name) + '">';
-        if (v.why && v.why.trim()) ph += '<div class="day-pillar-why">' + escapeHtml(v.why) + '</div>';
+        var v = rt[pl.key], rated = !!(v && v.rated !== false && isNum(v.score)), sc = rated ? v.score : 5;
+        if (rated) anyRated = true;
+        // rated rows always show; unrated rows appear only in Edit mode (so you can rate them too)
+        ph += '<div class="day-pillar' + (rated ? '' : ' day-pillar-unrated') + '"><span class="day-pillar-dot" style="background:' + pl.color + ';color:' + pl.color + '"></span>' +
+          '<span class="day-pillar-name">' + pl.name + '</span><span class="day-pillar-score" id="dscore-' + pl.key + '">' + (rated ? (v.score + '/10') : '—') + '</span></div>' +
+          '<input type="range" class="day-pillar-edit" min="0" max="10" step="1" value="' + sc + '" data-editkey="' + pl.key + '" data-editday="' + k + '" aria-label="Rate ' + escapeHtml(pl.name) + '">';
+        if (rated && v.why && v.why.trim()) ph += '<div class="day-pillar-why">' + escapeHtml(v.why) + '</div>';
       });
-      // editable "for now" so anyone can fix a past mistake (e.g. a stray low score)
+      if (!anyRated) ph = '<div class="day-reflect-a day-pillar-empty" style="color:var(--ink-faint)">Not rated this day — tap Edit to rate it.</div>' + ph;
+      ph += '<div class="day-pillar-actions"><button class="pillar-foot-link danger" data-daynottracked data-day="' + k + '">Mark not tracked</button></div>';
       body += dayCard("The Seven Pillars", ph, '<button class="day-edit-toggle" data-editpillars>Edit</button>');
     }
 
@@ -9053,6 +9173,26 @@
       buzz(6);
       return;
     }
+    var ntk = e.target.closest("[data-daynottracked]");
+    if (ntk) {                                    // mark this whole day "not tracked" (with a confirm)
+      var d1 = ntk.getAttribute("data-day");
+      confirmDialog("Mark this day as not tracked? Its pillar ratings won’t count toward your Integration (they’re kept, not deleted — you can track it again).", "Yes, not tracked", function () {
+        db.pillarSkip[d1] = true; save();
+        if (daysKey === d1) renderDay(d1);
+        if (typeof refreshGauge === "function") refreshGauge();
+        buzz(12);
+      });
+      return;
+    }
+    var trk = e.target.closest("[data-daytrack]");
+    if (trk) {                                    // reverse "not tracked" → track this day again
+      var d2 = trk.getAttribute("data-day");
+      delete db.pillarSkip[d2]; save();
+      if (daysKey === d2) renderDay(d2);
+      if (typeof refreshGauge === "function") refreshGauge();
+      buzz(8);
+      return;
+    }
     var n = e.target.closest(".day-note"); if (!n) return;
     var id = n.getAttribute("data-note"), nt = null;
     for (var i = 0; i < (db.thoughts || []).length; i++) if (db.thoughts[i].id === id) { nt = db.thoughts[i]; break; }
@@ -9065,11 +9205,13 @@
   $("daysBody").addEventListener("input", function (e) {
     var sl = e.target.closest(".day-pillar-edit"); if (!sl) return;
     var key = sl.getAttribute("data-editkey"), day = sl.getAttribute("data-editday"), val = Number(sl.value);
-    if (!db.ratings[day] || !db.ratings[day][key]) return;
-    var r = db.ratings[day][key];
-    r.score = val; r.rated = true; r.deep = false; r.facets = null;   // a manual correction is a simple score
+    if (!db.ratings[day]) db.ratings[day] = {};
+    var r = db.ratings[day][key] || (db.ratings[day][key] = { score: val, why: "", deep: false, facets: null });
+    r.score = val; r.rated = true; r.deep = false; r.facets = null;   // rating (or correcting) a day is a simple score
     save();
     var sc = $("dscore-" + key); if (sc) sc.textContent = val + "/10";
+    var row = sl.previousElementSibling; if (row && row.classList) row.classList.remove("day-pillar-unrated");  // now rated → keep it visible
+    var empty = document.querySelector("#daysBody .day-pillar-empty"); if (empty) empty.remove();
     var iv = document.querySelector("#daysBody .day-integ-val");
     if (iv) { var ni = entryIntegration(day); iv.textContent = ni != null ? ni : "—"; }
   });
@@ -9208,7 +9350,7 @@
   });
   if (window.matchMedia) { try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { if (db.theme === "auto") applyTheme("auto"); }); } catch (e) {} }
 
-  var APP_VERSION = "v61.24";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v61.31-dev";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
@@ -9319,11 +9461,40 @@
 
   function openOnboarding() {
     $("obName").value = (db.profile && db.profile.name) || "";
+    $("obCode").value = "";
+    $("obPhotoLabel").textContent = "A face makes your circle personal.";
+    var oa = $("obPhotoBtn"); if (oa) { oa.classList.remove("has-photo"); oa.style.backgroundImage = ""; }
     $("obMsg").textContent = "";
     $("welcome").hidden = true; $("authModal").hidden = true;
     $("onboard").hidden = false;
     setTimeout(function () { $("obName").focus(); }, 50);
   }
+  // optional profile photo, right in onboarding
+  $("obPhotoBtn").addEventListener("click", function () { $("obPhotoFile").click(); });
+  $("obPhotoFile").addEventListener("change", function () {
+    var file = this.files && this.files[0]; if (!file) return;
+    if (!sb || !session) { $("obPhotoLabel").textContent = "Sign in to add a photo."; return; }
+    try { var rd = new FileReader(); rd.onload = function () { var a = $("obPhotoBtn"); a.classList.add("has-photo"); a.style.backgroundImage = "url(" + rd.result + ")"; }; rd.readAsDataURL(file); } catch (e) {}  // instant preview
+    $("obPhotoLabel").textContent = "Uploading…";
+    var path = myId() + "/" + Date.now() + ".jpg";
+    sb.storage.from("avatars").upload(path, file, { upsert: true, contentType: file.type || "image/jpeg" }).then(function (res) {
+      if (res.error) { $("obPhotoLabel").textContent = "Couldn't upload — you can add it later."; return; }
+      var pub = sb.storage.from("avatars").getPublicUrl(path), url = pub && pub.data && pub.data.publicUrl;
+      db.profile = db.profile || {}; db.profile.avatarUrl = url; save();
+      if (sb) sb.from("profiles").upsert({ id: myId(), display_name: myName(), avatar_url: url, updated_at: new Date().toISOString() }).then(function () {});
+      $("obPhotoLabel").textContent = "Looking good.";
+      if (typeof renderProfileBtn === "function") renderProfileBtn();
+    }, function () { $("obPhotoLabel").textContent = "Couldn't upload — you can add it later."; });
+  });
+  function showWelcome(name) {
+    if (db.profile && db.profile.welcomed) return;
+    $("welcomeTitle").textContent = name ? ("Welcome, " + name + ".") : "Welcome.";
+    $("welcomeCard").hidden = false;
+  }
+  $("welcomeBegin").addEventListener("click", function () {
+    db.profile = db.profile || {}; db.profile.welcomed = true; save();
+    $("welcomeCard").hidden = true; if (typeof playChime === "function") playChime(); buzz(10);
+  });
   $("obStart").addEventListener("click", function () {
     if (!session) { openWelcome(); return; }             // must be signed in
     var name = $("obName").value.trim();
@@ -9336,11 +9507,14 @@
     db.lastThreshold = todayKey;
     save();
     if (typeof upsertProfile === "function") upsertProfile();   // register the name in the community profile from the start
+    clearJoin();                                                // never rely on a stale auto-join code
     $("onboard").hidden = true;
     $("bottomNav").hidden = false; $("journalBubble").hidden = false; setView("home"); renderProfileBtn();
     dailyRefresh();
-    // arrived via an invite link → drop them straight into the circle they were invited to
-    setTimeout(maybeAutoJoin, 300);
+    // explicit invite code → join their circle quietly; the welcome card lands first
+    var code = ($("obCode").value || "").trim().toUpperCase();
+    if (code) doJoin(code, function (ok) { if (!ok) showToastMsg("That code didn’t match a circle — you can join later from Fellowship."); }, true);
+    showWelcome(name);
   });
 
   function renderSoundToggle() {
@@ -9612,6 +9786,11 @@
     // honoring any prompt the user switched to + collapsing once answered.
     loadDayFields();
     if (journalVisible()) renderJournal();
+    // if the Fellowship board is open across a day change (phone left on the tab overnight),
+    // reload it so a tap lands on the correct day and the week strip / "today" dot are current
+    if (typeof currentView !== "undefined" && currentView === "fellowship" && typeof loadCircle === "function") {
+      loadCircle(function () { if (typeof renderCircle === "function") renderCircle(); });
+    }
   }
 
   // load the day-scoped field VALUES (called on init and after each rollover)
@@ -10189,7 +10368,13 @@
   // last-ditch flush so a quick capture-then-close still reaches the cloud
   window.addEventListener("pagehide", function () { if (pushTimer) { clearTimeout(pushTimer); pushTimer = null; cloudPush(); } });
   // came back online → push anything that never made it up
-  window.addEventListener("online", function () { if (needsPush) cloudPush(); else setSync("synced"); });
+  window.addEventListener("online", function () {
+    if (needsPush) cloudPush(); else setSync("synced");
+    // back online while looking at the circle → resync vows + marks and repaint
+    if (typeof currentView !== "undefined" && currentView === "fellowship" && typeof loadCircle === "function") {
+      loadCircle(function () { if (typeof renderCircle === "function") renderCircle(); });
+    }
+  });
   window.addEventListener("offline", function () { if (needsPush) setSync("offline"); });
   window.addEventListener("focus", function () {
     if (keyOf(new Date()) !== todayKey) dailyRefresh();
