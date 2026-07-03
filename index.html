@@ -1289,89 +1289,8 @@
   .storage-warn[hidden] { display: none; }
   .dev-ribbon { position: fixed; top: 0; left: 0; right: 0; z-index: 9998; background: #b45309; color: #fff; text-align: center; font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; padding: 3px 4px; font-family: "Spline Sans Mono", ui-monospace, monospace; pointer-events: none; }
 
-  /* ---- floating thought capture ---- */
-  .fab {
-    position: fixed; right: 22px; bottom: 22px; z-index: 88;
-    width: 58px; height: 58px; border-radius: 50%;
-    background: var(--accent); border: none; cursor: pointer;
-    box-shadow: 0 10px 30px -8px rgba(0,0,0,0.6), 0 0 0 6px var(--accent-soft);
-    display: flex; align-items: center; justify-content: center;
-    transition: transform 0.12s ease, box-shadow 0.2s ease;
-    touch-action: none;
-  }
-  .fab { overflow: visible; }
-  /* no thought capture before you're in / while the app is gated */
-  body:has(#welcome:not([hidden])) .fab,
-  body:has(#onboard:not([hidden])) .fab,
-  body:has(#authModal:not([hidden])) .fab,
-  body:has(#lock:not([hidden])) .fab,
-  body:has(#threshold:not([hidden])) .fab { display: none !important; }
-  .fab:hover { transform: scale(1.06); }
-  .fab:active { transform: scale(0.94); }
-  .fab-bubble { width: 25px; height: 25px; stroke: var(--bg); stroke-width: 1.8; fill: none; stroke-linejoin: round; }
-  .fab-bubble .fb-dot { fill: var(--bg); stroke: none; }
-  .fab-label {
-    position: absolute; right: 70px; top: 50%; transform: translateY(-50%) translateX(8px);
-    background: var(--panel); border: 1px solid var(--panel-edge); color: var(--ink);
-    padding: 8px 14px; border-radius: 999px; white-space: nowrap; font-size: 13px;
-    box-shadow: 0 8px 24px -8px rgba(0,0,0,0.5);
-    opacity: 0; pointer-events: none; transition: opacity 0.18s ease, transform 0.18s ease;
-  }
-  .fab:hover .fab-label { opacity: 1; transform: translateY(-50%) translateX(0); }
-  .fab.recording { animation: fabPulse 1s ease-in-out infinite; }
-  .fab.recording .fab-bubble { display: none; }
-  .fab-rec { width: 18px; height: 18px; border-radius: 3px; background: var(--bg); }
-  @media (hover: none) { .fab-label { display: none; } }
-  @keyframes fabPulse { 0%,100% { box-shadow: 0 10px 30px -8px rgba(0,0,0,0.6), 0 0 0 6px var(--accent-soft); } 50% { box-shadow: 0 10px 30px -8px rgba(0,0,0,0.6), 0 0 0 14px var(--accent-soft); } }
-  @media (min-width: 1100px) { body.journal-docked .fab { right: 22px; } }
-
-  .capture-overlay {
-    position: fixed; inset: 0; z-index: 92;
-    background: rgba(0,0,0,0.55); backdrop-filter: blur(3px);
-    display: flex; align-items: center; justify-content: center;
-    padding: 24px; overflow-y: auto;
-  }
-  .capture-overlay[hidden] { display: none; }
-  .capture-card {
-    width: 100%; max-width: 520px; margin: auto;
-    background: var(--panel); border: 1px solid var(--panel-edge);
-    border-radius: 18px; padding: 22px;
-    box-shadow: 0 24px 70px -20px rgba(0,0,0,0.7);
-    animation: capturePop 0.24s cubic-bezier(.2,.7,.2,1);
-  }
-  @keyframes capturePop { from { transform: scale(0.96); opacity: 0; } to { transform: none; opacity: 1; } }
-  .capture-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 12px; }
-  .capture-prompt { font-size: 19px; font-weight: 300; color: var(--ink); }
-  #captureText { width: 100%; font-size: 19px; line-height: 1.5; min-height: 92px; }
-  .capture-taglabel { margin-top: 14px; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); }
-  .capture-taglabel span { text-transform: none; letter-spacing: 0; font-style: italic; opacity: 0.8; }
-  .capture-tags { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
-  .capture-mood { display: grid; grid-template-columns: repeat(10, 1fr); gap: 6px; margin-top: 8px; }
-  .mood-chip {
-    aspect-ratio: 1 / 1; border-radius: 8px; cursor: pointer;
-    background: var(--field); border: 1px solid var(--field-edge); color: var(--ink-soft);
-    font-family: inherit; font-size: 13px; display: flex; align-items: center; justify-content: center;
-    transition: all 0.12s ease; font-variant-numeric: tabular-nums;
-  }
-  .mood-chip:hover { color: var(--ink); border-color: var(--ink-faint); }
-  .mood-chip.sel { color: var(--bg); font-weight: 600; }
-  @media (max-width: 420px) { .mood-chip { font-size: 12px; } }
-  .capture-foot-l { display: flex; gap: 8px; }
+  /* ---- notes: mood badge (from legacy captures; capture feature removed) ---- */
   .th-mood { width: 22px; height: 18px; border-radius: 5px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: var(--bg); font-variant-numeric: tabular-nums; }
-  .ct-orb {
-    width: 22px; height: 22px; border-radius: 50%; cursor: pointer;
-    border: 1px solid rgba(255,255,255,0.14); opacity: 0.4;
-    transition: opacity 0.15s ease, transform 0.12s ease;
-  }
-  .ct-orb:hover { opacity: 0.8; }
-  .ct-orb.sel { opacity: 1; transform: scale(1.18); box-shadow: 0 0 0 2px var(--bg), 0 0 0 3.5px var(--accent); }
-  .capture-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 16px; gap: 10px; }
-  .cap-send {
-    background: var(--accent); color: var(--bg); border: none; border-radius: 10px;
-    padding: 11px 22px; font-family: inherit; font-size: 13px; font-weight: 600;
-    letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; transition: opacity 0.2s ease;
-  }
-  .cap-send:hover { opacity: 0.9; }
 
   /* ---- thought stream ---- */
   .thoughts-overlay { align-items: stretch; justify-content: flex-end; padding: 0; }
@@ -2163,7 +2082,6 @@
 
   /* ===== App shell: bottom nav + destinations ===== */
   .wrap[hidden] { display: none; }
-  .fab[hidden] { display: none !important; }
   .appview { position: fixed; inset: 0; z-index: 40; overflow-y: auto; -webkit-overflow-scrolling: touch; background: var(--bg); }
   .appview[hidden] { display: none; }
   /* Glassy floating iOS-style nav */
@@ -3296,40 +3214,7 @@
 
   </div>
 
-  <!-- Floating thought capture -->
-  <button class="fab" id="fab" aria-label="Capture a thought" hidden>
-    <span class="fab-label">Capture a thought</span>
-    <svg class="fab-bubble" viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M5 4.5h14a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-8l-4.5 4v-4H5a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2z"/>
-      <circle class="fb-dot" cx="9" cy="10" r="1.1"/><circle class="fb-dot" cx="12" cy="10" r="1.1"/><circle class="fb-dot" cx="15" cy="10" r="1.1"/>
-    </svg>
-    <span class="fab-rec" id="fabRec" hidden></span>
-  </button>
-
-  <!-- Capture sheet -->
-  <div class="capture-overlay" id="captureView" hidden>
-    <div class="capture-card">
-      <div class="capture-head">
-        <span class="capture-prompt serif" id="capturePrompt">What’s on your mind?</span>
-        <button class="label-btn" id="captureAll">All thoughts →</button>
-      </div>
-      <textarea id="captureText" rows="2" placeholder="Drop a thought…"></textarea>
-      <div class="capture-taglabel">How are you feeling? <span>(optional · 1–10)</span></div>
-      <div class="capture-mood" id="captureMood"></div>
-      <div class="voice-memo" id="captureMemo"></div>
-      <div class="capture-foot">
-        <div class="capture-foot-l">
-          <button class="voice-btn" id="captureDictate" data-voice="dictate" data-target="captureText" aria-label="Dictate">
-            <svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><line x1="12" y1="18" x2="12" y2="21"/></svg><span>Dictate</span>
-          </button>
-          <button class="voice-btn" id="captureRecord" aria-label="Record a voice thought">
-            <span class="rec-dot"></span><span class="rec-label">Record</span>
-          </button>
-        </div>
-        <button class="cap-send" id="captureSend">Send</button>
-      </div>
-    </div>
-  </div>
+  <!-- (Floating thought-capture FAB + quick-note/1–10 mood sheet removed — feature retired) -->
 
   <!-- Week in review -->
   <div class="modal-overlay" id="reviewView" hidden>
@@ -8002,12 +7887,7 @@
   });
 
   // ===== Thought capture (floating, throughout the day) =====
-  var THOUGHT_PROMPTS = [
-    "What’s on your mind?", "What’s stirring right now?", "What did you just learn?",
-    "Who’s on your mind?", "What are you grateful for, right now?", "What’s God showing you?",
-    "What’s one honest thought?", "What just moved you?"
-  ];
-  var captureMood = null, toastTimer = null;
+  var toastTimer = null;
   var _idCounter = 0;
   function newId(pre) { return pre + Date.now().toString(36) + (_idCounter++).toString(36) + Math.floor(Math.random() * 1e9).toString(36); }
   // ---- notes are NEVER hard-deleted: soft-delete → recoverable trash + undo ----
@@ -8060,130 +7940,9 @@
     save();
     syncEntry(t);   // the entry gets its own cloud row the moment it exists
   }
-  (function buildCaptureMood() {
-    var h = "";
-    for (var m = 1; m <= 10; m++) h += '<button class="mood-chip" data-mood="' + m + '">' + m + "</button>";
-    $("captureMood").innerHTML = h;
-  })();
-  var capRec = null, capChunks = [], pendingVoice = null;
-  function stopCaptureRecording() {
-    if (capRec && capRec.state !== "inactive") { try { capRec.stop(); } catch (e) {} }
-    var b = $("captureRecord"); b.classList.remove("recording"); b.querySelector(".rec-label").textContent = "Record";
-  }
-  function startCaptureRecording() {
-    if (!canRecord) { $("captureMemo").innerHTML = '<div class="voice-msg">Recording isn’t available here.</div>'; return; }
-    navigator.mediaDevices.getUserMedia({ audio: true }).then(function (stream) {
-      capChunks = [];
-      try { capRec = new MediaRecorder(stream); } catch (e) { capRec = new MediaRecorder(stream, {}); }
-      capRec.ondataavailable = function (e) { if (e.data && e.data.size) capChunks.push(e.data); };
-      capRec.onstop = function () {
-        stream.getTracks().forEach(function (t) { t.stop(); });
-        var blob = new Blob(capChunks, { type: (capRec && capRec.mimeType) || "audio/webm" });
-        var rd = new FileReader();
-        rd.onload = function () { pendingVoice = rd.result; renderCaptureMemo(); };
-        rd.readAsDataURL(blob);
-        capRec = null;
-      };
-      capRec.start();
-      var b = $("captureRecord"); b.classList.add("recording"); b.querySelector(".rec-label").textContent = "Stop"; buzz(12);
-    }).catch(function () { $("captureMemo").innerHTML = '<div class="voice-msg">Microphone unavailable (allow access; use https or localhost).</div>'; });
-  }
-  function renderCaptureMemo() {
-    if (!vsrc(pendingVoice)) { $("captureMemo").innerHTML = ""; return; }
-    $("captureMemo").innerHTML = '<div class="vm-row"><audio controls src="' + pendingVoice + '"></audio>' +
-      '<button class="vm-del" id="capMemoDel" aria-label="Remove">×</button></div>';
-  }
-  function openCapture() {
-    // not before onboarding, and not while a gate overlay is up
-    if (!db.profile || !db.profile.onboarded) return;
-    if (!$("welcome").hidden || !$("onboard").hidden || !$("authModal").hidden || !$("lock").hidden || !$("threshold").hidden) return;
-    captureMood = null; pendingVoice = null;
-    $("captureText").value = ""; $("captureMemo").innerHTML = "";
-    $("capturePrompt").textContent = THOUGHT_PROMPTS[Math.floor(Math.random() * THOUGHT_PROMPTS.length)];
-    Array.prototype.forEach.call(document.querySelectorAll("#captureMood .mood-chip"), function (o) { o.classList.remove("sel"); o.style.background = ""; o.style.borderColor = ""; });
-    $("captureView").hidden = false;
-    setTimeout(function () { $("captureText").focus(); }, 60);
-  }
-  function closeCapture() { $("captureView").hidden = true; if (dictateBtn) stopDictation(); stopCaptureRecording(); }
-  function sendThought() {
-    var text = $("captureText").value.trim();
-    if (!text && !pendingVoice) { $("captureText").focus(); return; }
-    addThought({ text: text, voice: pendingVoice, mood: captureMood });
-    closeCapture(); playPop(); buzz(10); celebrate($("fab"));
-    if (!$("thoughtsPane").hidden) renderThoughts();
-  }
-  $("captureMood").addEventListener("click", function (e) {
-    var c = e.target.closest(".mood-chip"); if (!c) return;
-    var m = +c.getAttribute("data-mood");
-    Array.prototype.forEach.call(this.children, function (x) { x.classList.remove("sel"); x.style.background = ""; x.style.borderColor = ""; });
-    if (captureMood === m) { captureMood = null; }
-    else { captureMood = m; var col = moodColor(m); c.classList.add("sel"); c.style.background = col; c.style.borderColor = col; }
-  });
-  $("captureRecord").addEventListener("click", function () {
-    if ($("captureRecord").classList.contains("recording")) stopCaptureRecording();
-    else startCaptureRecording();
-  });
-  $("captureMemo").addEventListener("click", function (e) {
-    if (e.target.closest("#capMemoDel")) { pendingVoice = null; renderCaptureMemo(); }
-  });
-  $("captureSend").addEventListener("click", sendThought);
-  $("captureText").addEventListener("keydown", function (e) { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) sendThought(); });
-  $("captureView").addEventListener("click", function (e) { if (e.target === this) closeCapture(); });
-  $("captureAll").addEventListener("click", function () { closeCapture(); openThoughts(); });
+  // (thought-capture sheet removed — the quick-note + 1–10 mood feature was retired)
 
-  // FAB: tap = capture sheet, long-press = start voice (then TAP to stop).
-  // Tap-to-stop (rather than release-to-stop) so a first-time mic-permission prompt can't cut the recording short.
-  var fabRec = null, fabChunks = [], fabRecording = false, holdTimer = null, holdFired = false, fabMaxTimer = null;
-  function startFabRecording() {
-    if (!canRecord) { openCapture(); return; }
-    navigator.mediaDevices.getUserMedia({ audio: true }).then(function (stream) {
-      fabChunks = [];
-      try { fabRec = new MediaRecorder(stream); } catch (e) { fabRec = new MediaRecorder(stream, {}); }
-      fabRec.ondataavailable = function (e) { if (e.data && e.data.size) fabChunks.push(e.data); };
-      fabRec.onstop = function () {
-        stream.getTracks().forEach(function (t) { t.stop(); });
-        var blob = new Blob(fabChunks, { type: (fabRec && fabRec.mimeType) || "audio/webm" });
-        var rd = new FileReader();
-        rd.onload = function () {
-          var vt = { id: newId("t"), text: "", voice: rd.result, mood: null, star: false, ts: new Date().toISOString(), dateKey: todayKey };
-          db.thoughts.push(vt);
-          save();                       // audio → IndexedDB, text → localStorage (never overflows)
-          syncEntry(vt);
-          playPop(); celebrate($("fab"));
-          if (!$("thoughtsPane").hidden) renderThoughts();
-        };
-        rd.readAsDataURL(blob);
-        fabRec = null;
-      };
-      fabRec.start(); fabRecording = true;
-      $("fab").classList.add("recording"); $("fabRec").hidden = false; buzz(16);
-      showToastMsg("Recording… tap the button to stop.");
-      clearTimeout(fabMaxTimer); fabMaxTimer = setTimeout(stopFabRecording, 120000); // 2-min safety cap
-    }).catch(function () {
-      fabRecording = false; $("fab").classList.remove("recording"); $("fabRec").hidden = true;
-      showToastMsg("Microphone needs permission (and https or localhost).");
-    });
-  }
-  function stopFabRecording() {
-    clearTimeout(fabMaxTimer);
-    if (fabRec && fabRec.state !== "inactive") { try { fabRec.stop(); } catch (e) {} }
-    fabRecording = false; $("fab").classList.remove("recording"); $("fabRec").hidden = true;
-    $("toast").hidden = true;
-  }
-  var fab = $("fab");
-  fab.addEventListener("pointerdown", function (e) {
-    e.preventDefault();
-    if (fabRecording) return;            // a press while recording is handled on pointerup (stop)
-    holdFired = false;
-    holdTimer = setTimeout(function () { holdFired = true; startFabRecording(); }, 380);
-  });
-  fab.addEventListener("pointerup", function () {
-    clearTimeout(holdTimer);
-    if (fabRecording) { stopFabRecording(); return; }  // tap while recording → stop & save
-    if (!holdFired) openCapture();                     // quick tap → capture sheet
-    // long-press that started recording keeps going until the next tap
-  });
-  fab.addEventListener("contextmenu", function (e) { e.preventDefault(); });
+  // (floating capture FAB removed)
 
   // ----- thought stream -----
   function timeLabel(ts) {
@@ -8339,15 +8098,11 @@
     clearTimeout(toastTimer); toastTimer = setTimeout(function () { $("toast").hidden = true; }, 9000);
   }
   function showToast(kind, mem) {
+    if (!mem) return;
     var b = $("toastBody");
-    if (kind === "memory") {
-      var ago = mem.days >= 365 ? "A year ago" : (mem.days >= 30 ? "A month ago" : "A week ago");
-      b.innerHTML = '<div class="toast-kicker">Memory · ' + ago + '</div><div class="toast-text"><em>“' + escapeHtml(mem.t.text) + '”</em></div>';
-      b._action = openThoughts;
-    } else {
-      b.innerHTML = '<div class="toast-kicker">Thought bubble</div><div class="toast-text">What’s stirring right now? Tap to capture it.</div>';
-      b._action = openCapture;
-    }
+    var ago = mem.days >= 365 ? "A year ago" : (mem.days >= 30 ? "A month ago" : "A week ago");
+    b.innerHTML = '<div class="toast-kicker">Memory · ' + ago + '</div><div class="toast-text"><em>“' + escapeHtml(mem.t.text) + '”</em></div>';
+    b._action = openThoughts;
     $("toast").hidden = false;
     clearTimeout(toastTimer); toastTimer = setTimeout(function () { $("toast").hidden = true; }, 9000);
   }
@@ -8358,11 +8113,9 @@
     return !$("welcome").hidden || !$("onboard").hidden || !$("authModal").hidden || !$("lock").hidden || !$("threshold").hidden;
   }
   function maybeNudge() {
-    if (appGated()) return; // never nudge over the sign-in gate / setup / lock
+    if (appGated()) return; // never surface over the sign-in gate / setup / lock
     var mem = findMemory();
-    if (mem) { showToast("memory", mem); return; }
-    var hrs = (Date.now() - lastThoughtMs()) / 3600000;
-    if (!db.thoughts.length || hrs >= 3) showToast("nudge");
+    if (mem) showToast("memory", mem);   // gently resurface a past reflection ("a week ago…") — no capture nudge
   }
 
   // ----- thought reminders (notifications) -----
@@ -8372,7 +8125,7 @@
     clearInterval(notifyTimer);
     if (db.notifyOn && canNotify && Notification.permission === "granted") {
       notifyTimer = setInterval(function () {
-        try { new Notification("The Integrated Man", { body: "A thought bubble just floated by — capture it." }); } catch (e) {}
+        try { new Notification("The Integrated Man", { body: "A quiet moment to reflect — open your journal." }); } catch (e) {}
       }, db.notifyHours * 3600000);
     }
   }
@@ -9455,7 +9208,7 @@
   });
   if (window.matchMedia) { try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { if (db.theme === "auto") applyTheme("auto"); }); } catch (e) {} }
 
-  var APP_VERSION = "v61.23-dev";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v61.24-dev";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
