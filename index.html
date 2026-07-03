@@ -2203,7 +2203,7 @@
 
   /* ===== glassy compact covenant rows (holds a full circle of 9 without a giant scroll) ===== */
   .cov-board { display: flex; flex-direction: column; gap: 9px; }
-  .cov-row { position: relative; display: flex; align-items: center; gap: 12px; padding: 12px 13px; border-radius: 18px;
+  .cov-row { position: relative; display: flex; align-items: center; gap: 12px; padding: 12px 13px; border-radius: 18px; min-height: 66px;
     background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08);
     -webkit-backdrop-filter: blur(20px) saturate(1.4); backdrop-filter: blur(20px) saturate(1.4);
     box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 10px 26px -18px rgba(0,0,0,0.7); }
@@ -2213,9 +2213,10 @@
   .cov-row-main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
   .cov-row-name { font-size: 15px; font-weight: 600; color: var(--ink); display: flex; align-items: baseline; gap: 7px; min-width: 0; }
   .cov-row-name .rn { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .cov-row-cad { flex: 0 0 auto; font-size: 9.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-faint); font-weight: 500; }
-  .cov-row-vow { font-size: 12.5px; line-height: 1.35; color: var(--ink-soft); font-style: italic; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .cov-row-preparing { font-size: 12.5px; color: var(--ink-faint); font-style: italic; }
+  .cov-row-cad { flex: 0 0 auto; font-size: 9.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-soft); font-weight: 500; }
+  /* the vow is the heart of the card — let it breathe to 2 lines (full text in title/aria) */
+  .cov-row-vow { font-size: 12.5px; line-height: 1.38; color: var(--ink-soft); font-style: italic; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .cov-row-preparing { font-size: 12.5px; color: var(--ink-soft); font-style: italic; }
   /* the compact week: 7 small dots, today ringed, all states visible in both themes */
   .cov-week { display: flex; align-items: center; gap: 6px; margin-top: 3px; }
   .cov-mini { width: 8px; height: 8px; border-radius: 50%; box-sizing: border-box; flex: 0 0 auto; transition: all 0.3s ease; background: var(--field-edge); }
@@ -3569,6 +3570,7 @@
           <div class="cov-cadence-hint" id="cerCadenceHint">Every day this week</div>
         </div>
         <button class="cov-cer-next" id="cerNext" disabled>Continue</button>
+        <button class="cov-cer-back" id="cerLater">Maybe later</button>
       </div>
       <!-- movement 2: sign it -->
       <div id="cerStep2" hidden>
@@ -6068,7 +6070,8 @@
   function pwInitials(name) { var p = (name || "?").trim().split(/\s+/); return ((p[0] ? p[0][0] : "?") + (p[1] ? p[1][0] : "")).toUpperCase(); }
   function pwRgba(hex, a) { var n = parseInt(hex.slice(1), 16); return "rgba(" + ((n >> 16) & 255) + "," + ((n >> 8) & 255) + "," + (n & 255) + "," + a + ")"; }
   function pwAvatar(name, url, sz) {
-    if (url) return '<span class="pw-av pw-av-' + sz + '" style="background-image:url(' + encodeURI(url) + ')"></span>';
+    // quote the url and strip chars that could break out of url()/the style attr (defense-in-depth)
+    if (url) return '<span class="pw-av pw-av-' + sz + '" style=\'background-image:url("' + encodeURI(String(url)).replace(/["()\\<>]/g, "") + '")\'></span>';
     var c = pwColor(name);
     return '<span class="pw-av pw-av-' + sz + '" style="background:' + pwRgba(c, 0.17) + ';color:' + c + '">' + escapeHtml(pwInitials(name)) + '</span>';
   }
@@ -6335,8 +6338,11 @@
     }
     if (!circleState.circle) { renderChapelDoor(); return; }
     renderBoard();
-    if (!circleState.covenants[myId()]) openCeremony("first");   // member but no vow yet → the ceremony
+    // open the ceremony for a member with no vow — but only until they dismiss it once
+    // this session (otherwise they're trapped in an unclosable full-screen flow)
+    if (!circleState.covenants[myId()] && !cerDismissed) openCeremony("first");
   }
+  var cerDismissed = false;
 
   // ---- State 1: the chapel door ----
   function renderChapelDoor() {
@@ -6401,9 +6407,13 @@
     var cov = circleState.covenants[m.user_id];
     var av = pwAvatar(name, url, "lg");
     if (!cov) {
+      // my own un-signed row is a call to action; others just show "preparing"
+      var prep = mine
+        ? '<div class="cov-row-preparing" style="color:var(--accent)">Sign your covenant →</div></div>' +
+          '<div class="cov-row-right"><button class="cov-tap" data-act="openCeremony" aria-label="Sign your covenant"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button><span class="cov-tap-cap">Sign</span></div>'
+        : '<div class="cov-row-preparing">preparing his covenant…</div></div>';
       return '<div class="cov-row' + (mine ? " mine" : "") + '">' + av +
-        '<div class="cov-row-main"><div class="cov-row-name"><span class="rn">' + escapeHtml(name) + '</span></div>' +
-        '<div class="cov-row-preparing">preparing his covenant…</div></div></div>';
+        '<div class="cov-row-main"><div class="cov-row-name"><span class="rn">' + escapeHtml(name) + '</span></div>' + prep + '</div>';
     }
     var freq = +cov.freq || 7, daily = freq >= 7;
     var renewing = cov.signed_day < weekKey;
@@ -6425,7 +6435,7 @@
     var prog = renewing ? "" : (daily ? "" : (doneCount + "/" + freq));
     var main = '<div class="cov-row-main">' +
       '<div class="cov-row-name"><span class="rn">' + escapeHtml(name) + '</span><span class="cov-row-cad">' + covCadenceLabel(freq) + '</span></div>' +
-      '<div class="cov-row-vow">“' + escapeHtml(cov.body) + '”</div>' +
+      '<div class="cov-row-vow" title="' + escapeHtml(cov.body) + '">“' + escapeHtml(cov.body) + '”</div>' +
       '<div class="cov-week">' + week + (prog ? '<span class="cov-week-prog">' + prog + '</span>' : "") + '</div></div>';
     // right-side control
     var right;
@@ -6606,6 +6616,7 @@
   $("cerInput").addEventListener("input", function () { growCer(); $("cerNext").disabled = !this.value.trim(); });
   $("cerInput").addEventListener("keydown", function (e) { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); if (this.value.trim()) toSealStep(); } });
   $("cerNext").addEventListener("click", toSealStep);
+  $("cerLater").addEventListener("click", function () { cerDismissed = true; closeCeremony(); renderBoard(); });   // step out — your row shows "preparing"
   function toSealStep() {
     var body = $("cerInput").value.trim(); if (!body) return;
     $("cerEcho").textContent = "“" + body + "”";
@@ -6679,6 +6690,7 @@
     if (act === "retryCircle") { circleState.error = false; openCircle(); }
     else if (act === "showCode") { var cta = $("chapelCta"), cd = $("chapelCode"); if (cta) cta.hidden = true; if (cd) { cd.hidden = false; var i = $("chapelCodeInput"); if (i) i.focus(); } }
     else if (act === "submitCode") { submitCode(); }
+    else if (act === "openCeremony") { cerDismissed = false; openCeremony("first"); }
     else if (act === "markToday") { setCheck(true, el); }        // instant — tap fills the circle, tap again to undo
     else if (act === "unmarkToday") { setCheck(false, el); }
     else if (act === "gotBack") { sendNudge(uid, "back"); showToastMsg("He’ll know you’re with him."); buzz(10); }
@@ -8674,7 +8686,7 @@
   });
   if (window.matchMedia) { try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { if (db.theme === "auto") applyTheme("auto"); }); } catch (e) {} }
 
-  var APP_VERSION = "v61.11-dev";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v61.12-dev";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
