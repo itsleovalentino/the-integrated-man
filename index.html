@@ -6289,7 +6289,7 @@
       var cid = mine[0].circle_id, myRole = mine[0].role, myJoinedDay = mine[0].joined_day, days = weekDaysSat(), today = todayLocal();
       Promise.all([
         sb.from("circles").select("*").eq("id", cid).maybeSingle(),
-        sb.from("circle_members").select("user_id, role, joined_day, joined_at").eq("circle_id", cid),
+        sb.from("circle_members").select("*").eq("circle_id", cid),
         sb.from("profiles").select("*"),
         sb.from("covenants").select("*").eq("circle_id", cid).order("signed_at", { ascending: true }),
         sb.from("covenant_checks").select("user_id, day, done").eq("circle_id", cid).in("day", days),
@@ -6310,6 +6310,18 @@
         });
         circleState = { loaded: true, circle: res[0].data, members: members, profiles: profs, covenants: cov, checks: checks,
           sentBack: sentBack, fireCounts: fireCounts, received: received, myRole: myRole, myJoinedDay: myJoinedDay };
+        // stamp MY name + photo onto MY membership row so every brother can read it directly
+        // (the source of truth for the board — never depends on the fragile profiles table again)
+        try {
+          if (sb && hasRealName()) {
+            var meM = members.filter(function (m) { return m.user_id === uid; })[0];
+            var myAv = (db.profile && db.profile.avatarUrl) || null;
+            if (!meM || meM.member_name !== myName() || (myAv && meM.member_avatar !== myAv)) {
+              sb.from("circle_members").update({ member_name: myName(), member_avatar: myAv }).eq("circle_id", cid).eq("user_id", uid).then(function () {});
+              if (meM) { meM.member_name = myName(); if (myAv) meM.member_avatar = myAv; }
+            }
+          }
+        } catch (e) {}
         if (cb) cb();
       }, function () { circleState.loaded = true; circleState.error = true; if (cb) cb(); });   // member known, details failed
     }, function () { circleState = { loaded: true, error: true, circle: null, members: [], profiles: {}, covenants: {}, checks: {}, sentBack: {}, fireCounts: {}, received: [], myRole: null, myJoinedDay: null }; if (cb) cb(); });
@@ -6366,11 +6378,26 @@
   }
   var CHECK_SVG = '<svg viewBox="0 0 24 24"><polyline points="5 12 10 17 19 7"/></svg>';
   var HANDS_SVG = '<svg viewBox="0 0 24 24"><path d="M7 11V7a2 2 0 0 1 4 0v3M11 8a2 2 0 0 1 4 0v3M15 9.5a2 2 0 0 1 3.5 1.3V14a6 6 0 0 1-6 6h-1.2a5 5 0 0 1-3.5-1.5l-3.1-3.1a1.6 1.6 0 0 1 2.3-2.3L10 15"/></svg>';
+  // name/photo come from the membership row first (readable by every member), then the
+  // profiles table, then a last-resort placeholder. Removes the old "A brother" failure.
+  function memberName(m) {
+    if (!m) return "A brother";
+    if (m.user_id === myId() && hasRealName()) return myName();
+    if (isRealName(m.member_name)) return m.member_name.trim();
+    var p = circleState.profiles[m.user_id];
+    if (p && isRealName(p.display_name)) return p.display_name.trim();
+    return "A brother";
+  }
+  function memberAvatarUrl(m) {
+    if (!m) return null;
+    if (m.user_id === myId()) return (db.profile && db.profile.avatarUrl) || m.member_avatar || null;
+    var p = circleState.profiles[m.user_id];
+    return m.member_avatar || (p && p.avatar_url) || null;
+  }
   function covCardHtml(m, days, today, weekKey, uid) {
     var mine = m.user_id === uid;
-    var prof = circleState.profiles[m.user_id] || {};
-    var name = mine && hasRealName() ? myName() : (isRealName(prof.display_name) ? prof.display_name.trim() : "A brother");
-    var url = prof.avatar_url || (mine && db.profile && db.profile.avatarUrl) || null;
+    var name = memberName(m);
+    var url = memberAvatarUrl(m);
     var cov = circleState.covenants[m.user_id];
     var av = pwAvatar(name, url, "lg");
     if (!cov) {
@@ -6542,7 +6569,7 @@
     if (sb) sb.from("nudges").update({ seen: true }).in("id", ids).then(function () {});
     circleState.received = []; refreshCircleBadge();
   }
-  function nudgerName(uid) { var p = circleState.profiles[uid]; return (p && isRealName(p.display_name)) ? p.display_name.trim() : "A brother"; }
+  function nudgerName(uid) { var m = (circleState.members || []).filter(function (x) { return x.user_id === uid; })[0]; return memberName(m || { user_id: uid }); }
   function showNudgeBanner(text, icon) {
     var old = $("nudgeBanner"); if (old) old.remove();
     var b = document.createElement("div"); b.className = "nudge-banner"; b.id = "nudgeBanner";
@@ -8647,7 +8674,7 @@
   });
   if (window.matchMedia) { try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { if (db.theme === "auto") applyTheme("auto"); }); } catch (e) {} }
 
-  var APP_VERSION = "v61.10-dev";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v61.11-dev";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
