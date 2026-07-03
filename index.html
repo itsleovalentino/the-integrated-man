@@ -3553,7 +3553,7 @@
         <button class="ob-avatar" id="obPhotoBtn" type="button" aria-label="Add a photo">
           <svg viewBox="0 0 24 24" id="obAvatarIcon"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"/><path d="M4 20c0-3.3 3.6-5 8-5s8 1.7 8 5"/></svg>
         </button>
-        <div class="ob-photo-meta"><span id="obPhotoLabel">A face makes your circle personal.</span></div>
+        <div class="ob-photo-meta"><span id="obPhotoLabel">Find your best smile.</span></div>
         <input type="file" id="obPhotoFile" accept="image/*" hidden />
       </div>
 
@@ -9427,7 +9427,7 @@
   });
   if (window.matchMedia) { try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { if (db.theme === "auto") applyTheme("auto"); }); } catch (e) {} }
 
-  var APP_VERSION = "v61.33-dev";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v61.34-dev";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
@@ -9539,7 +9539,7 @@
   function openOnboarding() {
     $("obName").value = (db.profile && db.profile.name) || "";
     $("obCode").value = "";
-    $("obPhotoLabel").textContent = "A face makes your circle personal.";
+    $("obPhotoLabel").textContent = "Find your best smile.";
     var oa = $("obPhotoBtn"); if (oa) { oa.classList.remove("has-photo"); oa.style.backgroundImage = ""; }
     $("obMsg").textContent = "";
     $("welcome").hidden = true; $("authModal").hidden = true;
