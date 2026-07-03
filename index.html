@@ -2613,7 +2613,10 @@
   }
   .modal-x svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
   .modal-x:hover { color: var(--ink); border-color: var(--ink-faint); }
-  .settings-modal .modal-body { overflow-y: auto; padding: 6px 24px 24px; }
+  .settings-modal .modal-body { overflow-y: auto; padding: 6px 24px 20px; flex: 1 1 auto; min-height: 0; }
+  /* Save stays pinned & always visible — no more scrolling to the bottom to find it */
+  .settings-foot { flex: 0 0 auto; padding: 12px 24px calc(14px + env(safe-area-inset-bottom)); border-top: 1px solid var(--line); background: var(--panel); }
+  .settings-foot .settings-version { text-align: center; }
   .modal-sub { font-size: 14.5px; color: var(--ink-soft); line-height: 1.5; margin: 0 0 24px; }
   .ob-signin-link {
     display: block; margin: -14px 0 24px; padding: 0;
@@ -3487,10 +3490,11 @@
       <button class="modal-secondary" id="recoverBtn" style="width:100%;margin-top:8px;">Verify my journal</button>
       <p class="ob-reading-hint" style="margin-top:8px;text-align:left;">Your journal is kept in more than one place — on this device, in an automatic snapshot, and entry-by-entry in your account. <b>Verify my journal</b> checks them against each other and quietly fills in anything missing. Download a file now and then for extra peace of mind.</p>
       <div class="settings-msg" id="settingsMsg"></div>
-
-      <button class="modal-primary" id="settingsSave">Save</button>
-      <button class="modal-text" id="settingsClose">Close</button>
-      <div class="settings-version" id="settingsVersion"></div>
+      </div>
+      <div class="settings-foot">
+        <button class="modal-primary" id="settingsSave">Save</button>
+        <button class="modal-text" id="settingsClose">Close</button>
+        <div class="settings-version" id="settingsVersion"></div>
       </div>
     </div>
   </div>
@@ -8687,7 +8691,7 @@
   });
   if (window.matchMedia) { try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { if (db.theme === "auto") applyTheme("auto"); }); } catch (e) {} }
 
-  var APP_VERSION = "v61.13-dev";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v61.14-dev";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
