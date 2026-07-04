@@ -9440,7 +9440,7 @@
   });
   if (window.matchMedia) { try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { if (db.theme === "auto") applyTheme("auto"); }); } catch (e) {} }
 
-  var APP_VERSION = "v61.50-dev";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v61.51-dev";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
@@ -10040,6 +10040,14 @@
     }
     ensurePlans();
     var plans = (db.profile && db.profile.plans) || [];
+
+    // The Oura ("Sleep & Readiness") widget is opt-in, so a churned layout (unexpected sign-out /
+    // multi-device) can drop it and it defaults back to OFF. Tie it to the CONNECTION instead: if
+    // Oura is connected, keep its widget on, so it can never silently vanish and need re-adding.
+    if (db.oura && db.oura.token && typeof ensureWidgetOn === "function"
+        && !(Array.isArray(db.layout) && db.layout.some(function (e) { return e.key === "health" && e.on; }))) {
+      ensureWidgetOn("health");
+    }
 
     // ONE-TIME MIGRATION HEAL: the streak used to be a stored NUMBER, and openLog didn't sync across
     // devices — so THIS device's chain can be shorter than the real streak. Rebuild the chain from the
