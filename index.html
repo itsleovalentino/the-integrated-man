@@ -9423,7 +9423,7 @@
   });
   if (window.matchMedia) { try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { if (db.theme === "auto") applyTheme("auto"); }); } catch (e) {} }
 
-  var APP_VERSION = "v61.43-dev";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v61.44-dev";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
@@ -9984,6 +9984,17 @@
   $("streakCel").addEventListener("click", function (e) { if (e.target === this) dismissStreakCelebration(); });
 
   // ================= the daily render (re-runnable at midnight) =================
+  // The true streak = consecutive days the app was opened, counted back from today. openLog is
+  // union-merged across devices (a CONTENT_KEY — it can only ever GROW, never be replaced), so
+  // deriving the streak from it means a stale/second-device sync can never knock it down, and a
+  // clobbered streak self-heals to the real value on the next load. (Fixes the multi-device wipe.)
+  function computeStreak() {
+    var log = db.openLog || {}, d = new Date();
+    if (!log[keyOf(d)]) d = new Date(d.getFullYear(), d.getMonth(), d.getDate() - 1); // today unopened → start at yesterday
+    var n = 0, guard = 0;
+    while (log[keyOf(d)] && guard++ < 4000) { n++; d = new Date(d.getFullYear(), d.getMonth(), d.getDate() - 1); }
+    return n;
+  }
   function dailyRefresh() {
     var now = new Date();
     todayKey = keyOf(now);
@@ -10006,12 +10017,13 @@
     ensurePlans();
     var plans = (db.profile && db.profile.plans) || [];
 
-    // rollover: streak + (for each sequential plan) advance the reading position
+    // streak ALWAYS derives from the open-day chain (openLog[todayKey] was just set above), so it
+    // reflects the truth and heals any value a bad sync left behind. Reading advances only on rollover.
+    var _prevStreak = db.streak || 0;
+    db.streak = computeStreak();
     if (db.lastOpen !== todayKey) {
-      var _prevStreak = db.streak || 0;
-      db.streak = (db.lastOpen === yKey) ? (db.streak || 0) + 1 : 1;
       // queue the new-day celebration for the first time they're actually looking (not a background midnight roll)
-      if (db.lastOpen) db.streakToCelebrate = { from: _prevStreak, to: db.streak, day: todayKey };
+      if (db.lastOpen && db.streak > _prevStreak) db.streakToCelebrate = { from: _prevStreak, to: db.streak, day: todayKey };
       if (db.lastOpen) {
         plans.forEach(function (plan) {
           if (plan.key === "proverbs") return;
@@ -10021,6 +10033,8 @@
       }
       db.lastOpen = todayKey;
       save();
+    } else if (db.streak !== _prevStreak) {
+      save();   // same day, but we corrected a streak a stale sync had knocked off — persist + push the truth
     }
     $("streak").textContent = "Day " + db.streak + " streak";
     renderChain();
@@ -10248,7 +10262,13 @@
   function mergeCloudContent(data) { mergeRecover(data); applyCloudDeletes(data); }
   function applyCloud(data) {
     mergeCloudContent(data);     // content: union only — never replaced
+    // preserve customizations a stale/second device would otherwise wipe with its defaults
+    var _localLayout = (Array.isArray(db.layout) && db.layout.length) ? db.layout : null;
+    var _localPlans = (db.profile && Array.isArray(db.profile.plans) && db.profile.plans.length) ? db.profile.plans : null;
     for (var k in data) { if (data.hasOwnProperty(k) && !SYNC_SKIP[k] && !CONTENT_KEYS[k]) db[k] = data[k]; }
+    // a device with no widget layout / no reading plan must never erase one that already exists
+    if (_localLayout && (!Array.isArray(db.layout) || !db.layout.length)) db.layout = _localLayout;
+    if (_localPlans && db.profile && (!Array.isArray(db.profile.plans) || !db.profile.plans.length)) db.profile.plans = _localPlans;
     db.voice = db.voice || { journal: {}, evening: {} };
     db.bibleCache = db.bibleCache || {};
     persistClean(db);            // durable, audio-safe write
