@@ -126,6 +126,24 @@ There is no hard delete of user content anywhere, and it must stay that way:
   later push could erase another device's unsynced entries on the next pull → content is now
   union-merged, never replaced, plus per-entry cloud rows. Entries lost that morning were
   unrecoverable — they never reached any durable copy.
+- **July 3 2026 (the big one — streak/habits/widgets wiped):** THREE compounding sync holes, all
+  now fixed (v61.44–v61.47). (1) Non-content settings (`streak`, `layout`, `habits`, `profile.plans`)
+  were replaced wholesale by last-writer-wins, so a fresh/second device or an EMPTY MOCK ACCOUNT
+  could blank them. Fix: blanket guard in `applyCloud` — `if (!hasData(data[k]) && hasData(db[k])) continue`
+  (a sync may UPDATE a setting but may NEVER blank a field that holds data), plus `habits` added to
+  `CONTENT_KEYS`+`mergeRecover` (union by id). (2) `openLog` and `trash` were CONTENT_KEYS that
+  `applyCloud` skipped but `mergeRecover` never handled — a dead zone: they never synced across
+  devices. Since the streak is derived from `openLog` (via `computeStreak()`), a fresh device saw an
+  empty chain → "Day 1." Fix: `mergeRecover` now union-merges `openLog` and `trash`. (3) ROOT CAUSE
+  (found by the user): the local box (`leo_daily_v1`) was NOT tagged with which account owns it, so
+  making/switching mock accounts on one device let an empty account's push overwrite the real
+  account's cloud. Fix: `db.uid` tags the box (kept local via `SYNC_SKIP`); `cloudPull` wipes+reloads
+  if a DIFFERENT account signs in, so accounts can never mix. Lost data was recovered from a manual
+  file backup — the cloud blob had already been flattened.
+- **STILL OPEN (July 3 2026):** voice-memo AUDIO lives only in origin-scoped IndexedDB (`tim_media`),
+  never in the cloud (only `aud:*` refs are) — so a domain/origin change or new device loses the
+  audio. Fix = upload audio to Supabase Storage (per-account). Not yet built; user had no memos to
+  lose at cutover. Also minor: reading-plan `seqIndex` can drift across devices (position, not loss).
 
 ## Design system
 
@@ -145,6 +163,16 @@ There is no hard delete of user content anywhere, and it must stay that way:
    their unique `id` (`newId()`), only.
 3. **Never ask for git tokens** — gh CLI / keychain handles auth.
 4. Keep `APP_VERSION` and the sw.js `CACHE` version in lockstep on every deploy.
+5. **NEVER push/merge/revert `main` (production) without Leo's EXPLICIT permission** — not even for
+   an urgent hotfix. Do all work on `dev`, then ask "ship to production?" and wait for a clear yes.
+6. **Sync must never blank or shrink user data.** Invariants that must hold: a sync may UPDATE a
+   preference but may NEVER replace a field that holds data with an empty one (`hasData` guard in
+   `applyCloud`); every key in `CONTENT_KEYS` MUST have a real union-merge branch in `mergeRecover`
+   (a CONTENT_KEY missing from `mergeRecover` is a silent don't-sync dead zone); the streak is
+   DERIVED from `openLog` via `computeStreak()`, never a stored scalar; the local box is tagged with
+   `db.uid` and `cloudPull` wipes+reloads on an account mismatch so accounts never mix.
+7. **Keep this file (and memory) fed forward.** Context windows reset ~daily; update CLAUDE.md in the
+   SAME commit as any structural/data-safety change so the next Claude session inherits the "why."
 
 ## Fellowship = circles + weekly covenant board (as of v61.10-dev, on `dev`)
 
