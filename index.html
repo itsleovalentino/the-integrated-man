@@ -9423,7 +9423,7 @@
   });
   if (window.matchMedia) { try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { if (db.theme === "auto") applyTheme("auto"); }); } catch (e) {} }
 
-  var APP_VERSION = "v61.44-dev";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v61.45-dev";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
@@ -9809,6 +9809,9 @@
     if (Array.isArray(src.prayers)) { db.prayers = db.prayers || [];
       var ph = {}; db.prayers.forEach(function (p) { if (p && p.id) ph[p.id] = 1; });
       src.prayers.forEach(function (p) { if (p && p.id && !ph[p.id]) { db.prayers.push(p); ph[p.id] = 1; added++; } }); }
+    if (Array.isArray(src.habits)) { db.habits = db.habits || [];   // keystone habits — union by id, never wiped
+      var hHave = {}; db.habits.forEach(function (h) { if (h && h.id) hHave[h.id] = 1; });
+      src.habits.forEach(function (h) { if (h && h.id && !hHave[h.id]) { db.habits.push(h); hHave[h.id] = 1; added++; } }); }
     if (src.voice) { db.voice = db.voice || { journal: {}, evening: {} };
       for (var sec in src.voice) { db.voice[sec] = db.voice[sec] || {};
         for (var dk in src.voice[sec]) { if (src.voice[sec][dk] && !db.voice[sec][dk]) db.voice[sec][dk] = src.voice[sec][dk]; } } }
@@ -10245,7 +10248,8 @@
   // device could wipe another device's unsynced entries.
   var CONTENT_KEYS = { thoughts: 1, noteTrash: 1, prayers: 1, anchors: 1, morning: 1, journal: 1,
     evening: 1, gratitude: 1, reflections: 1, ratings: 1, habitLog: 1, readLog: 1, pillarSkip: 1,
-    scriptureNotes: 1, scriptureNoteLog: 1, pinned: 1, trash: 1, voice: 1, openLog: 1, covenants: 1, covChecks: 1 };
+    scriptureNotes: 1, scriptureNoteLog: 1, pinned: 1, trash: 1, voice: 1, openLog: 1, covenants: 1,
+    covChecks: 1, habits: 1 };
   // a soft-delete made elsewhere moves the entry to THIS device's trash too (recoverable,
   // never gone) — unless this device edited or restored it after the delete happened.
   function applyCloudDeletes(data) {
@@ -10260,14 +10264,23 @@
     }
   }
   function mergeCloudContent(data) { mergeRecover(data); applyCloudDeletes(data); }
+  function hasData(v) {   // does this value actually hold something (vs empty/absent)?
+    if (v == null) return false;
+    if (Array.isArray(v)) return v.length > 0;
+    if (typeof v === "object") return Object.keys(v).length > 0;
+    return true;          // a number/string/bool is real data
+  }
   function applyCloud(data) {
-    mergeCloudContent(data);     // content: union only — never replaced
-    // preserve customizations a stale/second device would otherwise wipe with its defaults
-    var _localLayout = (Array.isArray(db.layout) && db.layout.length) ? db.layout : null;
+    mergeCloudContent(data);     // content (incl. habits): union only — never replaced
     var _localPlans = (db.profile && Array.isArray(db.profile.plans) && db.profile.plans.length) ? db.profile.plans : null;
-    for (var k in data) { if (data.hasOwnProperty(k) && !SYNC_SKIP[k] && !CONTENT_KEYS[k]) db[k] = data[k]; }
-    // a device with no widget layout / no reading plan must never erase one that already exists
-    if (_localLayout && (!Array.isArray(db.layout) || !db.layout.length)) db.layout = _localLayout;
+    for (var k in data) {
+      if (!data.hasOwnProperty(k) || SYNC_SKIP[k] || CONTENT_KEYS[k]) continue;
+      // HARD SAFETY NET: a sync may UPDATE a setting, but it may NEVER blank out a field that holds
+      // data. A fresh/second device with empty defaults can no longer erase anything. No exceptions.
+      if (!hasData(data[k]) && hasData(db[k])) continue;
+      db[k] = data[k];
+    }
+    // reading plan lives nested inside profile — never let an incoming profile without plans drop it
     if (_localPlans && db.profile && (!Array.isArray(db.profile.plans) || !db.profile.plans.length)) db.profile.plans = _localPlans;
     db.voice = db.voice || { journal: {}, evening: {} };
     db.bibleCache = db.bibleCache || {};
