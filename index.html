@@ -9426,7 +9426,7 @@
   });
   if (window.matchMedia) { try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { if (db.theme === "auto") applyTheme("auto"); }); } catch (e) {} }
 
-  var APP_VERSION = "v61.41-dev";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v61.42-dev";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
@@ -9575,6 +9575,11 @@
     if (/iphone|ipad|ipod/i.test(ua)) return true;
     return navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1; // iPadOS masquerades as Mac
   }
+  function isMobile() {   // only phones/tablets have a home screen worth adding to — desktop web doesn't need this
+    var ua = navigator.userAgent || "";
+    if (/iphone|ipad|ipod|android/i.test(ua) || isIOS()) return true;
+    return (navigator.maxTouchPoints || 0) > 0 && window.matchMedia && window.matchMedia("(pointer: coarse)").matches;
+  }
   function openInstallSheet(force) {
     if (!force && isStandalone()) return;        // already on their home screen
     var sheet = $("installSheet"); if (!sheet) return;
@@ -9601,6 +9606,7 @@
   function maybeShowInstall() {
     if (installPromptedThisSession) return;     // only auto-offer once per app open
     if (isStandalone()) return;
+    if (!isMobile()) return;                    // desktop web is already "the app" — no home-screen step needed
     if (appGated()) return;                     // never over sign-in / onboarding / lock / threshold
     if (!$("welcomeCard").hidden) return;       // let the first-run welcome card finish first
     var sc = $("streakCel"); if (sc && !sc.hidden) return;   // not over the streak celebration
@@ -9693,7 +9699,7 @@
     renderLockToggle();
     if (typeof renderAccount === "function") renderAccount();
     if (typeof renderOuraSettings === "function") renderOuraSettings();
-    $("installSettingRow").hidden = isStandalone();   // hide once it's already on their home screen
+    $("installSettingRow").hidden = isStandalone() || !isMobile();   // hide once installed, and on desktop web (no home screen)
     $("settingsMsg").textContent = "";
     $("lockCoach").hidden = true; $("lockToggle").classList.remove("coach-target"); // clear any coach mark
     $("settings").hidden = false;
