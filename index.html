@@ -2659,10 +2659,13 @@
   .ob-avatar.has-photo svg { display: none; }
   .ob-photo-meta { font-size: 13px; color: var(--ink-faint); line-height: 1.4; }
   /* welcome card */
-  .welcome-list { list-style: none; margin: 4px 0 24px; padding: 0; display: flex; flex-direction: column; gap: 13px; text-align: left; }
-  .welcome-list li { font-size: 14.5px; line-height: 1.5; color: var(--ink-soft); padding-left: 16px; position: relative; }
-  .welcome-list li::before { content: ""; position: absolute; left: 0; top: 8px; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
-  .welcome-list li b { color: var(--ink); font-weight: 500; }
+  .welcome-list { list-style: none; margin: 8px 0 26px; padding: 0; display: flex; flex-direction: column; gap: 16px; text-align: left; }
+  .welcome-list li { display: flex; align-items: flex-start; gap: 13px; }
+  .wl-ic { flex: 0 0 auto; width: 40px; height: 40px; border-radius: 12px; background: rgba(182,146,86,0.12); border: 1px solid rgba(182,146,86,0.24); color: var(--accent); display: flex; align-items: center; justify-content: center; margin-top: 1px; }
+  .wl-ic svg { width: 21px; height: 21px; }
+  .wl-ic.wl-fire { color: #f5a04a; background: rgba(245,120,50,0.13); border-color: rgba(245,140,70,0.30); }
+  .wl-tx { font-size: 13.5px; line-height: 1.5; color: var(--ink-soft); }
+  .wl-tx b { display: block; color: var(--ink-high); font-weight: 600; font-size: 15px; margin-bottom: 2px; letter-spacing: -0.005em; }
   /* ---- Add to Home Screen (install guide) ---- */
   .install-sheet {
     position: fixed; left: 0; right: 0; bottom: 0; z-index: 120;
@@ -3611,13 +3614,28 @@
         <span>The Integrated Man</span>
       </div>
       <h2 class="modal-title serif" id="welcomeTitle">Welcome.</h2>
-      <p class="modal-sub">Here's your daily rhythm — take it at your own pace.</p>
+      <p class="modal-sub">Everything here is built to make you whole. Here's your rhythm.</p>
       <ul class="welcome-list">
-        <li><b>The Seven Pillars</b> — a weekly check on how you're really doing.</li>
-        <li><b>Daily Reading</b> — Scripture, your plan, your pace.</li>
-        <li><b>Keystone Habits</b> — the small anchors that hold a day together.</li>
-        <li><b>Your Journal</b> — reflections that gather into Days you can look back on.</li>
-        <li><b>Fellowship</b> — your circle, and the covenant you keep together.</li>
+        <li>
+          <span class="wl-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.5"/><circle cx="17.5" cy="7.6" r="1.5"/><circle cx="18.8" cy="13.6" r="1.5"/><circle cx="15" cy="18.3" r="1.5"/><circle cx="9" cy="18.3" r="1.5"/><circle cx="5.2" cy="13.6" r="1.5"/><circle cx="6.5" cy="7.6" r="1.5"/></svg></span>
+          <span class="wl-tx"><b>The Seven Pillars</b>Seven areas of a whole man. See where you're strong, and where He's calling you higher.</span>
+        </li>
+        <li>
+          <span class="wl-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6.5v14"/><path d="M3 5.5a10 10 0 0 1 9 1 10 10 0 0 1 9-1v13a10 10 0 0 0-9 1 10 10 0 0 0-9-1z"/></svg></span>
+          <span class="wl-tx"><b>Daily Reading</b>Meet God in His Word before the world gets your ear — your plan, your pace.</span>
+        </li>
+        <li>
+          <span class="wl-ic wl-fire" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 12c2-2.96 0-7-1-8 0 3.04-1.77 4.74-3 6-1.23 1.26-2 3.24-2 5a6 6 0 1 0 12 0c0-1.53-1.06-3.94-2-5-1.79 3-2.79 3-4 2z"/></svg></span>
+          <span class="wl-tx"><b>Keystone Habits</b>Small disciplines, kept daily, quietly rebuild a man. This is where it catches fire.</span>
+        </li>
+        <li>
+          <span class="wl-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L18.5 9.5a1.8 1.8 0 0 0-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg></span>
+          <span class="wl-tx"><b>Reflect &amp; Journal</b>Grow by getting honest. The more aware you are of your thoughts, the more He renews your mind.</span>
+        </li>
+        <li>
+          <span class="wl-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M15 5.2a3 3 0 0 1 0 5.6"/><path d="M3.5 20v-1.5a4 4 0 0 1 4-4h3a4 4 0 0 1 4 4V20"/><path d="M17.5 14.7a4 4 0 0 1 3 3.8V20"/></svg></span>
+          <span class="wl-tx"><b>Fellowship</b>No man grows alone. Stand in a circle of brothers and keep covenant together.</span>
+        </li>
       </ul>
       <button class="modal-primary" id="welcomeBegin">Begin</button>
     </div>
@@ -9408,7 +9426,7 @@
   });
   if (window.matchMedia) { try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { if (db.theme === "auto") applyTheme("auto"); }); } catch (e) {} }
 
-  var APP_VERSION = "v61.40-dev";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v61.41-dev";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
