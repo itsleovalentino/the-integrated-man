@@ -3628,7 +3628,7 @@
     <button class="install-x" id="installClose" type="button" aria-label="Close">&times;</button>
     <div class="install-icon"><img src="assets/cross.png" alt="" /></div>
     <div class="install-title">Keep it one tap away</div>
-    <div class="install-sub">Add The Integrated Man to your home screen — it opens like a real app, right where you'll reach for it each morning.</div>
+    <div class="install-sub" id="installSub">Add The Integrated Man to your home screen — it opens like a real app, right where you'll reach for it each morning.</div>
 
     <div class="install-steps" id="installIos" hidden>
       <div class="install-step"><span class="install-num">1</span> <span>Tap the <span class="install-glyph"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3"/><path d="M8 7l4-4 4 4"/><path d="M5 12v7a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-7"/></svg></span> Share button below</span></div>
@@ -9407,7 +9407,7 @@
   });
   if (window.matchMedia) { try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { if (db.theme === "auto") applyTheme("auto"); }); } catch (e) {} }
 
-  var APP_VERSION = "v61.38-dev";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v61.39-dev";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
@@ -9556,8 +9556,8 @@
     if (/iphone|ipad|ipod/i.test(ua)) return true;
     return navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1; // iPadOS masquerades as Mac
   }
-  function openInstallSheet() {
-    if (isStandalone()) return;                 // already on their home screen
+  function openInstallSheet(force) {
+    if (!force && isStandalone()) return;        // already on their home screen
     var sheet = $("installSheet"); if (!sheet) return;
     var ios = isIOS();
     $("installIos").hidden = !ios;
@@ -9565,6 +9565,15 @@
     $("installGeneric").hidden = ios || !!deferredInstall;         // desktop / no prompt available
     sheet.hidden = false;
     buzz(8);
+  }
+  function installDiag() {
+    var last = 0; try { last = +localStorage.getItem("tim_install_dismissed") || 0; } catch (e) {}
+    return "diag · installed(standalone)=" + isStandalone() + " · iPhone=" + isIOS() +
+      " · android-prompt=" + !!deferredInstall + " · dismissed=" + (last ? "yes" : "no") + " · " + APP_VERSION;
+  }
+  // Diagnostic hatch: opening …/dev/#install force-shows the sheet past every guard and reports device state.
+  if (/install/i.test((location.hash || "") + (location.search || ""))) {
+    setTimeout(function () { $("installSub").textContent = installDiag(); openInstallSheet(true); }, 700);
   }
   function dismissInstall(remember) {
     var s = $("installSheet"); if (s) s.hidden = true;
