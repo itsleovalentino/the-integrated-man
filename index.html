@@ -9423,7 +9423,7 @@
   });
   if (window.matchMedia) { try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { if (db.theme === "auto") applyTheme("auto"); }); } catch (e) {} }
 
-  var APP_VERSION = "v61.46-dev";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v61.47-dev";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
@@ -10123,7 +10123,7 @@
   function setSync(s) { syncState = s; if (typeof renderAccount === "function") renderAccount(); if (typeof renderSaveStatus === "function") renderSaveStatus(); }
   // heavy / device-local data we don't sync into the JSON blob (kept local).
   // Audio is stripped to tiny refs by splitAudio; bibleCache is a big re-fetchable cache.
-  var SYNC_SKIP = { bibleCache: 1 };
+  var SYNC_SKIP = { bibleCache: 1, uid: 1 };   // uid = which account this local box belongs to (never synced — a purely local tag)
   function syncableData() {
     var clean = splitAudio(db).clean;   // audio → refs, so the cloud blob stays small too
     var o = {}; for (var k in clean) { if (clean.hasOwnProperty(k) && !SYNC_SKIP[k]) o[k] = clean[k]; }
@@ -10295,9 +10295,17 @@
   // PULL FIRST, then route. The cloud is authoritative on sign-in; we never onboard or push until we've seen it.
   function cloudPull() {
     if (!sb || !session) return;
-    if (window.TIM_DEV) { pulled = true; routeAfterAuth(); return; }   // dev: skip journal cloud, but still route (and let circle calls run)
+    // ACCOUNT SAFETY: the local box is tagged with its owner (db.uid). If a DIFFERENT account signs in on
+    // this device, never let the two mix — wipe the box and reload so the new account pulls its own data clean.
+    // (This is the mock-account / account-switch data-loss path: an empty account could overwrite a full one.)
+    if (db.uid && db.uid !== session.user.id) {
+      try { localStorage.removeItem(KEY); localStorage.removeItem(SAFE_KEY); } catch (e) {}
+      location.reload(); return;
+    }
+    if (window.TIM_DEV) { pulled = true; db.uid = session.user.id; routeAfterAuth(); return; }   // dev: skip journal cloud, but still route
     sb.from("user_state").select("data").eq("user_id", session.user.id).maybeSingle()
       .then(function (res) {
+        db.uid = session.user.id; persistClean(db);   // tag this box with its owner, durably, before anything else touches it
         var cloud = res && res.data && res.data.data;
         var cloudHasProfile = !!(cloud && cloud.profile && cloud.profile.onboarded);
         var localHasProfile = !!(db.profile && db.profile.onboarded);
