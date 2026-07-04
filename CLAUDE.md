@@ -2,12 +2,18 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+> 🔴 **THIS IS A LIVE PRODUCTION APP WITH REAL USERS** (launched July 4 2026, 10+ men and growing,
+> journaling their private walk with God). Default posture is FROZEN: all work happens on `dev`, and
+> **nothing reaches `main`/production without Leo's explicit go for that specific change** (see Hard
+> Rule #5). Treat every prod change — especially data/sync/auth — as surgery on a running patient.
+
 ## What this is
 
 **The Integrated Man (TIM) Journal** — a faith-driven daily journal PWA for men: scripture reading
 plans + in-app Bible reader, journaling, prayer list, keystone habits, weekly 7-pillar check, and a
 shared community Prayer Wall ("Fellowship"). Single-file vanilla HTML/CSS/JS — **no build step, no
-framework, no bundler**. Auth + sync via Supabase. Live at https://itsleovalentino.github.io/the-integrated-man/.
+framework, no bundler**. Auth + sync via Supabase. Live at **https://theintegratedman.app** (custom
+domain; the old `itsleovalentino.github.io/the-integrated-man/` 301-redirects there).
 
 ## File structure
 
@@ -165,6 +171,11 @@ There is no hard delete of user content anywhere, and it must stay that way:
 4. Keep `APP_VERSION` and the sw.js `CACHE` version in lockstep on every deploy.
 5. **NEVER push/merge/revert `main` (production) without Leo's EXPLICIT permission** — not even for
    an urgent hotfix. Do all work on `dev`, then ask "ship to production?" and wait for a clear yes.
+   The app is LIVE with real users, so "explicit permission" = a clear yes to shipping THAT change;
+   a general "fix it" is NOT a blanket prod license. Only ship what is proven AND approved. Note:
+   `dev` and `main` version numbers may be DIVERGED (things were shipped straight to main) — do NOT
+   blindly `merge dev→main` (it can revert prod or carry frozen dev-only work); cherry-pick the
+   specific approved change instead, and reconcile branches deliberately.
 6. **Sync must never blank or shrink user data.** Invariants that must hold: a sync may UPDATE a
    preference but may NEVER replace a field that holds data with an empty one (`hasData` guard in
    `applyCloud`); every key in `CONTENT_KEYS` MUST have a real union-merge branch in `mergeRecover`
