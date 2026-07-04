@@ -7395,6 +7395,7 @@
     $("bottomNav").classList.remove("nav-off");   // always reveal the nav when switching views
     $("journalBubble").classList.remove("nav-off");
     window.scrollTo(0, 0);
+    if (name === "home") setTimeout(maybeShowInstall, 2200);   // home is actually visible now → offer install (once/session, self-guards)
   }
   function syncNavPosition() {
     // the docked journal only shifts the Home content; keep the nav centered over whatever's showing
@@ -9406,7 +9407,7 @@
   });
   if (window.matchMedia) { try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { if (db.theme === "auto") applyTheme("auto"); }); } catch (e) {} }
 
-  var APP_VERSION = "v61.37-dev";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v61.38-dev";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
@@ -9544,6 +9545,7 @@
   });
   // ----- Add to Home Screen (install guide) -----
   var deferredInstall = null;
+  var installPromptedThisSession = false;
   window.addEventListener("beforeinstallprompt", function (e) { e.preventDefault(); deferredInstall = e; });
   window.addEventListener("appinstalled", function () { dismissInstall(true); });
   function isStandalone() {
@@ -9569,11 +9571,15 @@
     if (remember) { try { localStorage.setItem("tim_install_dismissed", String(Date.now())); } catch (e) {} }
   }
   function maybeShowInstall() {
+    if (installPromptedThisSession) return;     // only auto-offer once per app open
     if (isStandalone()) return;
-    if (appGated()) return;                     // never over sign-in / onboarding / lock
+    if (appGated()) return;                     // never over sign-in / onboarding / lock / threshold
+    if (!$("welcomeCard").hidden) return;       // let the first-run welcome card finish first
+    var sc = $("streakCel"); if (sc && !sc.hidden) return;   // not over the streak celebration
     if (!(db.profile && db.profile.onboarded)) return;
     var last = 0; try { last = +localStorage.getItem("tim_install_dismissed") || 0; } catch (e) {}
     if (last && (Date.now() - last) < 3 * 24 * 3600 * 1000) return; // asked in the last 3 days — let it rest
+    installPromptedThisSession = true;
     openInstallSheet();
   }
   $("installGo").addEventListener("click", function () {
@@ -10052,7 +10058,7 @@
     playPage(); tone(130.81, 0.95, "sine", 0.1); buzz(18);
     $("threshold").classList.add("open");
     db.lastThreshold = todayKey; save();
-    setTimeout(function () { $("threshold").hidden = true; }, 1100);
+    setTimeout(function () { $("threshold").hidden = true; maybeShowInstall(); }, 1100);
   }
   $("threshold").addEventListener("click", openThreshold);
 
