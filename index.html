@@ -2663,6 +2663,43 @@
   .welcome-list li { font-size: 14.5px; line-height: 1.5; color: var(--ink-soft); padding-left: 16px; position: relative; }
   .welcome-list li::before { content: ""; position: absolute; left: 0; top: 8px; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
   .welcome-list li b { color: var(--ink); font-weight: 500; }
+  /* ---- Add to Home Screen (install guide) ---- */
+  .install-sheet {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 120;
+    max-width: 480px; margin: 0 auto;
+    background: var(--panel); border: 1px solid var(--panel-edge); border-bottom: none;
+    border-radius: 22px 22px 0 0;
+    padding: 24px 26px calc(24px + env(safe-area-inset-bottom));
+    box-shadow: 0 -20px 60px -14px rgba(0,0,0,0.75);
+    font-family: "Hanken Grotesk", -apple-system, sans-serif; text-align: center;
+    animation: instUp 0.42s cubic-bezier(.2,.8,.2,1);
+  }
+  .install-sheet[hidden] { display: none; }
+  @keyframes instUp { from { transform: translateY(112%); } to { transform: none; } }
+  .install-x { position: absolute; top: 14px; right: 16px; width: 30px; height: 30px; border-radius: 50%;
+    background: none; border: 1px solid var(--field-edge); color: var(--ink-soft); font-size: 16px; line-height: 1; cursor: pointer; }
+  .install-icon { width: 62px; height: 62px; border-radius: 15px; background: #0a0908; border: 1px solid var(--panel-edge);
+    margin: 2px auto 15px; display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 26px -8px rgba(0,0,0,0.65); }
+  .install-icon img { width: 42px; height: 42px; object-fit: contain; }
+  .install-title { font-family: "Fraunces", Georgia, serif; font-weight: 500; font-size: 25px; letter-spacing: -0.01em; color: var(--ink-high); margin: 0; }
+  .install-sub { font-size: 13.5px; line-height: 1.5; color: var(--ink-soft); margin: 9px auto 18px; max-width: 320px; }
+  .install-steps { display: flex; flex-direction: column; gap: 11px; text-align: left; max-width: 300px; margin: 0 auto 6px; }
+  .install-steps[hidden] { display: none; }   /* display:flex above would otherwise defeat the hidden attribute */
+  .install-step { display: flex; align-items: center; gap: 11px; font-size: 14px; color: var(--ink); line-height: 1.35; }
+  .install-num { flex: 0 0 auto; width: 23px; height: 23px; border-radius: 50%; background: var(--accent-soft, rgba(203,178,126,0.16));
+    color: var(--accent); font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; }
+  .install-step b { color: var(--ink-high); font-weight: 600; }
+  .install-glyph { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; color: var(--accent); vertical-align: middle; }
+  .install-glyph svg { width: 17px; height: 20px; }
+  .install-arrow { margin: 12px auto 2px; width: 24px; height: 24px; color: var(--accent); animation: instBob 1.3s ease-in-out infinite; }
+  .install-arrow svg { width: 100%; height: 100%; }
+  @keyframes instBob { 0%,100% { transform: translateY(0); opacity: 0.85; } 50% { transform: translateY(6px); opacity: 1; } }
+  .install-go { width: 100%; max-width: 300px; background: var(--accent); color: var(--bg); border: none; border-radius: 999px; padding: 15px;
+    font-family: inherit; font-size: 12px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; cursor: pointer; margin: 4px auto 0; }
+  .install-generic { font-size: 13px; color: var(--ink-soft); line-height: 1.5; max-width: 300px; margin: 0 auto; }
+  .install-later { display: block; background: none; border: none; color: var(--ink-faint); font-family: inherit; font-size: 12px;
+    letter-spacing: 0.12em; text-transform: uppercase; cursor: pointer; margin: 16px auto 0; padding: 6px 12px; }
+  @media (prefers-reduced-motion: reduce) { .install-sheet, .install-arrow { animation: none; } }
   /* ---- new-day streak celebration ---- */
   .streak-cel { position: fixed; inset: 0; z-index: 280; display: flex; align-items: center; justify-content: center;
     background: radial-gradient(circle at 50% 40%, rgba(42,29,13,0.95), rgba(0,0,0,0.985) 60%);
@@ -3586,6 +3623,25 @@
     </div>
   </div>
 
+  <!-- Add to Home Screen (install guide) -->
+  <div class="install-sheet" id="installSheet" hidden>
+    <button class="install-x" id="installClose" type="button" aria-label="Close">&times;</button>
+    <div class="install-icon"><img src="assets/cross.png" alt="" /></div>
+    <div class="install-title">Keep it one tap away</div>
+    <div class="install-sub">Add The Integrated Man to your home screen — it opens like a real app, right where you'll reach for it each morning.</div>
+
+    <div class="install-steps" id="installIos" hidden>
+      <div class="install-step"><span class="install-num">1</span> <span>Tap the <span class="install-glyph"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3"/><path d="M8 7l4-4 4 4"/><path d="M5 12v7a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-7"/></svg></span> Share button below</span></div>
+      <div class="install-step"><span class="install-num">2</span> <span>Choose <b>Add to Home Screen</b></span></div>
+      <div class="install-arrow" id="installArrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v15"/><path d="M6 13l6 6 6-6"/></svg></div>
+    </div>
+
+    <button class="install-go" id="installGo" type="button" hidden>Install</button>
+    <div class="install-generic" id="installGeneric" hidden>Open your browser's menu and choose <b>Install</b> (or <b>Add to Home Screen</b>).</div>
+
+    <button class="install-later" id="installLater" type="button">Maybe later</button>
+  </div>
+
   <!-- New-day streak celebration -->
   <div class="streak-cel" id="streakCel" hidden>
     <canvas class="scel-canvas" id="scelCanvas"></canvas>
@@ -3683,6 +3739,12 @@
         </div>
         <div class="oura-msg" id="ouraMsg"></div>
         <p class="ob-reading-hint" style="text-align:left;margin-top:6px;">Tap <a href="https://cloud.ouraring.com/personal-access-tokens" target="_blank" rel="noopener" class="oura-link">Get your Oura token&nbsp;↗</a>, create one, copy it, and paste it above. It's stored privately in your own account.</p>
+      </div>
+
+      <div id="installSettingRow" hidden>
+        <label class="field-label">Home screen</label>
+        <button class="modal-secondary" id="installSettingBtn" style="width:100%;">Add to my home screen</button>
+        <p class="ob-reading-hint" style="margin-top:6px;text-align:left;">Opens it like a real app, one tap from your home screen.</p>
       </div>
 
       <label class="field-label">Your data</label>
@@ -9344,7 +9406,7 @@
   });
   if (window.matchMedia) { try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { if (db.theme === "auto") applyTheme("auto"); }); } catch (e) {} }
 
-  var APP_VERSION = "v61.36-dev";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v61.37-dev";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
@@ -9480,6 +9542,49 @@
       if (typeof renderProfileBtn === "function") renderProfileBtn();
     }, function () { $("obPhotoLabel").textContent = "Couldn't upload — you can add it later."; });
   });
+  // ----- Add to Home Screen (install guide) -----
+  var deferredInstall = null;
+  window.addEventListener("beforeinstallprompt", function (e) { e.preventDefault(); deferredInstall = e; });
+  window.addEventListener("appinstalled", function () { dismissInstall(true); });
+  function isStandalone() {
+    return (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) || window.navigator.standalone === true;
+  }
+  function isIOS() {
+    var ua = navigator.userAgent || "";
+    if (/iphone|ipad|ipod/i.test(ua)) return true;
+    return navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1; // iPadOS masquerades as Mac
+  }
+  function openInstallSheet() {
+    if (isStandalone()) return;                 // already on their home screen
+    var sheet = $("installSheet"); if (!sheet) return;
+    var ios = isIOS();
+    $("installIos").hidden = !ios;
+    $("installGo").hidden = ios || !deferredInstall;               // real one-tap install (Android/Chrome)
+    $("installGeneric").hidden = ios || !!deferredInstall;         // desktop / no prompt available
+    sheet.hidden = false;
+    buzz(8);
+  }
+  function dismissInstall(remember) {
+    var s = $("installSheet"); if (s) s.hidden = true;
+    if (remember) { try { localStorage.setItem("tim_install_dismissed", String(Date.now())); } catch (e) {} }
+  }
+  function maybeShowInstall() {
+    if (isStandalone()) return;
+    if (appGated()) return;                     // never over sign-in / onboarding / lock
+    if (!(db.profile && db.profile.onboarded)) return;
+    var last = 0; try { last = +localStorage.getItem("tim_install_dismissed") || 0; } catch (e) {}
+    if (last && (Date.now() - last) < 3 * 24 * 3600 * 1000) return; // asked in the last 3 days — let it rest
+    openInstallSheet();
+  }
+  $("installGo").addEventListener("click", function () {
+    if (!deferredInstall) { dismissInstall(true); return; }
+    deferredInstall.prompt();
+    deferredInstall.userChoice.then(function () { deferredInstall = null; dismissInstall(true); });
+  });
+  $("installLater").addEventListener("click", function () { dismissInstall(true); buzz(6); });
+  $("installClose").addEventListener("click", function () { dismissInstall(true); });
+  $("installSettingBtn").addEventListener("click", function () { $("settings").hidden = true; openInstallSheet(); });
+
   function showWelcome(name) {
     if (db.profile && db.profile.welcomed) return;
     $("welcomeTitle").textContent = name ? ("Welcome, " + name + ".") : "Welcome.";
@@ -9488,6 +9593,7 @@
   $("welcomeBegin").addEventListener("click", function () {
     db.profile = db.profile || {}; db.profile.welcomed = true; save();
     $("welcomeCard").hidden = true; if (typeof playChime === "function") playChime(); buzz(10);
+    setTimeout(maybeShowInstall, 700);   // fresh signup, on the web → gently offer the home-screen install
   });
   $("obStart").addEventListener("click", function () {
     if (!session) { openWelcome(); return; }             // must be signed in
@@ -9553,6 +9659,7 @@
     renderLockToggle();
     if (typeof renderAccount === "function") renderAccount();
     if (typeof renderOuraSettings === "function") renderOuraSettings();
+    $("installSettingRow").hidden = isStandalone();   // hide once it's already on their home screen
     $("settingsMsg").textContent = "";
     $("lockCoach").hidden = true; $("lockToggle").classList.remove("coach-target"); // clear any coach mark
     $("settings").hidden = false;
@@ -10451,6 +10558,7 @@
   // a gentle nudge / memory on open
   setTimeout(function () { maybeNudge(); }, 2600); // maybeNudge() now self-guards while gated
   setTimeout(function () { maybeBackupReminder(); }, 9000); // later, and only if a nudge isn't already showing
+  setTimeout(function () { maybeShowInstall(); }, 4000);    // returning web user, not yet installed → gentle home-screen offer
 
   // roll over a few seconds after midnight, then keep rescheduling
   function scheduleMidnight() {
