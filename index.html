@@ -2659,10 +2659,50 @@
   .ob-avatar.has-photo svg { display: none; }
   .ob-photo-meta { font-size: 13px; color: var(--ink-faint); line-height: 1.4; }
   /* welcome card */
-  .welcome-list { list-style: none; margin: 4px 0 24px; padding: 0; display: flex; flex-direction: column; gap: 13px; text-align: left; }
-  .welcome-list li { font-size: 14.5px; line-height: 1.5; color: var(--ink-soft); padding-left: 16px; position: relative; }
-  .welcome-list li::before { content: ""; position: absolute; left: 0; top: 8px; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
-  .welcome-list li b { color: var(--ink); font-weight: 500; }
+  .welcome-list { list-style: none; margin: 8px 0 26px; padding: 0; display: flex; flex-direction: column; gap: 16px; text-align: left; }
+  .welcome-list li { display: flex; align-items: flex-start; gap: 13px; }
+  .wl-ic { flex: 0 0 auto; width: 40px; height: 40px; border-radius: 12px; background: rgba(182,146,86,0.12); border: 1px solid rgba(182,146,86,0.24); color: var(--accent); display: flex; align-items: center; justify-content: center; margin-top: 1px; }
+  .wl-ic svg { width: 21px; height: 21px; }
+  .wl-ic.wl-fire { color: #f5a04a; background: rgba(245,120,50,0.13); border-color: rgba(245,140,70,0.30); }
+  .wl-tx { font-size: 13.5px; line-height: 1.5; color: var(--ink-soft); }
+  .wl-tx b { display: block; color: var(--ink-high); font-weight: 600; font-size: 15px; margin-bottom: 2px; letter-spacing: -0.005em; }
+  /* ---- Add to Home Screen (install guide) ---- */
+  .install-sheet {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 120;
+    max-width: 480px; margin: 0 auto;
+    background: var(--panel); border: 1px solid var(--panel-edge); border-bottom: none;
+    border-radius: 22px 22px 0 0;
+    padding: 24px 26px calc(24px + env(safe-area-inset-bottom));
+    box-shadow: 0 -20px 60px -14px rgba(0,0,0,0.75);
+    font-family: "Hanken Grotesk", -apple-system, sans-serif; text-align: center;
+    animation: instUp 0.42s cubic-bezier(.2,.8,.2,1);
+  }
+  .install-sheet[hidden] { display: none; }
+  @keyframes instUp { from { transform: translateY(112%); } to { transform: none; } }
+  .install-x { position: absolute; top: 14px; right: 16px; width: 30px; height: 30px; border-radius: 50%;
+    background: none; border: 1px solid var(--field-edge); color: var(--ink-soft); font-size: 16px; line-height: 1; cursor: pointer; }
+  .install-icon { width: 62px; height: 62px; border-radius: 15px; background: #0a0908; border: 1px solid var(--panel-edge);
+    margin: 2px auto 15px; display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 26px -8px rgba(0,0,0,0.65); }
+  .install-icon img { width: 42px; height: 42px; object-fit: contain; }
+  .install-title { font-family: "Fraunces", Georgia, serif; font-weight: 500; font-size: 25px; letter-spacing: -0.01em; color: var(--ink-high); margin: 0; }
+  .install-sub { font-size: 13.5px; line-height: 1.5; color: var(--ink-soft); margin: 9px auto 18px; max-width: 320px; }
+  .install-steps { display: flex; flex-direction: column; gap: 11px; text-align: left; max-width: 300px; margin: 0 auto 6px; }
+  .install-steps[hidden] { display: none; }   /* display:flex above would otherwise defeat the hidden attribute */
+  .install-step { display: flex; align-items: center; gap: 11px; font-size: 14px; color: var(--ink); line-height: 1.35; }
+  .install-num { flex: 0 0 auto; width: 23px; height: 23px; border-radius: 50%; background: var(--accent-soft, rgba(203,178,126,0.16));
+    color: var(--accent); font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; }
+  .install-step b { color: var(--ink-high); font-weight: 600; }
+  .install-glyph { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; color: var(--accent); vertical-align: middle; }
+  .install-glyph svg { width: 17px; height: 20px; }
+  .install-arrow { margin: 14px 6px 0 auto; width: 26px; height: 26px; color: var(--accent); animation: instBob 1.3s ease-in-out infinite; }
+  .install-arrow svg { width: 100%; height: 100%; transform: rotate(-40deg); }   /* angle toward Safari's bottom-right menu */
+  @keyframes instBob { 0%,100% { transform: translate(0,0); opacity: 0.85; } 50% { transform: translate(5px,6px); opacity: 1; } }
+  .install-go { width: 100%; max-width: 300px; background: var(--accent); color: var(--bg); border: none; border-radius: 999px; padding: 15px;
+    font-family: inherit; font-size: 12px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; cursor: pointer; margin: 4px auto 0; }
+  .install-generic { font-size: 13px; color: var(--ink-soft); line-height: 1.5; max-width: 300px; margin: 0 auto; }
+  .install-later { display: block; background: none; border: none; color: var(--ink-faint); font-family: inherit; font-size: 12px;
+    letter-spacing: 0.12em; text-transform: uppercase; cursor: pointer; margin: 16px auto 0; padding: 6px 12px; }
+  @media (prefers-reduced-motion: reduce) { .install-sheet, .install-arrow { animation: none; } }
   /* ---- new-day streak celebration ---- */
   .streak-cel { position: fixed; inset: 0; z-index: 280; display: flex; align-items: center; justify-content: center;
     background: radial-gradient(circle at 50% 40%, rgba(42,29,13,0.95), rgba(0,0,0,0.985) 60%);
@@ -3574,16 +3614,51 @@
         <span>The Integrated Man</span>
       </div>
       <h2 class="modal-title serif" id="welcomeTitle">Welcome.</h2>
-      <p class="modal-sub">Here's your daily rhythm — take it at your own pace.</p>
+      <p class="modal-sub">Everything here is built to make you whole. Here's your rhythm.</p>
       <ul class="welcome-list">
-        <li><b>The Seven Pillars</b> — a weekly check on how you're really doing.</li>
-        <li><b>Daily Reading</b> — Scripture, your plan, your pace.</li>
-        <li><b>Keystone Habits</b> — the small anchors that hold a day together.</li>
-        <li><b>Your Journal</b> — reflections that gather into Days you can look back on.</li>
-        <li><b>Fellowship</b> — your circle, and the covenant you keep together.</li>
+        <li>
+          <span class="wl-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.5"/><circle cx="17.5" cy="7.6" r="1.5"/><circle cx="18.8" cy="13.6" r="1.5"/><circle cx="15" cy="18.3" r="1.5"/><circle cx="9" cy="18.3" r="1.5"/><circle cx="5.2" cy="13.6" r="1.5"/><circle cx="6.5" cy="7.6" r="1.5"/></svg></span>
+          <span class="wl-tx"><b>The Seven Pillars</b>Seven areas of a whole man. See where you're strong, and where He's calling you higher.</span>
+        </li>
+        <li>
+          <span class="wl-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6.5v14"/><path d="M3 5.5a10 10 0 0 1 9 1 10 10 0 0 1 9-1v13a10 10 0 0 0-9 1 10 10 0 0 0-9-1z"/></svg></span>
+          <span class="wl-tx"><b>Daily Reading</b>Meet God in His Word before the world gets your ear — your plan, your pace.</span>
+        </li>
+        <li>
+          <span class="wl-ic wl-fire" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 12c2-2.96 0-7-1-8 0 3.04-1.77 4.74-3 6-1.23 1.26-2 3.24-2 5a6 6 0 1 0 12 0c0-1.53-1.06-3.94-2-5-1.79 3-2.79 3-4 2z"/></svg></span>
+          <span class="wl-tx"><b>Keystone Habits</b>Small disciplines, kept daily, quietly rebuild a man. This is where it catches fire.</span>
+        </li>
+        <li>
+          <span class="wl-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L18.5 9.5a1.8 1.8 0 0 0-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg></span>
+          <span class="wl-tx"><b>Reflect &amp; Journal</b>Grow by getting honest. The more aware you are of your thoughts, the more He renews your mind.</span>
+        </li>
+        <li>
+          <span class="wl-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M15 5.2a3 3 0 0 1 0 5.6"/><path d="M3.5 20v-1.5a4 4 0 0 1 4-4h3a4 4 0 0 1 4 4V20"/><path d="M17.5 14.7a4 4 0 0 1 3 3.8V20"/></svg></span>
+          <span class="wl-tx"><b>Fellowship</b>No man grows alone. Stand in a circle of brothers and keep covenant together.</span>
+        </li>
       </ul>
       <button class="modal-primary" id="welcomeBegin">Begin</button>
     </div>
+  </div>
+
+  <!-- Add to Home Screen (install guide) -->
+  <div class="install-sheet" id="installSheet" hidden>
+    <button class="install-x" id="installClose" type="button" aria-label="Close">&times;</button>
+    <div class="install-icon"><img src="assets/cross.png" alt="" /></div>
+    <div class="install-title">Keep it one tap away</div>
+    <div class="install-sub" id="installSub">Add The Integrated Man to your home screen — it opens like a real app, right where you'll reach for it each morning.</div>
+
+    <div class="install-steps" id="installIos" hidden>
+      <div class="install-step"><span class="install-num">1</span> <span>Tap <span class="install-glyph"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></span> at the bottom right</span></div>
+      <div class="install-step"><span class="install-num">2</span> <span>Tap <span class="install-glyph"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3"/><path d="M8 7l4-4 4 4"/><path d="M5 12v7a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-7"/></svg></span> Share</span></div>
+      <div class="install-step"><span class="install-num">3</span> <span>Scroll down, then <b>Add to Home Screen</b></span></div>
+      <div class="install-arrow" id="installArrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v15"/><path d="M6 13l6 6 6-6"/></svg></div>
+    </div>
+
+    <button class="install-go" id="installGo" type="button" hidden>Install</button>
+    <div class="install-generic" id="installGeneric" hidden>Open your browser's menu and choose <b>Install</b> (or <b>Add to Home Screen</b>).</div>
+
+    <button class="install-later" id="installLater" type="button">Maybe later</button>
   </div>
 
   <!-- New-day streak celebration -->
@@ -3683,6 +3758,12 @@
         </div>
         <div class="oura-msg" id="ouraMsg"></div>
         <p class="ob-reading-hint" style="text-align:left;margin-top:6px;">Tap <a href="https://cloud.ouraring.com/personal-access-tokens" target="_blank" rel="noopener" class="oura-link">Get your Oura token&nbsp;↗</a>, create one, copy it, and paste it above. It's stored privately in your own account.</p>
+      </div>
+
+      <div id="installSettingRow" hidden>
+        <label class="field-label">Home screen</label>
+        <button class="modal-secondary" id="installSettingBtn" style="width:100%;">Add to my home screen</button>
+        <p class="ob-reading-hint" style="margin-top:6px;text-align:left;">Opens it like a real app, one tap from your home screen.</p>
       </div>
 
       <label class="field-label">Your data</label>
@@ -5589,13 +5670,10 @@
       for (var i = 0; i < audioStamps.list.length; i++) { if (audioStamps.list[i].t <= tNow) vNum = audioStamps.list[i].v; else break; }
       if (vNum == null) { clearReadingHl(); return; }   // still in the chapter intro — nothing glows yet
       vEl = audioByVerse[vNum] || null;
-    } else if (audioEls.length && audioTotal) {
-      // no timecodes for this recording → best-effort estimate by text length
-      var frac = el.currentTime / el.duration + 0.028;
-      var target = frac * audioTotal, idx = 0;
-      for (var j = 0; j < audioCum.length; j++) { if (audioCum[j] <= target) idx = j; else break; }
-      vEl = audioEls[idx];
     }
+    // Estimate-based verse highlighting (by text length) is OFF — it drifts badly on dramatized
+    // audio. Karaoke now runs ONLY with exact per-verse timecodes above, which return automatically
+    // once a Bible Brain key populates audioStamps. (Leo: re-enable the exact path by adding the key.)
     var cur = document.querySelector("#bibleBody .bv.reading");
     if (!vEl || cur === vEl) return;
     clearReadingHl(); vEl.classList.add("reading");
@@ -5704,7 +5782,7 @@
           for (var i = 0; i < audioStamps.list.length; i++) { if (audioStamps.list[i].v <= vn) tt = audioStamps.list[i].t; else break; }
           if (tt != null && el.duration) { el.currentTime = Math.min(el.duration - 0.5, tt); applyAudioRate(); return; }
         }
-        if (el.duration && audioTotal) el.currentTime = Math.min(el.duration - 0.5, (audioCum[idx] / audioTotal) * el.duration);
+        // No exact timecodes → don't estimate-seek (it lands off); just play. Restores with a Bible Brain key.
         applyAudioRate();
       };
       var p = el.play();
@@ -7333,6 +7411,7 @@
     $("bottomNav").classList.remove("nav-off");   // always reveal the nav when switching views
     $("journalBubble").classList.remove("nav-off");
     window.scrollTo(0, 0);
+    if (name === "home") setTimeout(maybeShowInstall, 2200);   // home is actually visible now → offer install (once/session, self-guards)
   }
   function syncNavPosition() {
     // the docked journal only shifts the Home content; keep the nav centered over whatever's showing
@@ -9344,7 +9423,7 @@
   });
   if (window.matchMedia) { try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { if (db.theme === "auto") applyTheme("auto"); }); } catch (e) {} }
 
-  var APP_VERSION = "v61.36";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v61.44-dev";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
@@ -9480,6 +9559,69 @@
       if (typeof renderProfileBtn === "function") renderProfileBtn();
     }, function () { $("obPhotoLabel").textContent = "Couldn't upload — you can add it later."; });
   });
+  // ----- Add to Home Screen (install guide) -----
+  var deferredInstall = null;
+  var installPromptedThisSession = false;
+  window.addEventListener("beforeinstallprompt", function (e) { e.preventDefault(); deferredInstall = e; });
+  window.addEventListener("appinstalled", function () { dismissInstall(true); });
+  function isStandalone() {
+    return (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) || window.navigator.standalone === true;
+  }
+  function isIOS() {
+    var ua = navigator.userAgent || "";
+    if (/iphone|ipad|ipod/i.test(ua)) return true;
+    return navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1; // iPadOS masquerades as Mac
+  }
+  function isMobile() {   // only phones/tablets have a home screen worth adding to — desktop web doesn't need this
+    var ua = navigator.userAgent || "";
+    if (/iphone|ipad|ipod|android/i.test(ua) || isIOS()) return true;
+    return (navigator.maxTouchPoints || 0) > 0 && window.matchMedia && window.matchMedia("(pointer: coarse)").matches;
+  }
+  function openInstallSheet(force) {
+    if (!force && isStandalone()) return;        // already on their home screen
+    var sheet = $("installSheet"); if (!sheet) return;
+    var ios = isIOS();
+    $("installIos").hidden = !ios;
+    $("installGo").hidden = ios || !deferredInstall;               // real one-tap install (Android/Chrome)
+    $("installGeneric").hidden = ios || !!deferredInstall;         // desktop / no prompt available
+    sheet.hidden = false;
+    buzz(8);
+  }
+  function installDiag() {
+    var last = 0; try { last = +localStorage.getItem("tim_install_dismissed") || 0; } catch (e) {}
+    return "diag · installed(standalone)=" + isStandalone() + " · iPhone=" + isIOS() +
+      " · android-prompt=" + !!deferredInstall + " · dismissed=" + (last ? "yes" : "no") + " · " + APP_VERSION;
+  }
+  // Diagnostic hatch: opening …/dev/#install force-shows the sheet past every guard and reports device state.
+  if (/install/i.test((location.hash || "") + (location.search || ""))) {
+    setTimeout(function () { $("installSub").textContent = installDiag(); openInstallSheet(true); }, 700);
+  }
+  function dismissInstall(remember) {
+    var s = $("installSheet"); if (s) s.hidden = true;
+    if (remember) { try { localStorage.setItem("tim_install_dismissed", String(Date.now())); } catch (e) {} }
+  }
+  function maybeShowInstall() {
+    if (installPromptedThisSession) return;     // only auto-offer once per app open
+    if (isStandalone()) return;
+    if (!isMobile()) return;                    // desktop web is already "the app" — no home-screen step needed
+    if (appGated()) return;                     // never over sign-in / onboarding / lock / threshold
+    if (!$("welcomeCard").hidden) return;       // let the first-run welcome card finish first
+    var sc = $("streakCel"); if (sc && !sc.hidden) return;   // not over the streak celebration
+    if (!(db.profile && db.profile.onboarded)) return;
+    var last = 0; try { last = +localStorage.getItem("tim_install_dismissed") || 0; } catch (e) {}
+    if (last && (Date.now() - last) < 3 * 24 * 3600 * 1000) return; // asked in the last 3 days — let it rest
+    installPromptedThisSession = true;
+    openInstallSheet();
+  }
+  $("installGo").addEventListener("click", function () {
+    if (!deferredInstall) { dismissInstall(true); return; }
+    deferredInstall.prompt();
+    deferredInstall.userChoice.then(function () { deferredInstall = null; dismissInstall(true); });
+  });
+  $("installLater").addEventListener("click", function () { dismissInstall(true); buzz(6); });
+  $("installClose").addEventListener("click", function () { dismissInstall(true); });
+  $("installSettingBtn").addEventListener("click", function () { $("settings").hidden = true; openInstallSheet(); });
+
   function showWelcome(name) {
     if (db.profile && db.profile.welcomed) return;
     $("welcomeTitle").textContent = name ? ("Welcome, " + name + ".") : "Welcome.";
@@ -9488,6 +9630,7 @@
   $("welcomeBegin").addEventListener("click", function () {
     db.profile = db.profile || {}; db.profile.welcomed = true; save();
     $("welcomeCard").hidden = true; if (typeof playChime === "function") playChime(); buzz(10);
+    setTimeout(maybeShowInstall, 700);   // fresh signup, on the web → gently offer the home-screen install
   });
   $("obStart").addEventListener("click", function () {
     if (!session) { openWelcome(); return; }             // must be signed in
@@ -9553,6 +9696,7 @@
     renderLockToggle();
     if (typeof renderAccount === "function") renderAccount();
     if (typeof renderOuraSettings === "function") renderOuraSettings();
+    $("installSettingRow").hidden = isStandalone() || !isMobile();   // hide once installed, and on desktop web (no home screen)
     $("settingsMsg").textContent = "";
     $("lockCoach").hidden = true; $("lockToggle").classList.remove("coach-target"); // clear any coach mark
     $("settings").hidden = false;
@@ -9840,6 +9984,17 @@
   $("streakCel").addEventListener("click", function (e) { if (e.target === this) dismissStreakCelebration(); });
 
   // ================= the daily render (re-runnable at midnight) =================
+  // The true streak = consecutive days the app was opened, counted back from today. openLog is
+  // union-merged across devices (a CONTENT_KEY — it can only ever GROW, never be replaced), so
+  // deriving the streak from it means a stale/second-device sync can never knock it down, and a
+  // clobbered streak self-heals to the real value on the next load. (Fixes the multi-device wipe.)
+  function computeStreak() {
+    var log = db.openLog || {}, d = new Date();
+    if (!log[keyOf(d)]) d = new Date(d.getFullYear(), d.getMonth(), d.getDate() - 1); // today unopened → start at yesterday
+    var n = 0, guard = 0;
+    while (log[keyOf(d)] && guard++ < 4000) { n++; d = new Date(d.getFullYear(), d.getMonth(), d.getDate() - 1); }
+    return n;
+  }
   function dailyRefresh() {
     var now = new Date();
     todayKey = keyOf(now);
@@ -9862,12 +10017,13 @@
     ensurePlans();
     var plans = (db.profile && db.profile.plans) || [];
 
-    // rollover: streak + (for each sequential plan) advance the reading position
+    // streak ALWAYS derives from the open-day chain (openLog[todayKey] was just set above), so it
+    // reflects the truth and heals any value a bad sync left behind. Reading advances only on rollover.
+    var _prevStreak = db.streak || 0;
+    db.streak = computeStreak();
     if (db.lastOpen !== todayKey) {
-      var _prevStreak = db.streak || 0;
-      db.streak = (db.lastOpen === yKey) ? (db.streak || 0) + 1 : 1;
       // queue the new-day celebration for the first time they're actually looking (not a background midnight roll)
-      if (db.lastOpen) db.streakToCelebrate = { from: _prevStreak, to: db.streak, day: todayKey };
+      if (db.lastOpen && db.streak > _prevStreak) db.streakToCelebrate = { from: _prevStreak, to: db.streak, day: todayKey };
       if (db.lastOpen) {
         plans.forEach(function (plan) {
           if (plan.key === "proverbs") return;
@@ -9877,6 +10033,8 @@
       }
       db.lastOpen = todayKey;
       save();
+    } else if (db.streak !== _prevStreak) {
+      save();   // same day, but we corrected a streak a stale sync had knocked off — persist + push the truth
     }
     $("streak").textContent = "Day " + db.streak + " streak";
     renderChain();
@@ -9945,7 +10103,7 @@
     playPage(); tone(130.81, 0.95, "sine", 0.1); buzz(18);
     $("threshold").classList.add("open");
     db.lastThreshold = todayKey; save();
-    setTimeout(function () { $("threshold").hidden = true; }, 1100);
+    setTimeout(function () { $("threshold").hidden = true; maybeShowInstall(); }, 1100);
   }
   $("threshold").addEventListener("click", openThreshold);
 
@@ -10104,7 +10262,13 @@
   function mergeCloudContent(data) { mergeRecover(data); applyCloudDeletes(data); }
   function applyCloud(data) {
     mergeCloudContent(data);     // content: union only — never replaced
+    // preserve customizations a stale/second device would otherwise wipe with its defaults
+    var _localLayout = (Array.isArray(db.layout) && db.layout.length) ? db.layout : null;
+    var _localPlans = (db.profile && Array.isArray(db.profile.plans) && db.profile.plans.length) ? db.profile.plans : null;
     for (var k in data) { if (data.hasOwnProperty(k) && !SYNC_SKIP[k] && !CONTENT_KEYS[k]) db[k] = data[k]; }
+    // a device with no widget layout / no reading plan must never erase one that already exists
+    if (_localLayout && (!Array.isArray(db.layout) || !db.layout.length)) db.layout = _localLayout;
+    if (_localPlans && db.profile && (!Array.isArray(db.profile.plans) || !db.profile.plans.length)) db.profile.plans = _localPlans;
     db.voice = db.voice || { journal: {}, evening: {} };
     db.bibleCache = db.bibleCache || {};
     persistClean(db);            // durable, audio-safe write
@@ -10451,6 +10615,7 @@
   // a gentle nudge / memory on open
   setTimeout(function () { maybeNudge(); }, 2600); // maybeNudge() now self-guards while gated
   setTimeout(function () { maybeBackupReminder(); }, 9000); // later, and only if a nudge isn't already showing
+  setTimeout(function () { maybeShowInstall(); }, 4000);    // returning web user, not yet installed → gentle home-screen offer
 
   // roll over a few seconds after midnight, then keep rescheduling
   function scheduleMidnight() {
