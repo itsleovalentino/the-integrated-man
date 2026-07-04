@@ -5670,13 +5670,10 @@
       for (var i = 0; i < audioStamps.list.length; i++) { if (audioStamps.list[i].t <= tNow) vNum = audioStamps.list[i].v; else break; }
       if (vNum == null) { clearReadingHl(); return; }   // still in the chapter intro — nothing glows yet
       vEl = audioByVerse[vNum] || null;
-    } else if (audioEls.length && audioTotal) {
-      // no timecodes for this recording → best-effort estimate by text length
-      var frac = el.currentTime / el.duration + 0.028;
-      var target = frac * audioTotal, idx = 0;
-      for (var j = 0; j < audioCum.length; j++) { if (audioCum[j] <= target) idx = j; else break; }
-      vEl = audioEls[idx];
     }
+    // Estimate-based verse highlighting (by text length) is OFF — it drifts badly on dramatized
+    // audio. Karaoke now runs ONLY with exact per-verse timecodes above, which return automatically
+    // once a Bible Brain key populates audioStamps. (Leo: re-enable the exact path by adding the key.)
     var cur = document.querySelector("#bibleBody .bv.reading");
     if (!vEl || cur === vEl) return;
     clearReadingHl(); vEl.classList.add("reading");
@@ -5785,7 +5782,7 @@
           for (var i = 0; i < audioStamps.list.length; i++) { if (audioStamps.list[i].v <= vn) tt = audioStamps.list[i].t; else break; }
           if (tt != null && el.duration) { el.currentTime = Math.min(el.duration - 0.5, tt); applyAudioRate(); return; }
         }
-        if (el.duration && audioTotal) el.currentTime = Math.min(el.duration - 0.5, (audioCum[idx] / audioTotal) * el.duration);
+        // No exact timecodes → don't estimate-seek (it lands off); just play. Restores with a Bible Brain key.
         applyAudioRate();
       };
       var p = el.play();
@@ -9426,7 +9423,7 @@
   });
   if (window.matchMedia) { try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { if (db.theme === "auto") applyTheme("auto"); }); } catch (e) {} }
 
-  var APP_VERSION = "v61.42-dev";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v61.43-dev";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
