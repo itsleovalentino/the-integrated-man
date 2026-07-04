@@ -9423,7 +9423,7 @@
   });
   if (window.matchMedia) { try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { if (db.theme === "auto") applyTheme("auto"); }); } catch (e) {} }
 
-  var APP_VERSION = "v61.47-dev";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v61.48-dev";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
@@ -10024,6 +10024,17 @@
     ensurePlans();
     var plans = (db.profile && db.profile.plans) || [];
 
+    // ONE-TIME MIGRATION HEAL: the streak used to be a stored NUMBER, and openLog didn't sync across
+    // devices — so THIS device's chain can be shorter than the real streak. Rebuild the chain from the
+    // saved streak once, so moving to an openLog-derived streak never loses someone's real history.
+    if (!db.streakHealed) {
+      db.streakHealed = true;
+      var _stored = db.streak || 0;
+      if (_stored > computeStreak() && db.lastOpen) {
+        var _hd = new Date(db.lastOpen + "T12:00:00");   // streak was counted as-of the last day opened
+        for (var _i = 0; _i < _stored && _i < 4000; _i++) { db.openLog[keyOf(_hd)] = true; _hd = new Date(_hd.getFullYear(), _hd.getMonth(), _hd.getDate() - 1); }
+      }
+    }
     // streak ALWAYS derives from the open-day chain (openLog[todayKey] was just set above), so it
     // reflects the truth and heals any value a bad sync left behind. Reading advances only on rollover.
     var _prevStreak = db.streak || 0;
