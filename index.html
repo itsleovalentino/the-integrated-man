@@ -4077,6 +4077,9 @@
 (function () {
   "use strict";
 
+  // Captured at the very top, before Supabase can strip the URL: did we arrive from a password-reset link?
+  var CAME_FROM_RECOVERY = ((location.hash || "") + (location.search || "")).indexOf("type=recovery") > -1;
+
   // ---------- storage ----------
   var KEY = window.TIM_DEV ? "leo_daily_v1_dev" : "leo_daily_v1";       // dev uses a separate local drawer
   var SAFE_KEY = window.TIM_DEV ? "leo_daily_safe_dev" : "leo_daily_safe"; // rolling local "last known good" snapshot
@@ -9455,7 +9458,7 @@
   });
   if (window.matchMedia) { try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { if (db.theme === "auto") applyTheme("auto"); }); } catch (e) {} }
 
-  var APP_VERSION = "v61.52-dev";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v61.53-dev";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
@@ -10412,17 +10415,49 @@
     $("authToggle").textContent = mode === "signup" ? "Already have an account? Sign in" : "Need an account? Create one";
     $("authPass").setAttribute("autocomplete", mode === "signup" ? "new-password" : "current-password");
   }
+  var recoveryMode = false;
   function openAuth(mode) {
     if (!sb) { $("welcome").hidden = false; showToastMsg("Can't reach the sign-in service. Check your connection and try again.", 3500); return; }
+    recoveryMode = false;   // leaving any recovery state — restore the normal sign-in modal
+    $("authEmail").style.display = ""; var _el = $("authEmail").previousElementSibling; if (_el) _el.style.display = "";
+    $("authToggle").style.display = ""; $("authForgot").style.display = ""; $("authBack").style.display = "";
     setAuthMode((mode === "signin" || mode === "signup") ? mode : (session ? "signin" : "signup"));
     $("authEmail").value = ""; $("authPass").value = ""; $("authMsg").textContent = "";
     $("authMsg").style.color = ""; $("authModal").hidden = false;
     setTimeout(function () { $("authEmail").focus(); }, 50);
   }
+  // Arrived from a password-reset email link → let them SET a new password (reuses the auth modal).
+  function openRecovery() {
+    if (!sb) return;
+    recoveryMode = true;
+    $("authTitle").textContent = "Set a new password";
+    $("authSub").textContent = "Choose a new password for your account.";
+    $("authEmail").style.display = "none"; var _el2 = $("authEmail").previousElementSibling; if (_el2) _el2.style.display = "none";
+    $("authPass").value = ""; $("authPass").setAttribute("autocomplete", "new-password");
+    $("authSubmit").textContent = "Update password";
+    $("authToggle").style.display = "none"; $("authForgot").style.display = "none"; $("authBack").style.display = "none";
+    $("authMsg").textContent = ""; $("authMsg").style.color = "";
+    $("welcome").hidden = true; $("authModal").hidden = false;
+    setTimeout(function () { $("authPass").focus(); }, 60);
+  }
   function closeAuth() { $("authModal").hidden = true; if (!session) $("welcome").hidden = false; } // closing the gate returns to welcome
   function authMsg(t, ok) { var m = $("authMsg"); m.textContent = t; m.style.color = ok ? "var(--accent)" : "#d08a72"; }
   function authSubmit() {
     if (!sb) return;
+    if (recoveryMode) {   // setting a new password after a reset link
+      var np = $("authPass").value;
+      if (!np || np.length < 6) { authMsg("Password needs at least 6 characters."); return; }
+      authMsg("Updating…", true);
+      sb.auth.updateUser({ password: np }).then(function (res) {
+        if (res && res.error) { authMsg(res.error.message); return; }
+        recoveryMode = false;
+        try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {}   // drop the recovery token from the URL
+        $("authModal").hidden = true; authMsg("");
+        showToastMsg("Password updated. You're in.", 2400);
+        pulled = false; cloudPull();   // the recovery session is now a valid login → route them in
+      }, function () { authMsg("Couldn't update your password. Try again."); });
+      return;
+    }
     var email = $("authEmail").value.trim(), pass = $("authPass").value;
     if (!email || !pass) { authMsg("Enter your email and a password."); return; }
     if (pass.length < 6) { authMsg("Password needs at least 6 characters."); return; }
@@ -10449,7 +10484,7 @@
     $("authPass").addEventListener("keydown", function (e) { if (e.key === "Enter") authSubmit(); });
     $("authToggle").addEventListener("click", function () { setAuthMode(authMode === "signup" ? "signin" : "signup"); authMsg(""); });
     $("authBack").addEventListener("click", function () { $("authModal").hidden = true; $("welcome").hidden = false; });
-    $("authModal").addEventListener("click", function (e) { if (e.target === this) closeAuth(); });
+    $("authModal").addEventListener("click", function (e) { if (e.target === this && !recoveryMode) closeAuth(); });
     $("authForgot").addEventListener("click", function () {
       var email = $("authEmail").value.trim();
       if (!email) { authMsg("Enter your email above first."); return; }
@@ -10459,6 +10494,7 @@
     sb.auth.getSession().then(function (r) {
       session = (r.data && r.data.session) || null;
       renderAccount();
+      if (CAME_FROM_RECOVERY) { openRecovery(); return; }   // arrived from a reset link → set a new password, don't route away
       if (session) cloudPull();   // pull FIRST, then route (never onboard before we've seen the cloud)
       else openWelcome();         // no session → gate
     });
@@ -10470,6 +10506,7 @@
         location.reload();
         return;
       }
+      if (event === "PASSWORD_RECOVERY") { openRecovery(); return; }   // Supabase detected the reset token → set a new password
       renderAccount();
       if (s && event === "SIGNED_IN") { pulled = false; cloudPull(); showToastMsg("Signed in.", 2200); }
     });
