@@ -9423,7 +9423,7 @@
   });
   if (window.matchMedia) { try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { if (db.theme === "auto") applyTheme("auto"); }); } catch (e) {} }
 
-  var APP_VERSION = "v61.45-dev";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v61.46-dev";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
@@ -9806,6 +9806,10 @@
         for (var id in inner) { if (inner[id] && !db[m][day][id]) { db[m][day][id] = inner[id]; added++; } } } });
     ["gratitude", "reflections", "ratings"].forEach(function (m) { var s = src[m]; if (!s) return; db[m] = db[m] || {};
       for (var k in s) { if (s[k] != null && db[m][k] == null) { db[m][k] = s[k]; added++; } } });
+    if (src.openLog) { db.openLog = db.openLog || {};   // the open-day chain (streak source) — union so the streak actually syncs across devices
+      for (var olk in src.openLog) { if (src.openLog[olk] && !db.openLog[olk]) { db.openLog[olk] = src.openLog[olk]; added++; } } }
+    if (src.trash) { db.trash = db.trash || {};          // deleted-day snapshots — union so a trashed day stays recoverable everywhere
+      for (var trk in src.trash) { if (src.trash[trk] && !db.trash[trk]) { db.trash[trk] = src.trash[trk]; added++; } } }
     if (Array.isArray(src.prayers)) { db.prayers = db.prayers || [];
       var ph = {}; db.prayers.forEach(function (p) { if (p && p.id) ph[p.id] = 1; });
       src.prayers.forEach(function (p) { if (p && p.id && !ph[p.id]) { db.prayers.push(p); ph[p.id] = 1; added++; } }); }
