@@ -4,13 +4,28 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <title>The Integrated Man · Daily</title>
+<meta name="description" content="A daily rhythm for becoming whole — Scripture, reflection, keystone habits, and brotherhood for men. Romans 12:2." />
+<!-- favicon + link preview: scrapers (iMessage/socials) read these STATIC tags without running JS; the app JS upgrades the home-screen icon at runtime -->
+<link rel="icon" type="image/png" href="assets/cross.png" />
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="The Integrated Man" />
+<meta property="og:title" content="The Integrated Man" />
+<meta property="og:description" content="A daily rhythm for becoming whole — Scripture, reflection, keystone habits, and brotherhood for men." />
+<meta property="og:url" content="https://theintegratedman.app/" />
+<meta property="og:image" content="https://theintegratedman.app/assets/cross.png" />
+<meta property="og:image:width" content="419" />
+<meta property="og:image:height" content="569" />
+<meta name="twitter:card" content="summary" />
+<meta name="twitter:title" content="The Integrated Man" />
+<meta name="twitter:description" content="A daily rhythm for becoming whole — Scripture, reflection, keystone habits, and brotherhood for men." />
+<meta name="twitter:image" content="https://theintegratedman.app/assets/cross.png" />
 <!-- installable as a home-screen app -->
 <meta name="theme-color" content="#0a0a0b" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black" />
 <meta name="apple-mobile-web-app-title" content="The Integrated Man" />
-<link id="appIcon" rel="apple-touch-icon" />
+<link id="appIcon" rel="apple-touch-icon" href="assets/cross.png" />
 <link id="appManifest" rel="manifest" />
 <script>
   // generate a real PNG app icon (nail-cross + ring) and an inline manifest — keeps it a single file
@@ -9423,7 +9438,7 @@
   });
   if (window.matchMedia) { try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { if (db.theme === "auto") applyTheme("auto"); }); } catch (e) {} }
 
-  var APP_VERSION = "v61.49";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v61.53";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
