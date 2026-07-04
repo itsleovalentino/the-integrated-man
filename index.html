@@ -9441,7 +9441,7 @@
   });
   if (window.matchMedia) { try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { if (db.theme === "auto") applyTheme("auto"); }); } catch (e) {} }
 
-  var APP_VERSION = "v61.53-dev";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v61.56";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
@@ -10390,16 +10390,29 @@
     $("authToggle").textContent = mode === "signup" ? "Already have an account? Sign in" : "Need an account? Create one";
     $("authPass").setAttribute("autocomplete", mode === "signup" ? "new-password" : "current-password");
   }
-  var recoveryMode = false;
+  var recoveryMode = false, forgotMode = false;
+  function showAuthField(id, show) { var el = $(id); if (!el) return; el.style.display = show ? "" : "none"; var lbl = el.previousElementSibling; if (lbl && lbl.classList && lbl.classList.contains("field-label")) lbl.style.display = show ? "" : "none"; }
   function openAuth(mode) {
     if (!sb) { $("welcome").hidden = false; showToastMsg("Can't reach the sign-in service. Check your connection and try again.", 3500); return; }
-    recoveryMode = false;   // leaving any recovery state — restore the normal sign-in modal
-    $("authEmail").style.display = ""; var _el = $("authEmail").previousElementSibling; if (_el) _el.style.display = "";
+    recoveryMode = false; forgotMode = false;   // leaving any reset state — restore the normal sign-in modal
+    showAuthField("authEmail", true); showAuthField("authPass", true);
     $("authToggle").style.display = ""; $("authForgot").style.display = ""; $("authBack").style.display = "";
     setAuthMode((mode === "signin" || mode === "signup") ? mode : (session ? "signin" : "signup"));
     $("authEmail").value = ""; $("authPass").value = ""; $("authMsg").textContent = "";
     $("authMsg").style.color = ""; $("authModal").hidden = false;
     setTimeout(function () { $("authEmail").focus(); }, 50);
+  }
+  // "Forgot password?" → a clean dedicated screen: just email + "Send reset link" (no password field).
+  function openForgot() {
+    recoveryMode = false; forgotMode = true;
+    $("authTitle").textContent = "Reset your password";
+    $("authSub").textContent = "Enter your email and we'll send you a reset link.";
+    showAuthField("authEmail", true); showAuthField("authPass", false);
+    $("authSubmit").textContent = "Send reset link";
+    $("authToggle").style.display = "none"; $("authForgot").style.display = "none"; $("authBack").style.display = "";
+    $("authMsg").textContent = ""; $("authMsg").style.color = "";
+    $("welcome").hidden = true; $("authModal").hidden = false;
+    setTimeout(function () { $("authEmail").focus(); }, 60);
   }
   // Arrived from a password-reset email link → let them SET a new password (reuses the auth modal).
   function openRecovery() {
@@ -10433,6 +10446,16 @@
       }, function () { authMsg("Couldn't update your password. Try again."); });
       return;
     }
+    if (forgotMode) {   // requesting a reset link
+      var em = $("authEmail").value.trim();
+      if (!em) { authMsg("Enter your email first."); return; }
+      authMsg("Sending…", true);
+      sb.auth.resetPasswordForEmail(em, { redirectTo: location.origin + location.pathname }).then(function (res) {
+        if (res && res.error) { authMsg(res.error.message); return; }
+        authMsg("Reset link sent — check your email.", true);
+      }, function () { authMsg("Couldn't send the reset email. Try again."); });
+      return;
+    }
     var email = $("authEmail").value.trim(), pass = $("authPass").value;
     if (!email || !pass) { authMsg("Enter your email and a password."); return; }
     if (pass.length < 6) { authMsg("Password needs at least 6 characters."); return; }
@@ -10458,14 +10481,12 @@
     $("authSubmit").addEventListener("click", authSubmit);
     $("authPass").addEventListener("keydown", function (e) { if (e.key === "Enter") authSubmit(); });
     $("authToggle").addEventListener("click", function () { setAuthMode(authMode === "signup" ? "signin" : "signup"); authMsg(""); });
-    $("authBack").addEventListener("click", function () { $("authModal").hidden = true; $("welcome").hidden = false; });
-    $("authModal").addEventListener("click", function (e) { if (e.target === this && !recoveryMode) closeAuth(); });
-    $("authForgot").addEventListener("click", function () {
-      var email = $("authEmail").value.trim();
-      if (!email) { authMsg("Enter your email above first."); return; }
-      sb.auth.resetPasswordForEmail(email, { redirectTo: location.href })
-        .then(function () { authMsg("Password reset link sent to your email.", true); });
+    $("authBack").addEventListener("click", function () {
+      if (forgotMode) { openAuth("signin"); return; }   // from the reset screen, go back to sign-in (not all the way to welcome)
+      $("authModal").hidden = true; $("welcome").hidden = false;
     });
+    $("authModal").addEventListener("click", function (e) { if (e.target === this && !recoveryMode) closeAuth(); });
+    $("authForgot").addEventListener("click", function () { openForgot(); });
     sb.auth.getSession().then(function (r) {
       session = (r.data && r.data.session) || null;
       renderAccount();
