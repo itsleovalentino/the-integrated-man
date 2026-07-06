@@ -500,8 +500,14 @@
     .mirror-grid{grid-template-columns:1fr;gap:44px}
   }
   @media (max-width:640px){
-    .fan .side{display:none}
-    .fan .center{width:min(300px,80vw)}
+    .fan{margin-top:52px}
+    .fan .center{width:50vw}
+    .fan .side{width:37vw}
+    .fan .side.left{transform:rotate(-8deg) translate(10vw,5vw)}
+    .fan .side.right{transform:rotate(8deg) translate(-10vw,5vw)}
+    .phone{padding:7px;border-radius:32px;box-shadow:0 20px 50px rgba(0,0,0,.6), 0 0 0 6px rgba(255,255,255,.035)}
+    .phone::before{height:16px;top:7px;width:30%}
+    .phone .screen{border-radius:25px}
     .field-row{flex-direction:column}
     .btn-join{width:100%}
     .timeline{padding-left:46px}
@@ -978,7 +984,7 @@
     var fan = document.getElementById('fan');
     addEventListener('scroll', function(){
       nav.classList.toggle('scrolled', scrollY > 10);
-      if(!REDUCED && fan){
+      if(!REDUCED && fan && innerWidth > 640){
         var y = Math.min(scrollY, 700) * 0.045;
         var l = fan.querySelector('.side.left'), r = fan.querySelector('.side.right');
         if(l) l.style.transform = 'rotate(-7deg) translate(34px,'+(26+y)+'px)';
