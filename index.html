@@ -2181,6 +2181,7 @@
   .nav-btn.active { color: var(--ink); background: rgba(255,255,255,0.12); }
   :root[data-theme="light"] .nav-btn.active { background: rgba(0,0,0,0.06); color: var(--ink); }
   .nav-btn.active svg { stroke: var(--accent); }
+  .journal-bubble { display: none !important; }   /* retired: Journal moved into the nav bar (clashed with 5 tabs) */
 
   /* ================= THE FORGE + THE 21 ================= */
   .f21-wrap { max-width: 560px; margin: 0 auto; padding: 18px 16px 110px; }
@@ -2257,6 +2258,7 @@
   .f21-score-top span::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--pc); }
   .f21-score-top b { font-size: 13px; color: var(--ink-faint); font-weight: 500; }
   .f21-score-row.rated .f21-score-top b { color: var(--ink-high); }
+  .f21-pd { font-size: 11.5px; color: var(--ink-faint); margin-top: 3px; line-height: 1.45; }
   .f21-sdots { display: grid; grid-template-columns: repeat(10, 1fr); gap: 5px; margin-top: 8px; }
   .f21-sdots button { aspect-ratio: 1; max-width: 26px; width: 100%; justify-self: center; border-radius: 50%;
     background: var(--field); border: 1px solid var(--field-edge); cursor: pointer; padding: 0; }
@@ -4119,6 +4121,10 @@
     <button class="nav-btn" id="nav_home">
       <svg viewBox="0 0 24 24"><path d="M4 11.5 12 5l8 6.5"/><path d="M5.5 10.5V19a1 1 0 0 0 1 1H10v-5h4v5h3.5a1 1 0 0 0 1-1v-8.5"/></svg>
       <span>Home</span>
+    </button>
+    <button class="nav-btn" id="nav_journal">
+      <svg viewBox="0 0 24 24"><path d="M4 20.5l4.5-1L19 9l-3.5-3.5L5 16z"/><line x1="14" y1="7" x2="17.5" y2="10.5"/></svg>
+      <span>Journal</span>
     </button>
     <button class="nav-btn" id="nav_bible">
       <svg viewBox="0 0 24 24"><path d="M5 4a2 2 0 0 1 2-2h11v18H7a2 2 0 0 0-2 2z"/><path d="M5 20a2 2 0 0 1 2-2h11"/><line x1="12" y1="6" x2="12" y2="13"/><line x1="9" y1="9" x2="15" y2="9"/></svg>
@@ -7561,11 +7567,13 @@
     $("bottomNav").classList.toggle("nav-docked", currentView === "home" && document.body.classList.contains("journal-docked"));
   }
   $("nav_home").addEventListener("click", function () { setView("home"); buzz(8); });
-  // Journal bubble → straight into a blank note, ready to type
-  $("journalBubble").addEventListener("click", function () {
+  // Journal lives IN the nav now (the floating bubble clashed with the 5-tab bar)
+  function openJournalNav() {
     if (journalWide()) { journalTab = "notes"; setView("journal"); buzz(8); }  // wide: open the split view
     else openWriter();                                                          // mobile: full-screen quick capture
-  });
+  }
+  $("nav_journal").addEventListener("click", openJournalNav);
+  $("journalBubble").addEventListener("click", openJournalNav);
   $("nav_bible").addEventListener("click", function () { if (currentView !== "bible") openBible(db.lastPassage || "John 1"); buzz(8); });
   $("nav_fellowship").addEventListener("click", function () { setView("fellowship"); buzz(8); });
   $("nav_forge").addEventListener("click", function () { setView("forge"); buzz(8); });
@@ -7753,6 +7761,16 @@
     }
   };
   function t21Pillars() { return (typeof pillars !== "undefined" && pillars && pillars.length) ? pillars : []; }
+  // one plain line per pillar so a man knows exactly what he's rating (Day 1 feedback: "explain what each of them are")
+  var T21_PDESC = {
+    faith: "Your walk with God: the Word, prayer, surrender.",
+    vitality: "Your body: sleep, food, training, energy.",
+    mental: "Your mind: focus, calm, and what you feed it.",
+    tribe: "Your people: family, brothers, being truly known.",
+    vocation: "Your work: done with excellence, on purpose.",
+    wealth: "Your money: a plan, margin, and generosity.",
+    environment: "Your spaces: order in the places you live and work."
+  };
   function t21RatingOf(key) {
     var rt = db.ratings && db.ratings[todayLocal()], r = rt && rt[key];
     return (r && r.rated !== false && typeof r.score === "number") ? r.score : null;
@@ -7763,6 +7781,7 @@
       var cur = t21RatingOf(p.key);
       h += '<div class="f21-score-row' + (cur != null ? " rated" : "") + '" style="--pc:' + p.color + '" data-pk="' + p.key + '">' +
            '<div class="f21-score-top"><span>' + t21Esc(p.name) + "</span><b>" + (cur != null ? cur : "—") + "</b></div>" +
+           (T21_PDESC[p.key] ? '<div class="f21-pd">' + t21Esc(T21_PDESC[p.key]) + "</div>" : "") +
            '<div class="f21-sdots">';
       for (var v = 1; v <= 10; v++) h += '<button type="button" data-v="' + v + '" class="' + (cur != null && v <= cur ? "on" : "") + '" aria-label="' + t21Esc(p.name) + " " + v + '"></button>';
       h += "</div></div>";
@@ -7789,7 +7808,7 @@
   }
   function t21DeltaHtml() {
     var s = t21() || {}, m0 = s.mirror0 && s.mirror0.scores;
-    if (!m0) return '<div class="f21-seal">No Day 1 snapshot exists, so today’s honest score IS the mirror. The letter below tells the rest.</div>';
+    if (!m0) return '<div class="f21-seal">Your Day 1 scores weren’t captured on this run (Day 1 ran before the mirror lived on this page), so today’s honest score stands as the record. The letter tells the rest.</div>';
     var h = '<div class="f21-delta">';
     t21Pillars().forEach(function (p) {
       var o = m0[p.key], os = (o && o.rated !== false && typeof o.score === "number") ? o.score : null;
@@ -7815,11 +7834,30 @@
     scored.sort(function (a, b) { return a[1] - b[1]; });
     return scored.slice(0, 2);
   }
+  function t21GoHome() { t21CloseSession(); setView("home"); }
+  // if Day 1 was completed before the in-session scorer existed, recover the snapshot
+  // from whatever he scored on that calendar day (repair, never overwrite)
+  function t21Mirror0Repair() {
+    var s = t21(); if (!s) return;
+    if (s.mirror0 && s.mirror0.scores) return;
+    var d1 = s.done && s.done[1]; if (!d1) return;
+    var r = db.ratings && db.ratings[d1];
+    if (r && Object.keys(r).length) {
+      s.mirror0 = s.mirror0 || { day: d1 };
+      s.mirror0.scores = JSON.parse(JSON.stringify(r));
+      save();
+    }
+  }
   function t21WidgetHtml(d, s, replay) {
     var h = "";
-    if (d.widget === "mirror" || d.widget === "mirror2") {
-      if (d.widget === "mirror2") h += '<div class="f21-action"><span class="f21-tag">Then vs. now</span><div id="f21Delta">' + t21DeltaHtml() + "</div></div>";
+    if (d.widget === "mirror") h += t21ScorerHtml();
+    if (d.widget === "mirror2") {
+      t21Mirror0Repair();
+      // today's honest score first (the fresh mirror), THEN the sealed Day 1 comparison
       h += t21ScorerHtml();
+      h += '<div class="f21-action"><span class="f21-tag">The mirror · Day 1 → today</span>' +
+           '<div class="f21-seal" style="margin-top:6px">The Day 1 column is sealed. It can’t be edited — that’s the point of a mirror.</div>' +
+           '<div id="f21Delta">' + t21DeltaHtml() + "</div></div>";
     }
     if (d.widget === "journal") {
       var prompts = d.day === 11
@@ -7851,14 +7889,14 @@
       } else {
         h += '<div class="f21-seal">No habits set yet. Head to Home and set your three starters, small.</div>';
       }
-      h += '<button class="f21-btn ghost" onclick="t21CloseSession();setView(\'home\')">Open my habits on Home</button></div>';
+      h += '<button class="f21-btn ghost" onclick="t21GoHome()">Open my habits on Home</button></div>';
     }
     if (d.widget === "plan") {
       var hasPlan = db.profile && Array.isArray(db.profile.plans) && db.profile.plans.length;
       h += '<div class="f21-action"><span class="f21-tag">Your reading plan</span>' +
            (hasPlan ? '<p>You already have a plan set. It’s on your Home page every morning: that’s your daily bread. Go read today’s portion.</p>'
                     : '<p>No plan yet. Head to Home, tap your reading card, and pick one. Thirty seconds, and it waits for you every morning after.</p>') +
-           '<button class="f21-btn ghost" onclick="t21CloseSession();setView(\'home\')">Open my reading on Home</button></div>';
+           '<button class="f21-btn ghost" onclick="t21GoHome()">Open my reading on Home</button></div>';
     }
     if (d.widget === "lies") {
       var lies = (s.lies && s.lies.length) ? s.lies : [{}, {}, {}];
@@ -8082,7 +8120,7 @@
   window.t21CloseSession = t21CloseSession; window.t21DebugShift = t21DebugShift; window.t21DebugReset = t21DebugReset;
   window.t21OpenFlow = t21OpenFlow; window.t21FlowNext = t21FlowNext; window.t21ShareInvite = t21ShareInvite;
   window.t21ToggleAffirm = t21ToggleAffirm; window.t21AddAffirm = t21AddAffirm; window.t21RmAffirm = t21RmAffirm;
-  window.t21Rate = t21Rate;
+  window.t21Rate = t21Rate; window.t21GoHome = t21GoHome;
 
   // ----- Bible chapter flipper + reading-chrome auto-hide -----
   function adjacentPassage(passage, dir) {
@@ -10098,7 +10136,7 @@
   });
   if (window.matchMedia) { try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { if (db.theme === "auto") applyTheme("auto"); }); } catch (e) {} }
 
-  var APP_VERSION = "v61.60-dev";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v61.61-dev";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
