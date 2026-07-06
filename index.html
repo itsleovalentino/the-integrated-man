@@ -4064,6 +4064,8 @@
       <input type="email" id="authEmail" autocomplete="email" />
       <label class="field-label">Password</label>
       <input type="password" id="authPass" autocomplete="current-password" />
+      <label class="field-label">Invite code</label>
+      <input type="text" id="authCode" autocomplete="one-time-code" autocapitalize="characters" spellcheck="false" placeholder="From the brother who invited you" />
       <div class="settings-msg" id="authMsg"></div>
       <button class="modal-primary" id="authSubmit">Create account</button>
       <button class="modal-text" id="authToggle">Already have an account? Sign in</button>
@@ -9458,7 +9460,7 @@
   });
   if (window.matchMedia) { try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { if (db.theme === "auto") applyTheme("auto"); }); } catch (e) {} }
 
-  var APP_VERSION = "v61.54-dev";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v61.57-dev";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
@@ -10407,6 +10409,9 @@
     }
   }
   // ---- auth modal ----
+  // The door opens by invitation: creating an account requires a valid code
+  // (any circle invite code, or a wave code from invite_codes). Sign-IN is never gated.
+  var GATE_SIGNUPS = true;
   function setAuthMode(mode) {
     authMode = mode;
     $("authTitle").textContent = mode === "signup" ? "Create your account" : "Welcome back";
@@ -10414,6 +10419,10 @@
     $("authSubmit").textContent = mode === "signup" ? "Create account" : "Sign in";
     $("authToggle").textContent = mode === "signup" ? "Already have an account? Sign in" : "Need an account? Create one";
     $("authPass").setAttribute("autocomplete", mode === "signup" ? "new-password" : "current-password");
+    showAuthField("authCode", mode === "signup" && GATE_SIGNUPS);
+    if (mode === "signup" && GATE_SIGNUPS && !$("authCode").value) {
+      var jc = currentJoinCode(); if (jc) $("authCode").value = jc;   // arrived via a ?join= link → code is pre-filled
+    }
   }
   var recoveryMode = false, forgotMode = false;
   function showAuthField(id, show) { var el = $(id); if (!el) return; el.style.display = show ? "" : "none"; var lbl = el.previousElementSibling; if (lbl && lbl.classList && lbl.classList.contains("field-label")) lbl.style.display = show ? "" : "none"; }
@@ -10432,7 +10441,7 @@
     recoveryMode = false; forgotMode = true;
     $("authTitle").textContent = "Reset your password";
     $("authSub").textContent = "Enter your email and we'll send you a reset link.";
-    showAuthField("authEmail", true); showAuthField("authPass", false);
+    showAuthField("authEmail", true); showAuthField("authPass", false); showAuthField("authCode", false);
     $("authSubmit").textContent = "Send reset link";
     $("authToggle").style.display = "none"; $("authForgot").style.display = "none"; $("authBack").style.display = "";
     $("authMsg").textContent = ""; $("authMsg").style.color = "";
@@ -10445,6 +10454,7 @@
     recoveryMode = true;
     $("authTitle").textContent = "Set a new password";
     $("authSub").textContent = "Choose a new password for your account.";
+    showAuthField("authCode", false);
     $("authEmail").style.display = "none"; var _el2 = $("authEmail").previousElementSibling; if (_el2) _el2.style.display = "none";
     $("authPass").value = ""; $("authPass").setAttribute("autocomplete", "new-password");
     $("authSubmit").textContent = "Update password";
@@ -10484,6 +10494,21 @@
     var email = $("authEmail").value.trim(), pass = $("authPass").value;
     if (!email || !pass) { authMsg("Enter your email and a password."); return; }
     if (pass.length < 6) { authMsg("Password needs at least 6 characters."); return; }
+    if (authMode === "signup" && GATE_SIGNUPS) {
+      var code = ($("authCode").value || "").trim().toUpperCase();
+      if (!code) { authMsg("The door opens by invitation. Enter your invite code."); return; }
+      authMsg("Checking your code…", true);
+      sb.rpc("validate_invite", { p_code: code }).then(function (vres) {
+        if (vres && vres.error) { authMsg("Couldn't check the code. Try again."); return; }
+        if (!vres || !vres.data) { authMsg("That code didn't open the door. Double-check it with the brother who sent it."); return; }
+        rememberJoin(code);   // survives the signup ride; circle codes also light up the chapel door
+        doAuthRequest(email, pass, code);
+      }, function () { authMsg("Couldn't check the code. Try again."); });
+      return;
+    }
+    doAuthRequest(email, pass, null);
+  }
+  function doAuthRequest(email, pass, inviteCode) {
     authMsg("One moment…", true);
     var p = authMode === "signup"
       ? sb.auth.signUp({ email: email, password: pass })
@@ -10498,6 +10523,7 @@
       }
       // signed in — pull the cloud FIRST, then route (cloudPull decides home vs. new-account setup)
       session = (res.data && res.data.session) || session;
+      if (inviteCode && session) { try { sb.rpc("redeem_invite", { p_code: inviteCode }).then(function () {}, function () {}); } catch (e) {} }
       $("authModal").hidden = true;
       pulled = false; cloudPull();
     }, function () { authMsg("Something went wrong. Try again."); });
