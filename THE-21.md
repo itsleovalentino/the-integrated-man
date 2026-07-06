@@ -25,7 +25,34 @@
 7. **Pillar-specific action**: what WOULD that version of you do, what DOES he do? Research. Then DO.
 8. **Night**: reflection, reading, prayer, get ready.
 
-## BUILD NOTES FOR THE ENGINE (for the Forge code)
+## BUILD STATE — WHAT IS ALREADY SHIPPED ON DEV (v61.63-dev, July 6 2026)
+
+**The engine is BUILT and live on the dev site. Code lives in index.html (all functions prefixed `t21`,
+styles `.f21-`); the authoritative code documentation is CLAUDE.md → "The Forge + The 21" section.
+This file remains the CONTENT source of truth: the scripts below generate `the21.json` via the
+build script (session scratchpad `build_the21.py`). Edit scripts here → regenerate → commit both.**
+
+Shipped: Forge nav tab (flame + ready-dot badge) · The 21 full flow (Welcome → Day 1 immediate →
+first-light locks, program waits on misses, one day per calendar day) · the 21-dot path with
+milestone dots + week-gate interstitials (AWAKE→BUILD→BECOME) · in-session widgets for every
+in-app-able action (Day 1/21 pillar scorer with per-pillar explainer lines, Day 21 BLANK-start +
+sealed Day 1→today delta + share invite; journals/reviews saving to Notes; Day 4 letter vault +
+examples; Day 6 wake-time picker + 3-step setup; Day 10 reading-plan status; Day 13 lies/truths;
+Day 17 pick-a-move (3 options per weakest pillar); Day 18 affirmation bank + one-tap "No
+complaining" habit) · draft autosave for everything typed (survives back arrow, per-day keys,
+cleared on complete) · J.E.S.U.S. Morning + P.R.A.I.S.E. Night runnable guided flows (unlock Days
+12/15; Silence countdown timer 1–10 min ending in the deep chime; sample prayers on Pray/Entrust;
+preview mode from Days 12/15 that never consumes the real run) · THE FALL as three course-correction
+protocols (tempted-now / fell / missed-morning) behind a quiet link · Home "Day N is ready" card ·
+strike celebration (flash + embers + chime + haptic) · audio player (1x/1.25x/1.5x) that appears the
+moment a day's `audio` URL is set · dev time machine · data safety (grow-only merge, quote-safe
+escaping, uid-tagged, letter/lies/affirms/drafts protected).
+
+**Not yet built:** Leo's audio (recordings pending → upload to Supabase Storage → set `audio` URLs
+in the json build), circle-board auto-events ("began The 21" / "Day N ✓"), read-along from Leo's
+Voice Memos transcripts, prod ship (needs disaster drills + Leo's explicit go).
+
+## BUILD NOTES FOR THE ENGINE (original design notes — see BUILD STATE above for what's real)
 
 - **J.E.S.U.S. morning mode**: guided 5-step flow in execution order (Silence timer → Undivided/prayer → Scripture/reading → Journal → Exercise check). Installs progressively Days 8 to 12. Widget-like card that completes for the day and returns at first light.
 - **PRAISE nightly mode**: guided tap-through (Pray → Review today → Affirmations spoken → Inventory heart-check prompt → Scripture → Entrust tomorrow, one line). Installs Day 15.

@@ -33,32 +33,64 @@ domain; the old `itsleovalentino.github.io/the-integrated-man/` 301-redirects th
 - `forge-mock.html`, `THE-FORTY.md` — untracked concept artifacts (Forge UI mock; the future
   40-day flagship program design)
 
-## The Forge + The 21 (as of v61.60-dev, on `dev`)
+## The Forge + The 21 (as of v61.63-dev, on `dev`)
 
-- **The Forge** = bottom-nav flame tab (`nav_forge` → `setView("forge")` → `renderForge()`).
-  Inside: The 21 (centerpiece), unlocked JESUS/PRAISE routine cards, teaser cards.
+- **The Forge** = bottom-nav flame tab (`nav_forge` → `setView("forge")` → `renderForge()`), with a
+  ready-dot badge (`navForgeBadge`, toggled by `t21NavDot()` when today's session is open). The nav
+  is now 5 tabs: Home · Journal · Bible · Forge · Fellowship (the floating journal bubble is retired
+  via CSS `display:none`; `nav_journal` runs the same handler). Inside the Forge: The 21
+  (centerpiece), unlocked routine cards, a quiet Fall link, teaser cards.
 - **The 21** = the 21-day onboarding program, one session/day. All engine code is prefixed `t21`.
   Flow: `t21Start()` → Day 0 Welcome plays immediately → Day 1 available on the spot → each next
-  day unlocks at first light after completing the prior (`t21Available()`, enforced in
-  `t21Complete`; the program WAITS on missed days; max one day per calendar day).
-- **State**: `db.the21` = { startedAt, startDay, done{day:dateKey}, letter, lies[], affirms[],
-  flows{jesus/praise:{dateKey:1}}, mirror0/mirror21 (read-only pillar-score snapshots), rate,
-  completedAt }. It is in `CONTENT_KEYS` and union-merged GROW-ONLY in `mergeRecover`: a sync can
-  add progress, never remove it; letter/lies/affirms keep whichever copy holds more words.
-- **In-session widgets** (`t21WidgetHtml`): Day 1/21 pillar scorer (writes real `db.ratings`, the
-  same records Home uses), Day 2/11 journal → saved to Notes via `addThought` on complete,
-  Day 7/14 weekly-review questions → one Note, Day 4 vision letter (sealed until Day 21),
-  Day 13 lies/truths, Day 17 weakest-2 pillars (computed from mirror0), Day 18 affirmation bank,
-  Day 21 delta + share invite. Example content lives in `T21_EX`.
-- **Routines**: `T21_FLOWS` (JESUS Morning / P.R.A.I.S.E. Night) run as guided flows via
-  `t21OpenFlow`; unlocked by Days 12/15 (`t21FlowUnlocked`).
+  day unlocks at first light (`t21Available()` = `last !== todayLocal()`, which also self-heals
+  westward-timezone travel; enforced in `t21Complete`; the program WAITS on missed days; max one
+  day per calendar day). Locked state renders as an anticipatory teaser (tomorrow's title +
+  "first light (midnight, technically)"); returns after missed days get "The program waited for you."
+  A Home hero card (`t21HomeCard()`, injected at the top of `.wrap`) surfaces today's session.
+- **State**: `db.the21` = { startedAt, startDay, wake ("HH:MM", Day 6 picker), done{day:dateKey},
+  letter, lies[], affirms[], drafts{ "d<day>_<elId>": text }, flows{jesus/praise:{dateKey:1}},
+  mirror0/mirror21 (read-only pillar-score snapshots; `t21Mirror0Repair()` backfills from the Day-1
+  date's ratings), rate, completedAt }. In `CONTENT_KEYS`, union-merged GROW-ONLY in `mergeRecover`:
+  a sync adds progress, never removes it; letter/lies/affirms/drafts keep whichever copy holds more.
+- **Draft autosave**: everything typed on a day page persists (delegated `oninput` on
+  `#f21SessBody`, per-day keys, restored on reopen, cleared in `t21Complete` once the words reach
+  the journal via `addThought`). The back arrow can never eat writing.
+- **In-session widgets** (`t21WidgetHtml`): Day 1/21 pillar scorer with one-line pillar explainers
+  (`T21_PDESC`; writes real `db.ratings` records, same as Home; Day 21 renders BLANK —
+  `t21ScorerHtml(true)` — for zero bias, then the sealed "Day 1 → today" delta + share invite
+  `t21ShareInvite`), Day 2/11 journal → Notes, Day 7/14 weekly-review → one Note, Day 4 letter
+  (sealed until 21, example lines), Day 6 setup (wake-time picker + alarm checkbox + habits list —
+  names only, never `hb.icon`), Day 10 reading-plan status, Day 13 lies/truths, Day 17 pick-a-move
+  (3 selectable options per weakest pillar, `t21PickMove`), Day 18 affirmation bank (+ one-tap
+  `t21AddNoComplain()` habit). Examples in `T21_EX`; `t21GoHome()` for open-on-Home buttons
+  (inline onclick can only reach `window.`-exported functions — everything user-tappable is exported).
+- **Routines**: `T21_FLOWS` (The J.E.S.U.S. Morning / The P.R.A.I.S.E. Night) run as guided flows
+  via `t21OpenFlow(type, previewReturnDay?)`; unlock at Days 12/15 (`t21FlowUnlocked`). Preview mode
+  (from the Day 12/15 sessions) never writes the done-for-today flag and returns to the day session.
+  Silence step has a 1–10 min countdown (`t21Timer`, ends with `playChime` + buzz); Pray/Entrust
+  steps carry sample prayers; the Affirmation step reads his bank + Day-13 truths.
+- **THE FALL** (`t21OpenFall`, `T21_FALL`): course-correction, not a panic button. A quiet text link
+  on the Forge → "What happened?" → three protocols: tempted-right-now / fell / missed-a-morning
+  (1 Cor 10:13, 1 John 1:9, Prov 24:16). Kept deliberately low-key so it means something when needed.
+- **Celebrations**: `t21Strike` (full-screen gold flash + embers + chime + haptic) on every
+  completion; `t21Gate` week interstitial at Days 7/14 (AWAKE→BUILD→BECOME); Day 21 never
+  auto-closes (he sits with the delta and his letter).
 - **Audio**: each day in the21.json has an `audio` field (null until Leo's recordings land in
-  Supabase Storage); the player renders automatically when set. Sessions run in read mode until then.
+  Supabase Storage); the player (1x/1.25x/1.5x, `t21Rate`) renders automatically when set.
+  Read mode until then. Session typography: serif lede first paragraph, "— Leo" signature,
+  read-time in the crumb.
 - **Dev time machine** on the Forge screen (TIM_DEV/localhost only): shift progress back a day,
-  reset the run.
+  reset the run. NOT YET BUILT: Leo's audio, circle-board auto-events, transcript read-along,
+  prod ship (disaster drills + Leo's explicit go first).
 - **Perf rules learned the hard way**: never animate box-shadow (transform/opacity only); any fixed
   full-screen overlay with an explicit `display` MUST pair with `[hidden]{display:none!important}`;
-  session overlays lock body scroll and use `overscroll-behavior: contain` (iOS scroll-trap).
+  session overlays lock body scroll + `overscroll-behavior: contain` (iOS scroll-trap) + own
+  compositor layer (`translateZ(0)`); `body.f21-open` pauses background animations while a session
+  is up; closing a session only re-renders the visible view. `t21Esc` escapes `&`, `<`, AND `"` —
+  user text goes into HTML attributes, and un-escaped quotes silently truncated a man's own words.
+- **DEV-ONLY DATA CAUTION**: dev doesn't cloud-sync the blob by design, so signing out on the dev
+  site (or a uid-mismatch wipe) destroys `db.the21` unrecoverably there. Don't sign out mid-test on
+  dev. Prod restores everything through the merge block.
 
 ## Signup gate (as of v61.57-dev, on `dev`)
 
