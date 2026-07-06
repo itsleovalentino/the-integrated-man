@@ -25,6 +25,49 @@ domain; the old `itsleovalentino.github.io/the-integrated-man/` 301-redirects th
   `tribes_phase1.sql` is deprecated. `functions/bible` + `functions/oura` are Deno edge functions
   (API proxies so keys stay server-side).
 - `docs/` — design notes
+- `the21.json` — content for The 21 (the Forge's 21-day onboarding program). GENERATED from
+  `THE-21.md` by a build script — never hand-edit the json; edit `THE-21.md` and regenerate.
+- `THE-21.md` — The 21 program bible + all day scripts (source of truth for the21.json)
+- `waitlist.html` — standalone marketing/waitlist page (no service worker, does not touch the app;
+  live path is `/waitlist`, extensionless). Generated from a template kept in the session scratchpad.
+- `forge-mock.html`, `THE-FORTY.md` — untracked concept artifacts (Forge UI mock; the future
+  40-day flagship program design)
+
+## The Forge + The 21 (as of v61.60-dev, on `dev`)
+
+- **The Forge** = bottom-nav flame tab (`nav_forge` → `setView("forge")` → `renderForge()`).
+  Inside: The 21 (centerpiece), unlocked JESUS/PRAISE routine cards, teaser cards.
+- **The 21** = the 21-day onboarding program, one session/day. All engine code is prefixed `t21`.
+  Flow: `t21Start()` → Day 0 Welcome plays immediately → Day 1 available on the spot → each next
+  day unlocks at first light after completing the prior (`t21Available()`, enforced in
+  `t21Complete`; the program WAITS on missed days; max one day per calendar day).
+- **State**: `db.the21` = { startedAt, startDay, done{day:dateKey}, letter, lies[], affirms[],
+  flows{jesus/praise:{dateKey:1}}, mirror0/mirror21 (read-only pillar-score snapshots), rate,
+  completedAt }. It is in `CONTENT_KEYS` and union-merged GROW-ONLY in `mergeRecover`: a sync can
+  add progress, never remove it; letter/lies/affirms keep whichever copy holds more words.
+- **In-session widgets** (`t21WidgetHtml`): Day 1/21 pillar scorer (writes real `db.ratings`, the
+  same records Home uses), Day 2/11 journal → saved to Notes via `addThought` on complete,
+  Day 7/14 weekly-review questions → one Note, Day 4 vision letter (sealed until Day 21),
+  Day 13 lies/truths, Day 17 weakest-2 pillars (computed from mirror0), Day 18 affirmation bank,
+  Day 21 delta + share invite. Example content lives in `T21_EX`.
+- **Routines**: `T21_FLOWS` (JESUS Morning / P.R.A.I.S.E. Night) run as guided flows via
+  `t21OpenFlow`; unlocked by Days 12/15 (`t21FlowUnlocked`).
+- **Audio**: each day in the21.json has an `audio` field (null until Leo's recordings land in
+  Supabase Storage); the player renders automatically when set. Sessions run in read mode until then.
+- **Dev time machine** on the Forge screen (TIM_DEV/localhost only): shift progress back a day,
+  reset the run.
+- **Perf rules learned the hard way**: never animate box-shadow (transform/opacity only); any fixed
+  full-screen overlay with an explicit `display` MUST pair with `[hidden]{display:none!important}`;
+  session overlays lock body scroll and use `overscroll-behavior: contain` (iOS scroll-trap).
+
+## Signup gate (as of v61.57-dev, on `dev`)
+
+- Creating an account requires a valid invite code (`GATE_SIGNUPS` flag). Sign-IN is never gated;
+  existing accounts are unaffected. Valid codes: any circle code, or wave codes in the
+  `invite_codes` table (`supabase/invite-gate.sql`, additive-only; Leo runs it once, seeds
+  `FIRSTFRUIT`). `validate_invite` RPC checks pre-signup; `redeem_invite` counts wave-code uses;
+  `?join=` links pre-fill the code. Client-side gate only for now — API-level enforcement is a
+  future task to be done WITH Leo (it touches live auth/policies).
 
 ## Navigating index.html
 
