@@ -2287,6 +2287,16 @@
   .t21-flash { position: fixed; inset: 0; z-index: 390; pointer-events: none; opacity: 0;
     background: radial-gradient(420px 420px at 50% 60%, rgba(203,178,126,.28), transparent 70%); animation: t21flash 1s ease-out forwards; }
   @keyframes t21flash { 0% { opacity: 0; } 18% { opacity: 1; } 100% { opacity: 0; } }
+  .f21-lede { font-family: Georgia, serif; font-size: 17.5px; color: var(--ink); }
+  .f21-action.main { border-width: 2px; }
+  .f21-action.main p { font-size: 15.5px; }
+  .f21-dot.m { border-width: 2px; }
+  .f21-dot.m.done { box-shadow: 0 0 12px rgba(203,178,126,.5); }
+  .t21-gate { position: fixed; inset: 0; z-index: 395; display: flex; align-items: center; justify-content: center; text-align: center;
+    background: rgba(10,10,11,.94); animation: t21flash-in .5s ease both; transition: opacity .7s; }
+  .t21-gate.out { opacity: 0; }
+  .t21-gate-big { font-family: Georgia, serif; font-size: 34px; font-weight: 500; color: var(--ink-high); margin-top: 14px; letter-spacing: -.01em; }
+  @keyframes t21flash-in { from { opacity: 0; } to { opacity: 1; } }
   .nav-badge { position: absolute; top: 5px; right: calc(50% - 18px); width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 2px rgba(38,38,42,0.9); opacity: 0; transform: scale(0.4); transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.34,1.56,0.64,1); }
   .nav-badge.on { opacity: 1; transform: scale(1); }
 
@@ -4133,6 +4143,7 @@
     <button class="nav-btn" id="nav_forge">
       <svg viewBox="0 0 24 24"><path d="M12 3.5c1.2 3 5 5.2 5 9.5a5 5 0 0 1-10 0c0-1.8.8-3.3 1.9-4.8.4 1.2 1.1 1.9 2.1 2.3-.9-2.6-.3-5 1-7z"/></svg>
       <span>Forge</span>
+      <span class="nav-badge" id="navForgeBadge"></span>
     </button>
     <button class="nav-btn" id="nav_fellowship">
       <svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.3"/><path d="M3.5 19.5a5.5 5.5 0 0 1 11 0"/><path d="M15.5 14.5a4.6 4.6 0 0 1 5 5"/></svg>
@@ -7555,6 +7566,7 @@
     if (name === "journal") renderJournalTab();
     if (name === "fellowship") { renderProfileBtn(); openCircle(); }
     if (name === "forge") renderForge();
+    if (name === "home" && typeof t21HomeCard === "function") t21HomeCard();
     if (name !== "bible" && typeof closeVerseMenu === "function") closeVerseMenu();
     syncNavPosition();
     $("bottomNav").classList.remove("nav-off");   // always reveal the nav when switching views
@@ -7604,7 +7616,9 @@
     var s = t21(); if (!s || s.completedAt) return false;
     if (t21NextDay() == null) return false;
     var last = t21LastDoneDate();
-    return !last || last < todayLocal();
+    // "not today": also unlocks when the clock moved BACKWARD (westward flight, timezone fix) —
+    // a rare benign extra day beats locking a traveling man out of his program
+    return !last || last !== todayLocal();
   }
   function t21Scores() { try { var r = db.ratings && db.ratings[todayLocal()]; return r ? JSON.parse(JSON.stringify(r)) : null; } catch (e) { return null; } }
   function t21Start() {
@@ -7634,16 +7648,31 @@
     s.done[day] = todayLocal();
     if (day === 1 && !s.mirror0) s.mirror0 = { day: todayLocal(), scores: t21Scores() };
     if (day === 21) { s.mirror21 = { day: todayLocal(), scores: t21Scores() }; s.completedAt = new Date().toISOString(); }
+    if (s.drafts) { for (var dpk in s.drafts) { if (dpk.indexOf("d" + day + "_") === 0) delete s.drafts[dpk]; } }   // words reached the journal — drafts done
     save();
     buzzPattern([18, 40, 26]); playChime();   // the strike
     t21Strike(day === 7 || day === 14 || day === 21);
     var btn = $("f21Done");
     if (btn) {
       btn.classList.add("done");
-      btn.textContent = day === 21 ? "The 21 · complete" : ("Day " + day + " done · Day " + (day + 1) + " unlocks at first light");
+      btn.textContent = day === 21 ? "The 21 · complete. Take your time." : ("Day " + day + " done · Day " + (day + 1) + " unlocks at first light");
       celebrate(btn, day === 7 || day === 14 || day === 21);
     }
-    setTimeout(function () { t21CloseSession(); renderForge(); }, 2100);
+    t21NavDot();
+    if (day === 21) return;   // no auto-close on the finale: let him sit with the delta and his letter
+    if (day === 7 || day === 14) t21Gate(day);
+    setTimeout(function () { t21CloseSession(); renderForge(); }, (day === 7 || day === 14) ? 3600 : 2100);
+  }
+  // the week gate: a held full-screen moment when a movement completes
+  function t21Gate(day) {
+    try {
+      var names = day === 7 ? ["AWAKE", "Week two: BUILD"] : ["BUILD", "Week three: BECOME"];
+      var g = document.createElement("div");
+      g.className = "t21-gate";
+      g.innerHTML = '<div><div class="f21-eyebrow">' + names[0] + ' · complete</div><div class="t21-gate-big">' + names[1] + "</div></div>";
+      document.body.appendChild(g);
+      setTimeout(function () { g.classList.add("out"); setTimeout(function () { g.remove(); }, 800); }, 2600);
+    } catch (e) {}
   }
   // the full-screen strike moment: a gold flash + embers rising from where he tapped
   function t21Strike(big) {
@@ -7664,10 +7693,11 @@
       }
     } catch (e) {}
   }
-  function t21Esc(s) { return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;"); }
-  function t21Rich(p) {   // minimal markdown: **bold**, *italic*, story slots as visible placeholders
+  function t21Esc(s) { return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;"); }
+  function t21Rich(p, lede) {   // minimal markdown: **bold**, *italic*; a bold-only line becomes a section label
     var h = t21Esc(p).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>").replace(/\*(.+?)\*/g, "<i>$1</i>");
-    return /^〔/.test(p) ? '<div class="f21-story">' + h + "</div>" : '<p class="f21-p">' + h + "</p>";
+    if (/^\*\*[^*]+\*\*$/.test(p.trim())) return '<div class="f21-eyebrow" style="margin-top:24px">' + t21Esc(p.replace(/\*/g, "")) + "</div>";
+    return '<p class="f21-p' + (lede ? " f21-lede" : "") + '">' + h + "</p>";
   }
   function renderForge() {
     var body = $("forgeBody"); if (!body) return;
@@ -7686,14 +7716,26 @@
     } else {
       var next = t21NextDay(), open = t21Available();
       var d = t21Day(next);
+      var waited = "";
+      var lastDone = t21LastDoneDate();
+      if (open && lastDone && lastDone < keyOf(new Date(Date.now() - 86400000))) {
+        waited = '<div class="f21-meta" style="margin-top:8px">The program waited for you. Day ' + next + " is right where you left it.</div>";
+      }
       h += '<div class="f21-card hero"><div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px">' +
            '<span class="f21-tag">The 21 · ' + (d ? d.movement : "") + '</span><span class="f21-chip">Day ' + next + " of 21</span></div>" +
-           '<h3>' + (d ? t21Esc(t21Title(d)) : "…") + "</h3>" +
+           '<h3>' + (d ? t21Esc(t21Title(d)) : "…") + "</h3>" + waited +
            (open
              ? '<button class="f21-btn" onclick="t21OpenSession(' + next + ')">Begin Day ' + next + "</button>"
-             : '<button class="f21-btn done">Day ' + next + " unlocks at first light</button>") +
+             : '<div class="f21-meta" style="margin-top:12px">Done for today. Tomorrow’s waiting above.</div>' +
+               '<div class="f21-seal">Unlocks at first light (midnight, technically). Tonight: phone out of the room.</div>') +
            "</div>";
       h += t21PathHtml(s);
+      if (s.letter && !s.completedAt) {
+        h += '<div class="f21-seal" style="text-align:center;margin-top:10px">Your letter is sealed in the vault · it opens on Day 21</div>';
+      }
+      h += '<div class="f21-card" style="margin-top:14px"><span class="f21-tag">For the hard night</span><h3 style="font-size:17px">The Fall</h3>' +
+           '<div class="f21-meta">If a thief gets you at 1am, press this. No shame in here.</div>' +
+           '<button class="f21-btn ghost" onclick="t21OpenFall()">Open</button></div>';
     }
     if (s && (t21FlowUnlocked("jesus") || t21FlowUnlocked("praise"))) {
       h += '<div class="f21-eyebrow" style="margin-top:30px">Your routines · unlocked by The 21</div>';
@@ -7728,7 +7770,7 @@
       h += '<div class="f21-pweek"><b>' + w[0] + '</b><div class="f21-dots">';
       for (var d = w[1]; d < w[1] + 7; d++) {
         var done = s.done && s.done[d];
-        var cls = done ? "done" : (d === next && open ? "now" : "");
+        var cls = (done ? "done" : (d === next && open ? "now" : "")) + (d % 7 === 0 ? " m" : "");
         var click = done ? ' onclick="t21OpenSession(' + d + ',true)"' : (d === next && open ? ' onclick="t21OpenSession(' + d + ')"' : "");
         h += '<button class="f21-dot ' + cls + '"' + click + ">" + d + "</button>";
       }
@@ -7933,7 +7975,7 @@
     if (d.widget === "jesus" || d.widget === "praise") {
       h += '<div class="f21-action"><span class="f21-tag">' + (d.widget === "jesus" ? "The routine, built in" : "Tonight, built in") + "</span>" +
            '<p>The app now walks you through it, step by step. Take the tour right now so tomorrow has zero friction.</p>' +
-           '<button class="f21-btn ghost" onclick="t21OpenFlow(\'' + d.widget + '\')">Preview the ' + (d.widget === "jesus" ? "JESUS Morning" : "P.R.A.I.S.E. Night") + "</button></div>";
+           '<button class="f21-btn ghost" onclick="t21OpenFlow(\'' + d.widget + '\',' + d.day + ')">Preview the ' + (d.widget === "jesus" ? "JESUS Morning" : "P.R.A.I.S.E. Night") + "</button></div>";
     }
     if (d.widget === "mirror2") {
       h += '<div class="f21-action"><span class="f21-tag">Your letter · sealed on Day 4</span>' +
@@ -7980,12 +8022,13 @@
     }
     if (arr.length) { s.lies = arr; save(); }
   }
-  var t21LetterTimer = null;
+  var t21LetterTimer = null, t21DraftTimer = null;
   function t21OpenSession(day, replay) {
     t21Load(function () {
       var d = t21Day(day); if (!d) return;
       var s = t21() || {};
-      $("f21Crumb").textContent = day === 0 ? "The 21 · Welcome" : "The 21 · Day " + day + " of 21 · " + d.movement;
+      var mins = Math.max(1, Math.round(d.paras.join(" ").split(/\s+/).length / 180));
+      $("f21Crumb").textContent = (day === 0 ? "The 21 · Welcome" : "The 21 · Day " + day + " of 21 · " + d.movement) + " · ~" + mins + " min";
       var h = '<div class="f21-eyebrow">' + (day === 0 ? "Before Day 1" : "Today’s session") + "</div><h2>" + t21Esc(t21Title(d)) + "</h2>";
       if (d.audio) {
         var rate = (s.rate || 1);
@@ -7995,9 +8038,10 @@
              }).join("") + "</div></div>" +
              '<div class="f21-seal" style="text-align:center">Or read along below.</div>';
       }
-      d.paras.forEach(function (p) { h += t21Rich(p); });
+      d.paras.forEach(function (p, pi) { h += t21Rich(p, pi === 0); });
+      if (day > 0) h += '<div class="f21-seal" style="margin-top:18px">— Leo</div>';
       h += t21WidgetHtml(d, s, replay);
-      if (d.action) h += '<div class="f21-action"><span class="f21-tag">Today’s action</span><p>' + t21Esc(d.action) + "</p></div>";
+      if (d.action) h += '<div class="f21-action main"><span class="f21-tag">Today’s action</span><p>' + t21Esc(d.action) + "</p></div>";
       var next = t21NextDay();
       if (day === 0) {
         h += '<button class="f21-btn" onclick="t21OpenSession(1)">Begin Day 1 now</button>' +
@@ -8015,6 +8059,22 @@
         t21LetterTimer = setTimeout(function () { db.the21 = db.the21 || {}; db.the21.letter = lt.value; save(); }, 700);
       });
       for (var li = 0; li < 3; li++) (function (el) { if (el) el.addEventListener("blur", t21SaveLies); })($("f21Truth" + li));
+      // DRAFT AUTOSAVE: anything typed on a day page survives the back arrow (entries are sacred).
+      // Keyed per day; restored on reopen; cleared once the day completes and the words reach the journal.
+      var drafts = (s.drafts || {});
+      Object.keys(drafts).forEach(function (k) {
+        var m = k.indexOf("d" + day + "_") === 0 ? k.slice(("d" + day + "_").length) : null;
+        var el2 = m && $(m); if (el2 && !el2.value) el2.value = drafts[k];
+      });
+      $("f21SessBody").oninput = function (ev) {
+        var el = ev.target; if (!el || !el.id || el.id === "f21Letter" || el.id === "f21AffIn") return;
+        if (t21DraftTimer) clearTimeout(t21DraftTimer);
+        t21DraftTimer = setTimeout(function () {
+          db.the21 = db.the21 || {}; db.the21.drafts = db.the21.drafts || {};
+          db.the21.drafts["d" + day + "_" + el.id] = el.value; save();
+          if (/^f21(Lie|Truth)/.test(el.id)) t21SaveLies();
+        }, 600);
+      };
       $("f21Session").hidden = false;
       document.body.style.overflow = "hidden";   // no scroll-chaining into the page behind (the iOS freeze fix)
       $("f21Session").querySelector(".f21-sess-scroll").scrollTop = 0;
@@ -8052,10 +8112,12 @@
     var s = t21(); if (!s || !s.done) return false;
     return type === "jesus" ? !!(s.done[12] || s.completedAt) : !!(s.done[15] || s.completedAt);
   }
-  function t21OpenFlow(type) {
+  function t21OpenFlow(type, previewReturnDay) {
     var F = T21_FLOWS[type]; if (!F) return;
-    t21FlowState = { type: type, i: 0 };
-    $("f21Crumb").textContent = F.name;
+    // previewReturnDay: opened as a tour from a day session — don't count it as today's run,
+    // and land back on the day he came from so he can still mark it complete
+    t21FlowState = { type: type, i: 0, back: (typeof previewReturnDay === "number" ? previewReturnDay : null) };
+    $("f21Crumb").textContent = F.name + (t21FlowState.back != null ? " · preview" : "");
     t21FlowRender();
     $("f21Session").hidden = false;
     document.body.style.overflow = "hidden";
@@ -8088,23 +8150,69 @@
     if (fj && fj.value.trim()) addThought({ title: st.type === "jesus" ? "Morning journal" : "Evening journal", text: fj.value.trim() });
     buzz(8);
     if (st.i >= T21_FLOWS[st.type].steps.length - 1) {
-      db.the21 = db.the21 || {}; db.the21.flows = db.the21.flows || {};
-      db.the21.flows[st.type] = db.the21.flows[st.type] || {};
-      db.the21.flows[st.type][todayLocal()] = 1;
-      save(); playChime(); t21Strike(false);
-      t21FlowState = null;
-      setTimeout(t21CloseSession, 900);
+      if (st.back == null) {   // a REAL run counts for today; a preview never does
+        db.the21 = db.the21 || {}; db.the21.flows = db.the21.flows || {};
+        db.the21.flows[st.type] = db.the21.flows[st.type] || {};
+        db.the21.flows[st.type][todayLocal()] = 1;
+        save(); playChime(); t21Strike(false);
+        t21FlowState = null;
+        setTimeout(t21CloseSession, 900);
+      } else {                 // preview done → back to the day he came from, so he can mark it complete
+        var backDay = st.back; t21FlowState = null;
+        playChime(); t21OpenSession(backDay);
+      }
       return;
     }
     st.i++; t21FlowRender();
   }
   function t21CloseSession() {
+    // a flow journal in progress is still his words — save before anything is torn down
+    try { var fj2 = $("f21FlowJ"); if (fj2 && fj2.value.trim() && t21FlowState) addThought({ title: t21FlowState.type === "jesus" ? "Morning journal" : "Evening journal", text: fj2.value.trim() }); } catch (e) {}
     t21FlowState = null;
     var au = $("f21Audio"); if (au) { try { au.pause(); } catch (e) {} }
     $("f21Session").hidden = true;
     document.body.style.overflow = "";
     renderForge();
   }
+  // The Fall — the hard-night protocol, one press away, no shame
+  function t21OpenFall() {
+    $("f21Crumb").textContent = "The Fall · no shame in here";
+    $("f21SessBody").innerHTML =
+      '<div class="f21-eyebrow">For the hard night</div><h2>You fell. You didn’t fail.</h2>' +
+      '<p class="f21-p f21-lede">Listen to me. The fall already happened. The only question left is what happens in the next ten minutes. Shame wants you to spiral, scroll, hide, and let one bad hour become a bad week. We don’t feed shame in here.</p>' +
+      '<p class="f21-p"><b>Do this, right now.</b> Get up off the bed or the couch. Drink a glass of water. If you have a brother who knows your fight, send him two words: "fell, getting up." Then go to sleep.</p>' +
+      '<p class="f21-p">That’s the whole protocol. Tomorrow morning your day will be waiting, and so will grace. The deal was never perfection. The deal was direction, and getting up IS the direction.</p>' +
+      '<p class="f21-p"><i>"For the righteous falls seven times, and rises again."</i> Proverbs 24:16. Rising again is what righteous men do.</p>' +
+      '<div class="f21-seal" style="margin-top:18px">— Leo</div>' +
+      '<button class="f21-btn" onclick="t21CloseSession()">Getting up</button>';
+    $("f21Session").hidden = false;
+    document.body.style.overflow = "hidden";
+    $("f21Session").querySelector(".f21-sess-scroll").scrollTop = 0;
+  }
+  // the flame's quiet pull: a gold dot on the Forge tab whenever today's session is open
+  function t21NavDot() {
+    var b = $("navForgeBadge"); if (!b) return;
+    var s = t21();
+    b.classList.toggle("on", !!(s && s.startedAt && !s.completedAt && t21Available()));
+  }
+  // The 21 on Home: the morning screen he already opens says today's session is ready
+  function t21HomeCard() {
+    var wrap = document.querySelector(".wrap"); if (!wrap) return;
+    var old = $("t21HomeCard"); if (old) old.remove();
+    var s = t21();
+    t21NavDot();
+    if (!s || !s.startedAt || s.completedAt || !t21Available()) return;
+    var next = t21NextDay(); if (next == null) return;
+    var el = document.createElement("div");
+    el.id = "t21HomeCard"; el.className = "f21-card hero"; el.style.margin = "0 0 14px";
+    el.innerHTML = '<span class="f21-tag">The 21 · Day ' + next + " is ready</span>" +
+      '<h3 id="t21hcT" style="margin-top:7px">Today’s session</h3>' +
+      '<button class="f21-btn" style="margin-top:12px">Take it now</button>';
+    el.querySelector("button").addEventListener("click", function () { setView("forge"); t21OpenSession(next); buzz(8); });
+    wrap.insertBefore(el, wrap.firstChild);
+    t21Load(function () { var dd = t21Day(next), tt = $("t21hcT"); if (dd && tt) tt.textContent = t21Title(dd); });
+  }
+  t21HomeCard();   // on load: surface today's session where the morning starts
   $("f21Back").addEventListener("click", function () { t21CloseSession(); buzz(8); });
   function t21DebugShift() {
     var s = t21(); if (!s || !s.done) return;
@@ -8120,7 +8228,7 @@
   window.t21CloseSession = t21CloseSession; window.t21DebugShift = t21DebugShift; window.t21DebugReset = t21DebugReset;
   window.t21OpenFlow = t21OpenFlow; window.t21FlowNext = t21FlowNext; window.t21ShareInvite = t21ShareInvite;
   window.t21ToggleAffirm = t21ToggleAffirm; window.t21AddAffirm = t21AddAffirm; window.t21RmAffirm = t21RmAffirm;
-  window.t21Rate = t21Rate; window.t21GoHome = t21GoHome;
+  window.t21Rate = t21Rate; window.t21GoHome = t21GoHome; window.t21OpenFall = t21OpenFall;
 
   // ----- Bible chapter flipper + reading-chrome auto-hide -----
   function adjacentPassage(passage, dir) {
@@ -10136,7 +10244,7 @@
   });
   if (window.matchMedia) { try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { if (db.theme === "auto") applyTheme("auto"); }); } catch (e) {} }
 
-  var APP_VERSION = "v61.61-dev";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v61.62-dev";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
@@ -10561,6 +10669,8 @@
       // lies + affirmations: keep whichever list holds MORE of his words
       if (Array.isArray(s21.lies) && s21.lies.length > (Array.isArray(d21.lies) ? d21.lies.length : 0)) { d21.lies = s21.lies; added++; }
       if (Array.isArray(s21.affirms) && s21.affirms.length > (Array.isArray(d21.affirms) ? d21.affirms.length : 0)) { d21.affirms = s21.affirms; added++; }
+      if (s21.drafts) { d21.drafts = d21.drafts || {};   // unfinished writing: keep whichever copy holds more
+        for (var dr21 in s21.drafts) { if ((s21.drafts[dr21] || "").length > (d21.drafts[dr21] || "").length) { d21.drafts[dr21] = s21.drafts[dr21]; added++; } } }
     }
     // even soft-deleted notes come along (into the trash, not the journal) — recoverable everywhere
     if (Array.isArray(src.noteTrash)) { db.noteTrash = db.noteTrash || []; db.thoughts = db.thoughts || [];
@@ -11091,7 +11201,9 @@
         confirmDialog("Sign out? You'll be fully signed out and need to sign back in to reach your journal.", "Sign out", function () {
           if (pushTimer) { clearTimeout(pushTimer); pushTimer = null; }
           cloudPush();              // flush the latest to the cloud first
-          sb.auth.signOut();        // the SIGNED_OUT handler wipes this device + returns to the gate
+          // give the flush a beat to land — a day completed seconds ago must reach the cloud
+          // before the SIGNED_OUT handler wipes this device and returns to the gate
+          setTimeout(function () { sb.auth.signOut(); }, 900);
         });
       });
     } else {

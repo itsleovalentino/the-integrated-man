@@ -71,13 +71,13 @@ Here's what you just signed up for, straight: 21 mornings. A few minutes with me
 
 One rule in here. One. Don't fake anything. Don't check a box you didn't do. Don't write a nice answer when the true one is ugly. Every man who's ever been changed by anything got changed by the truth, so in here we tell it.
 
-One thing before you sleep tonight: get to bed like a man with an appointment, because you have one. Your brothers can already see you're in; the board just told them. A thing witnessed is a thing that's real.
+One thing before you sleep tonight: get to bed like a man with an appointment, because you have one.
 
-Day 1 unlocks at first light. It's called The Mirror, and it takes about ten minutes.
+Day 1 is called The Mirror, and it takes about ten minutes. It's already open. If you're burning to start, take it right now. If not, it'll be waiting for you at first light, and morning is where this program lives.
 
-The man who taps play tomorrow morning is already different from the man who almost didn't. See you at first light.
+Either way: the man who shows up tomorrow morning is already different from the man who almost didn't.
 
-**ACTION:** Sleep. Day 1 unlocks at first light.
+**ACTION:** Take Day 1 now if you're burning, or sleep and let it meet you at first light.
 
 ---
 
