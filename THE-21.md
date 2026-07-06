@@ -4,10 +4,10 @@
 **What it is:** every man's first 21 days. A daily pump-up from Leo (90 seconds to 8 minutes), one clear action, marked done where his brothers see it. It teaches WHO to become (the vision), WHAT to do (the Integrated OS), and hands him the tool that keeps it going (the app). Surrender is the engine: you as the vessel, God as the power.
 
 **Locked decisions (Leo, July 6 2026):**
-- Morning execution order: **Silence → Undivided time with God → Scripture → Journal → Exercise.** JESUS is the memory device for the pieces; this is the order you run them.
+- Morning execution order: **Silence → Undivided time with God → Scripture → Journal → Exercise.** J.E.S.U.S. is the memory device for the pieces; this is the order you run them.
 - Minimum viable morning: **5m silence · 10m undivided · 10m scripture · 5m journal · 30m exercise = 1 hour.** Installed by waking one hour earlier, backed up 15 minutes at a time across Week 2. "It changed my life."
 - Day 3 visualization: **Leo runs it himself** (record it once; it becomes the Day 3 audio). Script below only frames and lands it.
-- JESUS morning mode + PRAISE nightly mode = **in-app guided installs** (widget-like, done-for-today until tomorrow). **Unlocked ONLY by taking The 21.** The program is the key to the OS.
+- J.E.S.U.S. morning mode + PRAISE nightly mode = **in-app guided installs** (widget-like, done-for-today until tomorrow). **Unlocked ONLY by taking The 21.** The program is the key to the OS.
 - Affirmations: **both** — who God says he is (Scripture) + his own words. Taught on Day 18.
 - Time blocking: **Google Calendar.**
 - **Monday start.** Debriefs land on Sundays (Days 7, 14, 21).
@@ -20,14 +20,14 @@
 2. **Vision**: the visualization. The man you want to be (character), the life you want to steward (pillars), the lifestyle. Then write it all down clearly.
 3. **Remove thieves**: porn, mindless scrolling, laziness, snoozing, complaining.
 4. **The Surrender / Handoff**: the life and character we want is impossible without Him. "Why would He bless your kingdom? But imagine if you build His."
-5. **The Integrated OS**: the JESUS Morning Routine (Journal, Exercise, Silence, Undivided time, Scripture) · the PRAISE Nightly Routine (Pray, Review, Affirmation, Inventory, Scripture, Entrust) · habits (routine, waking on time, nightly) · Mind Renewal (Rom 12:2: catch the negativity, replace with truth, repeat the truth, live the truth).
+5. **The Integrated OS**: the J.E.S.U.S. Morning Routine (Journal, Exercise, Silence, Undivided time, Scripture) · the PRAISE Nightly Routine (Pray, Review, Affirmation, Inventory, Scripture, Entrust) · habits (routine, waking on time, nightly) · Mind Renewal (Rom 12:2: catch the negativity, replace with truth, repeat the truth, live the truth).
 6. **Time Blocking**: protect the hours that build the vision.
 7. **Pillar-specific action**: what WOULD that version of you do, what DOES he do? Research. Then DO.
 8. **Night**: reflection, reading, prayer, get ready.
 
 ## BUILD NOTES FOR THE ENGINE (for the Forge code)
 
-- **JESUS morning mode**: guided 5-step flow in execution order (Silence timer → Undivided/prayer → Scripture/reading → Journal → Exercise check). Installs progressively Days 8 to 12. Widget-like card that completes for the day and returns at first light.
+- **J.E.S.U.S. morning mode**: guided 5-step flow in execution order (Silence timer → Undivided/prayer → Scripture/reading → Journal → Exercise check). Installs progressively Days 8 to 12. Widget-like card that completes for the day and returns at first light.
 - **PRAISE nightly mode**: guided tap-through (Pray → Review today → Affirmations spoken → Inventory heart-check prompt → Scripture → Entrust tomorrow, one line). Installs Day 15.
 - **Unlock mechanic**: both modes are locked app features. Taking The 21 unlocks them progressively; completing The 21 keeps them forever. This is the incentive to take the program.
 - **Mind renewal card** (Day 13): his top 3 lies + the truth that answers each. Surfaced in PRAISE (Affirmation step) and by the Fall button.
@@ -54,7 +54,7 @@
 9. **The Forge enters the bottom nav NOW (the flame tab), with The 21 inside it** (Leo's call: men should get used to growth living in the Forge from day one). The Forge screen = The 21 as centerpiece + a grayed "more forging ahead" teaser row.
 10. **Data safety:** completions are grow-only union-merge, uid-tagged; the letter gets journal-grade sacred protection; disaster drills (two devices, fresh device mid-program, offline completion, midnight straddle) must pass before any prod ship; dev time machine included from day one.
 11. **Re-runs: out of scope v1.** Completing The 21 is a terminal state (the repeat engine arrives with The Forty).
-12. **JESUS/PRAISE unlock only via The 21** (locked teaser card for everyone else).
+12. **J.E.S.U.S./PRAISE unlock only via The 21** (locked teaser card for everyone else).
 
 ---
 
@@ -250,7 +250,7 @@ Rest tonight. Real rest. Because tomorrow, week two begins, and I'm handing you 
 
 See you at first light.
 
-**ACTION:** Morning: feet on the floor at the alarm, run the three. Evening: first weekly review, three journal sentences, sleep.
+**ACTION:** Morning: feet on the floor at the alarm, run your three habits. Evening: first weekly review, three journal sentences, sleep.
 
 ---
 
@@ -258,7 +258,7 @@ See you at first light.
 
 ---
 
-### DAY 8 · THE JESUS MORNING ROUTINE · SILENCE
+### DAY 8 · THE J.E.S.U.S. MORNING ROUTINE · SILENCE
 *Charge · ~4 min · installs: Silence (5 min) · alarm backs up 15 minutes*
 
 Week two. This is where I hand you the machine.
@@ -267,7 +267,7 @@ For years my mornings belonged to everybody but God and me. The phone, the news,
 
 `[YOUR STORY: 60 seconds. The hour that changed your life. What your mornings were before, and what happened when this routine took hold.]`
 
-Here's the frame so you never forget the pieces. The routine spells JESUS: Journal, Exercise, Silence, Undivided time with God, Scripture. Five pieces, easy to remember. But you don't RUN it in that order. You run it the way it actually works: Silence first. Then undivided time with God. Then Scripture. Then journal. Then exercise. This week we install one piece a day, and by Friday you're running the full hour.
+Here's the frame so you never forget the pieces. The routine spells J.E.S.U.S.: Journal, Exercise, Silence, Undivided time with God, Scripture. Five pieces, easy to remember. But you don't RUN it in that order. You run it the way it actually works: Silence first. Then undivided time with God. Then Scripture. Then journal. Then exercise. This week we install one piece a day, and by Friday you're running the full hour.
 
 Today: Silence. Five minutes. Before the phone, before the noise, before the world gets let in. Sit still and let your mind settle, or chew slowly on one line of Scripture. That's it. No production. Five minutes of quiet before a single input hits you.
 
@@ -281,7 +281,7 @@ Alarm minus fifteen. Silence, five minutes, first thing. Then your starters. Go.
 
 ---
 
-### DAY 9 · THE JESUS MORNING ROUTINE · UNDIVIDED
+### DAY 9 · THE J.E.S.U.S. MORNING ROUTINE · UNDIVIDED
 *Charge · ~3 min · installs: Undivided time with God (10 min) · alarm backs up another 15*
 
 Piece two. And this one's the center of the whole machine.
@@ -302,7 +302,7 @@ The vessel connects to the power source every morning, or the vessel runs dry. T
 
 ---
 
-### DAY 10 · THE JESUS MORNING ROUTINE · SCRIPTURE
+### DAY 10 · THE J.E.S.U.S. MORNING ROUTINE · SCRIPTURE
 *Charge · ~3 min · installs: Scripture (10 min) · alarm backs up another 15*
 
 Piece three: the Word. Ten minutes, and the placement matters: BEFORE the world gets to talk to you.
@@ -313,7 +313,9 @@ Here's how you run it. The app has reading plans, and this page will show you yo
 
 Ten minutes. Don't rush to finish chapters, that's not the goal. Read until something catches, and when it catches, stop and chew. One verse that actually lands beats three chapters skimmed.
 
-One more thing, because the S in JESUS is Scripture OR reading. Some mornings, after the Word, you'll have time to read something else: make it something aligned with your values that grows you. A book on your weakest pillar. Something an older man you respect would hand you. The rule is simple: if it doesn't build the man in your letter, it doesn't get your morning.
+And if you're new to the Bible and don't know where to start, here's my answer: a Proverb a day, there are 31 of them, pure wisdom for men. Or the Gospel of John: the life and the good news of Jesus, told by a man who watched it happen. Either one will feed you for weeks.
+
+One more thing, because the S in J.E.S.U.S. is Scripture OR reading. Some mornings, after the Word, you'll have time to read something else: make it something aligned with your values that grows you. A book on your weakest pillar. Something an older man you respect would hand you. The rule is simple: if it doesn't build the man in your letter, it doesn't get your morning.
 
 And when something lands, hold onto it, because tomorrow I'm giving you the piece that keeps it.
 
@@ -323,7 +325,7 @@ Tonight: alarm back another fifteen. You're forty-five minutes in, and tomorrow 
 
 ---
 
-### DAY 11 · THE JESUS MORNING ROUTINE · JOURNAL
+### DAY 11 · THE J.E.S.U.S. MORNING ROUTINE · JOURNAL
 *Charge · ~3 min · installs: Journal (5 min) · no alarm change*
 
 Piece four, and good news: this one's free. No alarm change tonight. The five minutes are already sitting inside the hour we've been building.
@@ -332,7 +334,7 @@ Journal. Right after the Word, five minutes, write what He's teaching you.
 
 Here's the line I want you to remember: Jesus didn't necessarily write things down, but His disciples did. That's the whole Bible you read this morning, by the way. Men who walked with Him and WROTE IT DOWN. You're a disciple. Act like one. When God teaches you something at 6am and you don't write it, by lunch it's gone, and by Friday you can't even remember that it happened.
 
-This isn't "dear diary." This is a man keeping records of what God is doing in his life. The page you're on gives you the space right now, with prompts if you need them: What did the reading say to ME today? What is He teaching me in this season? What am I not going to forget?
+This isn't "dear diary." This is a man keeping records of what God is doing in his life. The page you're on gives you the space right now, with prompts if you need them: What did the reading say to ME today? What is He teaching me in this season? What am I not going to forget? And if the reading hasn't found its groove yet, remember: a Proverb a day, or the Gospel of John. Simple beats impressive.
 
 Some mornings you'll write two lines. Some mornings the pen won't stop. Both count. Here's how the habit builds: same slot every morning, right after the Word, two-line minimum, zero pressure to be deep. Depth shows up on its own around week three.
 
@@ -344,7 +346,7 @@ Tomorrow, the final piece, and it's the biggest block of the hour. Bring your sh
 
 ---
 
-### DAY 12 · THE JESUS MORNING ROUTINE · EXERCISE
+### DAY 12 · THE J.E.S.U.S. MORNING ROUTINE · EXERCISE
 *Charge · ~3 min · installs: Exercise (30 min) · final alarm backup: the full hour*
 
 Last piece. Exercise. Thirty minutes of moving your body.
@@ -355,11 +357,11 @@ Move your body. Thirty minutes. Gym if you've got one, but the floor of your bed
 
 Why is this in a morning routine with prayer and Scripture? Because your body isn't separate from your walk with God. Paul calls it a temple of the Holy Spirit. It's the vessel we talked about on Day 5, the actual physical vessel the power works through. A drained, soft, neglected vessel serves nobody. And practically? Discipline is a muscle that doesn't know the difference. The man who conquers his body at 6am finds that his mind and his appetites start falling in line too. Win the body, and the body votes for you the rest of the day.
 
-So here it is, the full machine, the JESUS morning in running order: Silence, five. Undivided time with God, ten. Scripture, ten. Journal, five. Exercise, thirty. One hour. The app walks you through every piece from here on out, every morning, in order.
+So here it is, the full machine, the J.E.S.U.S. morning in running order: Silence, five. Undivided time with God, ten. Scripture, ten. Journal, five. Exercise, thirty. One hour. The app walks you through every piece from here on out, every morning, in order.
 
 Tomorrow you run the complete hour for the first time. Then I'm going to show you what to do with the enemy that lives between your ears. See you at first light. Full hour.
 
-**ACTION:** Move the alarm 15 minutes earlier one last time (with the three earlier moves, that's the full hour). Tomorrow: run the complete JESUS morning, all five pieces. The app now has the routine built in and will walk you through it, step by step, every morning from here on.
+**ACTION:** Move the alarm 15 minutes earlier one last time (with the three earlier moves, that's the full hour). Tomorrow: run the complete J.E.S.U.S. morning, all five pieces. The app now has the routine built in and will walk you through it, step by step, every morning from here on.
 
 ---
 
@@ -426,7 +428,7 @@ S. Scripture. A few verses, or a page of something that grows you. Last input of
 
 E. Entrust. One line to God: tomorrow is Yours before it starts. Then set out what tomorrow needs, clothes, alarm across the room, and put the day down. It's His now. Sleep like it.
 
-The app now has this built in. From tonight on, there's a nightly flow that walks you through all six, a few minutes total, and you unlocked it by being here on Day 15. Run PRAISE tonight for the first time. Morning belongs to JESUS, night belongs to PRAISE, and the man in between is becoming somebody.
+The app now has this built in. From tonight on, there's a nightly flow that walks you through all six, a few minutes total, and you unlocked it by being here on Day 15. Run PRAISE tonight for the first time. Morning belongs to J.E.S.U.S., night belongs to PRAISE, and the man in between is becoming somebody.
 
 **ACTION:** Run the PRAISE flow in the app tonight. Phone still sleeps outside the room.
 
@@ -546,7 +548,7 @@ And now, the letter. Seventeen days ago you wrote to this exact moment. The app'
 
 ...
 
-You just heard your own voice describe the man you're becoming, and here's what I want you to notice: he's not a stranger anymore. Some of what you wrote, you're already doing. The rest? You now own the exact machine that builds him. The morning belongs to JESUS. The night belongs to PRAISE. The week has a debrief. The mind has weapons. The calendar has locks. The pillars have moves.
+You just heard your own voice describe the man you're becoming, and here's what I want you to notice: he's not a stranger anymore. Some of what you wrote, you're already doing. The rest? You now own the exact machine that builds him. The morning belongs to J.E.S.U.S.. The night belongs to PRAISE. The week has a debrief. The mind has weapons. The calendar has locks. The pillars have moves.
 
 So here's the most important thing I'll say today: the program ends. The rhythm doesn't. Starting tomorrow there's no Day 22 audio waiting for you, and that's on purpose. You weren't building a dependence on my voice. You were building an operating system, and it's installed now. This app carries it: same morning flow, same nightly flow, same streak, same board, same brothers. Nothing stops tomorrow except my talking. The training wheels come off because you can ride.
 
@@ -588,7 +590,7 @@ It's His kingdom. You're the vessel. Go build it.
 - D5: vessel not engine · "why would He bless YOUR kingdom?" · open hands + one sentence out loud
 - D6: wake time declared to circle · alarm ACROSS the room · 3 starter habits, small
 - D7am: feet before negotiation, run the three || D7pm: 3 sentences · grace = direction not perfection
-- D8: JESUS = the pieces, but RUN order = Silence first · alarm minus 15 · 5 min quiet before any input
+- D8: J.E.S.U.S. = the pieces, but RUN order = Silence first · alarm minus 15 · 5 min quiet before any input
 - D9: undivided means undivided, phone elsewhere · alarm minus 15 more · Mark 1:35 (dark, solitary, prayed)
 - D10: the deepest voice goes FIRST · read till it catches, then chew · alarm minus 15 more
 - D11: "Jesus didn't write, His disciples did" · write what He's teaching you · no alarm change
@@ -605,4 +607,4 @@ It's His kingdom. You're the vessel. Go build it.
 
 **Recording cadence (locked):** Day 1 now (the voice test) → Claude builds the engine on dev with it → record Week 1 + Fall + Grace while the engine builds → full dev test run on the time machine → record Week 2 with what the test taught → stay one week ahead of the cohort, never more.
 
-**Engine pre-flight (Claude, on dev):** progress fields added to merge rules (completions grow-only, letter = sacred content, uid-tagged) · disaster drills pass (two devices, fresh device mid-program, empty cloud, offline completion, midnight-straddle completion) · JESUS/PRAISE visibility COMPUTED never stored (the anti-Oura-bug rule) · fallback scripture bank if Day 13 skipped · audio pre-cache for offline mornings · dev time machine (jump/reset days) · prod untouched until Leo's explicit ship.*
+**Engine pre-flight (Claude, on dev):** progress fields added to merge rules (completions grow-only, letter = sacred content, uid-tagged) · disaster drills pass (two devices, fresh device mid-program, empty cloud, offline completion, midnight-straddle completion) · J.E.S.U.S./PRAISE visibility COMPUTED never stored (the anti-Oura-bug rule) · fallback scripture bank if Day 13 skipped · audio pre-cache for offline mornings · dev time machine (jump/reset days) · prod untouched until Leo's explicit ship.*
