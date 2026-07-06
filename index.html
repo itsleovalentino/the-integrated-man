@@ -2216,6 +2216,7 @@
     background: var(--field); border: 1px solid var(--field-edge); color: var(--ink-soft); cursor: pointer; }
 
   .f21-session { position: fixed; inset: 0; z-index: 220; background: var(--bg); display: flex; flex-direction: column; }
+  .f21-session[hidden] { display: none !important; }   /* the hidden attribute must always win over display:flex */
   .f21-sess-top { flex: none; display: flex; align-items: center; gap: 10px; padding: calc(env(safe-area-inset-top, 0px) + 14px) 16px 10px;
     border-bottom: 1px solid var(--line); }
   .f21-back { font: inherit; font-size: 18px; background: none; border: none; color: var(--ink-soft); cursor: pointer; padding: 4px 8px; }
@@ -9693,7 +9694,7 @@
   });
   if (window.matchMedia) { try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { if (db.theme === "auto") applyTheme("auto"); }); } catch (e) {} }
 
-  var APP_VERSION = "v61.58-dev";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v61.59-dev";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
