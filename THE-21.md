@@ -100,11 +100,11 @@ One rule in here. One. Don't fake anything. Don't check a box you didn't do. Don
 
 One thing before you sleep tonight: get to bed like a man with an appointment, because you have one.
 
-Day 1 is called The Mirror, and it takes about ten minutes. It's already open. If you're burning to start, take it right now. If not, it'll be waiting for you at first light, and morning is where this program lives.
+Day 1 is called The Mirror, and it takes about ten minutes. It's already open. If you're ready, take it right now. If not, it'll be waiting for you at first light, and morning is where this program lives.
 
 Either way: the man who shows up tomorrow morning is already different from the man who almost didn't.
 
-**ACTION:** Take Day 1 now if you're burning, or sleep and let it meet you at first light.
+**ACTION:** Take Day 1 now, or sleep and let it meet you at first light.
 
 ---
 
