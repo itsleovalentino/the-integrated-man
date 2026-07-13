@@ -1,6 +1,6 @@
 // The Integrated Man — offline service worker
 // Network-first for the page (so updates always show), cache-first for static assets.
-var CACHE = "tim-v61.64-dev";
+var CACHE = "tim-v61.65-dev";
 var PRECACHE = ["./", "index.html", "the21.json",
   "assets/orb-vitality.png?v=2", "assets/orb-mental.png?v=2", "assets/orb-faith.png?v=2",
   "assets/orb-vocation.png?v=2", "assets/orb-wealth.png?v=2", "assets/orb-environment.png?v=2",
@@ -50,4 +50,23 @@ self.addEventListener("fetch", function (e) {
       });
     })
   );
+});
+
+// ---- web push: show the banner; tapping it focuses or opens the app ----
+self.addEventListener("push", function (e) {
+  var d = {};
+  try { d = e.data ? e.data.json() : {}; } catch (err) {}
+  e.waitUntil(self.registration.showNotification(d.title || "The Integrated Man", {
+    body: d.body || "",
+    icon: "assets/cross.png",
+    badge: "assets/cross.png",
+    data: d
+  }));
+});
+self.addEventListener("notificationclick", function (e) {
+  e.notification.close();
+  e.waitUntil(clients.matchAll({ type: "window", includeUncontrolled: true }).then(function (list) {
+    for (var i = 0; i < list.length; i++) { if ("focus" in list[i]) return list[i].focus(); }
+    return clients.openWindow("./");
+  }));
 });

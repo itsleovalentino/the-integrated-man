@@ -65,7 +65,10 @@
   // serve a STALE (old) build here — which would make every fix look like it "didn't work."
   // In dev: unregister every worker, delete every cache, and if an old worker was controlling
   // this page, reload ONCE so what you see is guaranteed to be the freshly deployed code.
-  if (window.TIM_DEV && "serviceWorker" in navigator) {
+  // EXCEPTION: web push needs a live service worker. When Leo opts a dev device into
+  // push testing (localStorage tim_dev_sw=1, set by the Enable-push button), keep its SW.
+  var KEEP_DEV_SW = false; try { KEEP_DEV_SW = localStorage.getItem("tim_dev_sw") === "1"; } catch (e) {}
+  if (window.TIM_DEV && !KEEP_DEV_SW && "serviceWorker" in navigator) {
     try {
       navigator.serviceWorker.getRegistrations().then(function (rs) {
         if (!rs.length) return;
@@ -4277,6 +4280,47 @@
     }); });
   }
   var _stored = {}; // ref -> byte length already written to IndexedDB this session (skip rewrites)
+  // ---- voice audio → cloud backup (Supabase Storage bucket "voice", private, per-man) ----
+  // The blob sync carries only "aud:*" refs; the BYTES lived only in this device's IndexedDB —
+  // the last known data-loss hole. Every memo now also backs up to <uid>/<ref> in Storage, and a
+  // new device pulls it back down during rehydrate. Uploads are idempotent (tracked in db.audioUp).
+  function audPath(refKey) { return myId() + "/" + refKey.replace(/[^a-zA-Z0-9._-]/g, "_"); }
+  function audioUpload(refKey, dataUrl) {
+    try {
+      if (!sb || !myId() || !isDataUrl(dataUrl)) return;
+      db.audioUp = db.audioUp || {};
+      if (db.audioUp[refKey] === dataUrl.length) return;   // this exact audio is already up
+      fetch(dataUrl).then(function (r) { return r.blob(); }).then(function (blob) {
+        return sb.storage.from("voice").upload(audPath(refKey), blob, { upsert: true, contentType: blob.type || "audio/webm" });
+      }).then(function (res) {
+        if (res && !res.error) { db.audioUp[refKey] = dataUrl.length; save(); }
+        else if (res && res.error) console.error("voice backup failed:", res.error);
+      }).catch(function (e) { console.error("voice backup failed:", e); });
+    } catch (e) {}
+  }
+  function audioDownload(refKey) {   // resolves a dataURL, or null
+    if (!sb || !myId()) return Promise.resolve(null);
+    return sb.storage.from("voice").download(audPath(refKey)).then(function (res) {
+      if (!res || res.error || !res.data) return null;
+      return new Promise(function (resolve) {
+        var fr = new FileReader();
+        fr.onload = function () { resolve(String(fr.result || "") || null); };
+        fr.onerror = function () { resolve(null); };
+        fr.readAsDataURL(res.data);
+      });
+    }).catch(function () { return null; });
+  }
+  // every memo on this device that hasn't reached the cloud yet goes up (load + sign-in)
+  function audioBackfill() {
+    if (!sb || !myId()) return;
+    try {
+      (db.thoughts || []).forEach(function (t) { if (t && isDataUrl(t.voice)) audioUpload(AUD + "t:" + t.id, t.voice); });
+      if (db.voice) for (var sec in db.voice) for (var dk in db.voice[sec]) {
+        var v = db.voice[sec][dk];
+        if (isDataUrl(v)) audioUpload(AUD + "v:" + sec + ":" + dk, v);
+      }
+    } catch (e) {}
+  }
   // Build a persistence-safe copy of db: inline audio → tiny "aud:*" refs; bytes collected
   // for IndexedDB. db itself is never mutated, so on-screen playback keeps working.
   function splitAudio(src) {
@@ -4302,7 +4346,10 @@
   function stashAudio(blobs) {
     for (var key in blobs) {
       if (_stored[key] === blobs[key].length) continue;   // unchanged, already saved
-      (function (k, len) { idbPut(k, blobs[k]).then(function (ok) { if (ok) _stored[k] = len; }); })(key, blobs[key].length);
+      (function (k, len) {
+        idbPut(k, blobs[k]).then(function (ok) { if (ok) _stored[k] = len; });
+        audioUpload(k, blobs[k]);   // and up to the cloud, so a lost phone never means a lost voice
+      })(key, blobs[key].length);
     }
   }
   // THE single durable write. Text always fits (audio stripped out), so it can't fail on quota.
@@ -4318,7 +4365,15 @@
   function rehydrateAudio() {
     var jobs = [], touched = false;
     function pull(refKey, assign) {
-      jobs.push(idbGet(refKey).then(function (u) { if (u) { assign(u); _stored[refKey] = u.length; touched = true; } }));
+      jobs.push(idbGet(refKey).then(function (u) {
+        if (u) { assign(u); _stored[refKey] = u.length; touched = true; return; }
+        // not on this device (new phone / cleared browser) → pull the cloud backup down
+        return audioDownload(refKey).then(function (d) {
+          if (!d) return;
+          assign(d); idbPut(refKey, d); _stored[refKey] = d.length; touched = true;
+          db.audioUp = db.audioUp || {}; db.audioUp[refKey] = d.length;
+        });
+      }));
     }
     if (Array.isArray(db.thoughts)) db.thoughts.forEach(function (t) {
       if (t && isAudRef(t.voice)) (function (th) { pull(th.voice, function (u) { th.voice = u; }); })(t);
@@ -7796,7 +7851,9 @@
     if (window.TIM_DEV || location.hostname === "localhost" || location.hostname === "127.0.0.1") {
       h += '<div class="f21-debug"><span class="f21-tag">Time machine (dev only)</span><div>' +
            '<button onclick="t21DebugShift()">⏪ Make today’s progress “yesterday”</button>' +
-           '<button onclick="t21DebugReset()">Reset The 21</button></div></div>';
+           '<button onclick="t21DebugReset()">Reset The 21</button>' +
+           '<button onclick="pushEnable()">🔔 Enable push (this device)</button>' +
+           '<button onclick="pushTest()">Send me a test in 10s</button></div></div>';
     }
     body.innerHTML = h;
   }
@@ -8369,6 +8426,53 @@
   window.t21ToggleAffirm = t21ToggleAffirm; window.t21AddAffirm = t21AddAffirm; window.t21RmAffirm = t21RmAffirm;
   window.t21Rate = t21Rate; window.t21GoHome = t21GoHome; window.t21OpenFall = t21OpenFall;
   window.t21Timer = t21Timer; window.t21PickMove = t21PickMove; window.t21AddNoComplain = t21AddNoComplain;
+
+  // ---- web push (test harness — iOS 16.4+, must be opened from the Home-Screen icon) ----
+  var VAPID_PUB = "BLo3rp9NWqSTTRYRI6wleqhMtUmD9oFlQVk3Xf3c_IXQxqsAdo1HfWuMmFbn9F5ST91y6W9pAovd-QKatEkAoDU";
+  function pushU8(s) {
+    var pad = "====".slice(0, (4 - s.length % 4) % 4);
+    var b = atob((s + pad).replace(/-/g, "+").replace(/_/g, "/"));
+    var a = new Uint8Array(b.length);
+    for (var i = 0; i < b.length; i++) a[i] = b.charCodeAt(i);
+    return a;
+  }
+  function pushEnsureReg() {
+    if (!("serviceWorker" in navigator)) return Promise.resolve(null);
+    return navigator.serviceWorker.getRegistration().then(function (r) {
+      if (r) return r;
+      try { localStorage.setItem("tim_dev_sw", "1"); } catch (e) {}   // dev keeps a SW from now on (push needs one)
+      return navigator.serviceWorker.register("sw.js");
+    }).catch(function () { return null; });
+  }
+  function pushEnable() {
+    if (!session) { showToastMsg("Sign in first.", 2200); return; }
+    if (!("Notification" in window) || !("PushManager" in window)) {
+      showToastMsg("This browser can't do push. iPhone: iOS 16.4+ AND opened from the Home-Screen icon (not a Safari tab).", 5000); return;
+    }
+    Notification.requestPermission().then(function (perm) {
+      if (perm !== "granted") { showToastMsg("Notifications weren't allowed.", 2600); return; }
+      pushEnsureReg().then(function (reg) {
+        if (!reg) { showToastMsg("No service worker available here.", 2600); return; }
+        navigator.serviceWorker.ready.then(function (r2) {
+          return r2.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: pushU8(VAPID_PUB) });
+        }).then(function (sub) {
+          var j = sub.toJSON();
+          return sb.from("push_subs").upsert({ user_id: myId(), endpoint: j.endpoint, sub: j, ua: navigator.userAgent.slice(0, 180) }, { onConflict: "endpoint" });
+        }).then(function (res) {
+          if (res && res.error) showToastMsg("Couldn't save the subscription: " + res.error.message, 4000);
+          else showToastMsg("Push enabled on this device. 🔔", 2600);
+        }).catch(function (e) { showToastMsg("Push setup failed: " + (e && e.message || e), 4000); });
+      });
+    });
+  }
+  function pushTest() {
+    if (!sb || !session) { showToastMsg("Sign in first.", 2200); return; }
+    showToastMsg("Sending in ~10 seconds. LOCK YOUR PHONE now.", 3200);
+    sb.functions.invoke("push", { body: { wait: 10 } }).then(function (res) {
+      if (res && res.error) showToastMsg("Push function error (deployed + secrets set?).", 4200);
+    }, function () { showToastMsg("Push function unreachable (deployed yet?).", 3600); });
+  }
+  window.pushEnable = pushEnable; window.pushTest = pushTest;
 
   // ----- Bible chapter flipper + reading-chrome auto-hide -----
   function adjacentPassage(passage, dir) {
@@ -10408,7 +10512,7 @@
   });
   if (window.matchMedia) { try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { if (db.theme === "auto") applyTheme("auto"); }); } catch (e) {} }
 
-  var APP_VERSION = "v61.64-dev";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v61.65-dev";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
@@ -10836,6 +10940,8 @@
       if (s21.drafts) { d21.drafts = d21.drafts || {};   // unfinished writing: keep whichever copy holds more
         for (var dr21 in s21.drafts) { if ((s21.drafts[dr21] || "").length > (d21.drafts[dr21] || "").length) { d21.drafts[dr21] = s21.drafts[dr21]; added++; } } }
     }
+    if (src.audioUp) { db.audioUp = db.audioUp || {};   // the voice-backup ledger — union so devices don't re-upload
+      for (var auk in src.audioUp) { if (src.audioUp[auk] && !db.audioUp[auk]) { db.audioUp[auk] = src.audioUp[auk]; } } }
     // even soft-deleted notes come along (into the trash, not the journal) — recoverable everywhere
     if (Array.isArray(src.noteTrash)) { db.noteTrash = db.noteTrash || []; db.thoughts = db.thoughts || [];
       var tHave = {}; db.thoughts.concat(db.noteTrash).forEach(function (t) { if (t && t.id) tHave[t.id] = 1; });
@@ -11275,7 +11381,7 @@
   var CONTENT_KEYS = { thoughts: 1, noteTrash: 1, prayers: 1, anchors: 1, morning: 1, journal: 1,
     evening: 1, gratitude: 1, reflections: 1, ratings: 1, habitLog: 1, readLog: 1, pillarSkip: 1,
     scriptureNotes: 1, scriptureNoteLog: 1, pinned: 1, trash: 1, voice: 1, openLog: 1, covenants: 1,
-    covChecks: 1, habits: 1, the21: 1 };
+    covChecks: 1, habits: 1, the21: 1, audioUp: 1 };
   // a soft-delete made elsewhere moves the entry to THIS device's trash too (recoverable,
   // never gone) — unless this device edited or restored it after the delete happened.
   function applyCloudDeletes(data) {
@@ -11365,6 +11471,7 @@
         confirmDialog("Sign out? You'll be fully signed out and need to sign back in to reach your journal.", "Sign out", function () {
           if (pushTimer) { clearTimeout(pushTimer); pushTimer = null; }
           cloudPush();              // flush the latest to the cloud first
+          deliberateSignOut = true; // only a chosen sign-out may wipe this device
           // give the flush a beat to land — a day completed seconds ago must reach the cloud
           // before the SIGNED_OUT handler wipes this device and returns to the gate
           setTimeout(function () { sb.auth.signOut(); }, 900);
@@ -11393,6 +11500,7 @@
     }
   }
   var recoveryMode = false, forgotMode = false;
+  var deliberateSignOut = false;   // distinguishes "he tapped Sign out" from "the session expired"
   function showAuthField(id, show) { var el = $(id); if (!el) return; el.style.display = show ? "" : "none"; var lbl = el.previousElementSibling; if (lbl && lbl.classList && lbl.classList.contains("field-label")) lbl.style.display = show ? "" : "none"; }
   function openAuth(mode) {
     if (!sb) { $("welcome").hidden = false; showToastMsg("Can't reach the sign-in service. Check your connection and try again.", 3500); return; }
@@ -11510,20 +11618,26 @@
       session = (r.data && r.data.session) || null;
       renderAccount();
       if (CAME_FROM_RECOVERY) { openRecovery(); return; }   // arrived from a reset link → set a new password, don't route away
-      if (session) cloudPull();   // pull FIRST, then route (never onboard before we've seen the cloud)
+      if (session) { cloudPull(); setTimeout(audioBackfill, 6000); }   // pull FIRST, then route; memos back up quietly after
       else openWelcome();         // no session → gate
     });
     sb.auth.onAuthStateChange(function (event, s) {
       session = s || null;
       if (event === "SIGNED_OUT") {
-        // leave nothing behind on this device — back to a clean gate until sign-in
-        try { localStorage.removeItem(KEY); localStorage.removeItem(SAFE_KEY); } catch (e) {}
+        if (deliberateSignOut) {
+          // the user ASKED to sign out → leave nothing behind on this device
+          try { localStorage.removeItem(KEY); localStorage.removeItem(SAFE_KEY); } catch (e) {}
+        }
+        // otherwise this was an EXPIRED/FAILED session (bad hotel wifi, token refresh
+        // hiccup) — that is not a request to erase a man's words. Keep everything local;
+        // the gate shows; signing back into the same account reunites with the cloud,
+        // and a DIFFERENT account is still protected by the uid-mismatch wipe in cloudPull.
         location.reload();
         return;
       }
       if (event === "PASSWORD_RECOVERY") { openRecovery(); return; }   // Supabase detected the reset token → set a new password
       renderAccount();
-      if (s && event === "SIGNED_IN") { pulled = false; cloudPull(); showToastMsg("Signed in.", 2200); }
+      if (s && event === "SIGNED_IN") { pulled = false; cloudPull(); showToastMsg("Signed in.", 2200); setTimeout(audioBackfill, 6000); }
     });
   }
 
