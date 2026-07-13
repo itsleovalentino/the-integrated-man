@@ -1429,13 +1429,32 @@
   .rw-prompt::after { content: "”"; color: var(--accent); }
   .rw-switch { margin-top: 5px; }
   .rw-body {
-    display: block; width: 100%; max-width: 660px; margin: 22px auto 0; flex: 1 1 auto;
+    display: block; width: 100%; max-width: 660px; margin: 22px auto 0;
     background: transparent; border: none; outline: none; resize: none;
     color: var(--ink); font-family: inherit; font-size: 17.5px; line-height: 1.66;
     letter-spacing: 0.002em; caret-color: var(--accent);
-    min-height: 44vh; overflow: hidden;
+    /* content-driven height (grow() owns it): flex 0 0 auto + a modest floor, so the page
+       reads as paper with a header — never a giant invisible textarea ending in a void */
+    flex: 0 0 auto; min-height: 30vh; overflow: hidden;
   }
   .rw-body::placeholder { color: var(--ink-faint); font-style: italic; }
+  .rw-prompt-row { padding-bottom: 22px; border-bottom: 1px solid var(--gold-line); }   /* letterhead: the prompt is a header, not floating text */
+  .rw-count { position: fixed; right: 20px; bottom: calc(env(safe-area-inset-bottom, 0px) + 16px);
+    font-size: 11px; letter-spacing: 0.08em; color: var(--ink-faint); pointer-events: none; }
+  /* card reflections: paper, not a box in a box */
+  #journal, #evening { background: transparent; border: none; border-radius: 0; border-bottom: 1px solid var(--field-edge); }
+  #journal:focus, #evening:focus { border-bottom-color: var(--accent); }
+  /* invisible-but-generous hit areas on small controls */
+  .prompt-switch, .pillar-info-btn { position: relative; }
+  .prompt-switch::after, .pillar-info-btn::after { content: ""; position: absolute; inset: -10px; }
+  /* dark-theme depth: a whisper of top-edge light on every panel */
+  .panel { box-shadow: var(--shadow), inset 0 1px 0 rgba(255,255,255,0.04); }
+  /* ---- atmosphere mode (Oura-style test): richer time-of-day sky + grain + floating panels ---- */
+  body.atmo #ambient { opacity: 1; }
+  body.atmo::after { content: ""; position: fixed; inset: 0; z-index: 1; pointer-events: none; opacity: 0.05; mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E"); }
+  body.atmo .panel { background: rgba(18, 18, 20, 0.62); -webkit-backdrop-filter: blur(18px) saturate(1.1); backdrop-filter: blur(18px) saturate(1.1); border-color: rgba(255,255,255,0.09); }
+  @supports not (backdrop-filter: blur(1px)) { body.atmo .panel { background: rgba(18, 18, 20, 0.88); } }
 
   /* ---- Days recall dashboard (read-only, glassy) ---- */
   .days-view { position: fixed; inset: 0; z-index: 72; background: var(--bg); display: flex; flex-direction: column; animation: viewIn 0.32s cubic-bezier(.2,.7,.2,1); }
@@ -2211,9 +2230,9 @@
     color: var(--ink-faint); font-size: 10.5px; display: flex; align-items: center; justify-content: center; cursor: default; padding: 0; }
   .f21-dot.done { background: var(--accent); border-color: var(--accent); color: #151009; font-weight: 600; cursor: pointer; }
   .f21-dot.now { border-color: var(--accent); color: var(--accent-hover); cursor: pointer; position: relative; }
-  .f21-dot.now::after { content: ""; position: absolute; inset: -3px; border-radius: 50%; border: 1px solid var(--accent);
-    animation: f21pulse 2.4s ease-out infinite; }   /* transform+opacity only — never animate box-shadow (it lagged real iPhones) */
-  @keyframes f21pulse { 0% { transform: scale(.85); opacity: .7; } 70%, 100% { transform: scale(1.3); opacity: 0; } }
+  /* a static gold ring, no animation: an infinite pulse kept a low-power iPhone painting forever (Leo's Forge lag) */
+  .f21-dot.now::after { content: ""; position: absolute; inset: -3px; border-radius: 50%; border: 1px solid var(--accent); opacity: .55; }
+  .f21-wrap { transform: translateZ(0); }
   .f21-teaser { opacity: .55; }
   .f21-teaser h3 { font-size: 16px; }
   .f21-err { padding: 40px 20px; text-align: center; color: var(--ink-soft); }
@@ -3583,6 +3602,7 @@
       </div>
       <textarea class="rw-body" id="rwBody" placeholder="Write into it…" autocapitalize="sentences" spellcheck="true"></textarea>
     </div>
+    <span class="rw-count" id="rwCount" aria-hidden="true"></span>
   </div>
 
   <!-- Days recall dashboard (read-only, glassy; reads existing stores only) -->
@@ -5229,6 +5249,17 @@
   // ---------- living background: a faint tint that shifts with the time of day ----------
   function setAmbient(hour) {
     var amb = $("ambient"); if (!amb) return;
+    // atmosphere mode: a full sky, not a whisper — vignette + time-of-day gradient (test toggle)
+    if (document.body.classList.contains("atmo")) {
+      var sky;
+      if (hour < 5)       sky = "linear-gradient(180deg, #0a0d1c 0%, #141a30 40%, #0a0a0b 100%)";
+      else if (hour < 9)  sky = "linear-gradient(180deg, #0d1120 0%, #242840 42%, rgba(158,98,42,0.5) 78%, #0a0a0b 100%)";
+      else if (hour < 17) sky = "linear-gradient(180deg, #131a24 0%, #1e2836 48%, #0a0a0b 100%)";
+      else if (hour < 21) sky = "linear-gradient(180deg, #141020 0%, #3a2230 45%, rgba(176,112,52,0.55) 76%, #0a0a0b 100%)";
+      else                sky = "linear-gradient(180deg, #0b0e1c 0%, #11142a 45%, #0a0a0b 100%)";
+      amb.style.background = "radial-gradient(ellipse at 50% 35%, transparent 55%, rgba(0,0,0,0.5)), " + sky;
+      return;
+    }
     var g;
     if (hour < 5)       g = "radial-gradient(120% 80% at 50% 0%, rgba(42,48,92,0.16), transparent 60%)";   // deep night
     else if (hour < 9)  g = "radial-gradient(125% 85% at 50% 102%, rgba(158,98,42,0.17), transparent 60%)"; // dawn, warm from below
@@ -6294,6 +6325,7 @@
     $("rwPrompt").textContent = c.prompts[jcardIdx(c)];
     var b = $("rwBody");
     b.value = db[c.data][todayKey] || "";
+    rwCountPaint();
     var s = $("rwStatus"); s.textContent = ""; s.classList.remove("ok");
     $("reflectWriter").hidden = false;
     document.body.classList.add("rw-open");
@@ -6398,10 +6430,15 @@
   wireSaveMini("eveningSave", "eveningSaveMsg", JCARDS.evening);
 
   // ----- reflection writer controls -----
+  function rwCountPaint() {
+    var el = $("rwCount"); if (!el) return;
+    var n = ($("rwBody").value.trim().match(/\S+/g) || []).length;
+    el.textContent = n ? n + (n === 1 ? " word" : " words") : "";
+  }
   $("rwBody").addEventListener("input", function () {
     if (!rwCard) return;
     db[rwCard.data][todayKey] = this.value;
-    save(); grow(this); rwStatusSaved();
+    save(); grow(this); rwStatusSaved(); rwCountPaint();
   });
   $("rwSwitch").addEventListener("click", function () {
     if (!rwCard) return;
@@ -7853,7 +7890,8 @@
            '<button onclick="t21DebugShift()">⏪ Make today’s progress “yesterday”</button>' +
            '<button onclick="t21DebugReset()">Reset The 21</button>' +
            '<button onclick="pushEnable()">🔔 Enable push (this device)</button>' +
-           '<button onclick="pushTest()">Send me a test in 10s</button></div></div>';
+           '<button onclick="pushTest()">Send me a test in 10s</button>' +
+           '<button onclick="atmoToggle()">🏞 Atmosphere test (time of day)</button></div></div>';
     }
     body.innerHTML = h;
   }
@@ -8473,6 +8511,20 @@
     }, function () { showToastMsg("Push function unreachable (deployed yet?).", 3600); });
   }
   window.pushEnable = pushEnable; window.pushTest = pushTest;
+
+  // ---- atmosphere test toggle (Oura-style time-of-day sky; dev box) ----
+  function atmoApply() {
+    var on = false; try { on = localStorage.getItem("tim_atmo") === "1"; } catch (e) {}
+    document.body.classList.toggle("atmo", on);
+    try { setAmbient(new Date().getHours()); } catch (e) {}
+  }
+  function atmoToggle() {
+    try { localStorage.setItem("tim_atmo", localStorage.getItem("tim_atmo") === "1" ? "0" : "1"); } catch (e) {}
+    atmoApply();
+    showToastMsg(document.body.classList.contains("atmo") ? "Atmosphere on — it follows the time of day. 🏞" : "Atmosphere off.", 2400);
+  }
+  window.atmoToggle = atmoToggle;
+  atmoApply();
 
   // ----- Bible chapter flipper + reading-chrome auto-hide -----
   function adjacentPassage(passage, dir) {
@@ -10347,6 +10399,24 @@
   $("daysClose").addEventListener("click", function () { closeDays(); buzz(6); });
   $("daysPrev").addEventListener("click", function () { var i = daysList.indexOf(daysKey); if (i > -1 && i < daysList.length - 1) { daysGo(daysList[i + 1]); playPage(); buzz(6); } });
   $("daysNext").addEventListener("click", function () { var i = daysList.indexOf(daysKey); if (i > 0) { daysGo(daysList[i - 1]); playPage(); buzz(6); } });
+  // swipe between days like pages: left → newer, right → older (same strict gesture as the Bible)
+  (function () {
+    var el = $("daysScroll"), sx = null, sy = 0, st = 0;
+    el.addEventListener("touchstart", function (e) {
+      if (e.touches.length !== 1) { sx = null; return; }
+      sx = e.touches[0].clientX; sy = e.touches[0].clientY; st = Date.now();
+    }, { passive: true });
+    el.addEventListener("touchend", function (e) {
+      if (sx == null || !daysKey) return;
+      var t = e.changedTouches[0], dx = t.clientX - sx, dy = t.clientY - sy;
+      sx = null;
+      if (Date.now() - st > 600) return;
+      if (Math.abs(dx) < 70 || Math.abs(dy) > Math.abs(dx) * 0.6) return;
+      var i = daysList.indexOf(daysKey);
+      if (dx < 0) { if (i > 0) { daysGo(daysList[i - 1]); playPage(); buzz(6); } }
+      else { if (i > -1 && i < daysList.length - 1) { daysGo(daysList[i + 1]); playPage(); buzz(6); } }
+    }, { passive: true });
+  })();
   $("daysBody").addEventListener("click", function (e) {
     var ntk = e.target.closest("[data-daynottracked]");
     if (ntk) {                                    // mark this whole day "not tracked" (with a confirm)
@@ -10512,7 +10582,7 @@
   });
   if (window.matchMedia) { try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { if (db.theme === "auto") applyTheme("auto"); }); } catch (e) {} }
 
-  var APP_VERSION = "v61.65-dev";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v61.66-dev";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
