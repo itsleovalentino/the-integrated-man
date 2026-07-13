@@ -1,6 +1,6 @@
 // The Integrated Man — offline service worker
 // Network-first for the page (so updates always show), cache-first for static assets.
-var CACHE = "tim-v61.66-dev";
+var CACHE = "tim-v61.67-dev";
 var PRECACHE = ["./", "index.html", "the21.json",
   "assets/orb-vitality.png?v=2", "assets/orb-mental.png?v=2", "assets/orb-faith.png?v=2",
   "assets/orb-vocation.png?v=2", "assets/orb-wealth.png?v=2", "assets/orb-environment.png?v=2",
@@ -26,10 +26,17 @@ self.addEventListener("fetch", function (e) {
 
   var isPage = req.mode === "navigate" || req.destination === "document";
   if (isPage) {
-    // network-first: always try the latest page; fall back to cache when offline
+    // network-first: always try the latest page; fall back to cache when offline.
+    // CACHE-POISONING GUARD: only overwrite the stored app shell with a real, OK response
+    // for the app root itself — never a /waitlist page, a /dev/ page, or a 404/error page.
     e.respondWith(
       fetch(req).then(function (res) {
-        try { var copy = res.clone(); caches.open(CACHE).then(function (c) { c.put("index.html", copy); }); } catch (err) {}
+        try {
+          var scopePath = new URL(self.registration.scope).pathname;
+          var reqPath = new URL(req.url).pathname;
+          var isAppRoot = reqPath === scopePath || reqPath === scopePath + "index.html";
+          if (res && res.ok && isAppRoot) { var copy = res.clone(); caches.open(CACHE).then(function (c) { c.put("index.html", copy); }); }
+        } catch (err) {}
         return res;
       }).catch(function () { return caches.match("index.html"); })
     );

@@ -154,6 +154,8 @@
   }
   @keyframes ambientBreathe { 0%,100% { opacity: 0.85; } 50% { opacity: 1; } }
   .wrap, .topbar { position: relative; z-index: 1; }
+  /* stop the full-screen background from painting when nobody's looking at Home (perf) */
+  body.f21-open .ambient, body.view-off .ambient { animation: none; }
   @media (prefers-reduced-motion: reduce) { .ambient { animation: none; } }
 
   body {
@@ -1171,9 +1173,10 @@
   .hab-flame.heat-0 { color: var(--ink-faint); background: rgba(255,255,255,0.06); }
   .hab-flame.heat-1 { color: #d3b06a; background: rgba(211,176,106,0.15); }
   /* past 6 days the fire is truly lit — visible glow + a slow breathing pulse */
-  .hab-flame.heat-2 { color: #e2a05f; background: rgba(226,160,95,0.19); box-shadow: 0 0 12px -2px rgba(226,160,95,0.65); animation: flameGlow2 2.6s ease-in-out infinite; }
-  .hab-flame.heat-3 { color: #ec8a52; background: rgba(236,138,82,0.22); box-shadow: 0 0 15px -2px rgba(236,138,82,0.75); animation: flameGlow3 2.4s ease-in-out infinite; }
-  .hab-flame.heat-4 { color: #f5683f; background: rgba(245,104,63,0.24); box-shadow: 0 0 18px -2px rgba(245,104,63,0.8); animation: flameGlow 2.2s ease-in-out infinite; }
+  /* static glow only — animating box-shadow kept low-power iPhones repainting forever (our own hard rule) */
+  .hab-flame.heat-2 { color: #e2a05f; background: rgba(226,160,95,0.19); box-shadow: 0 0 12px -2px rgba(226,160,95,0.55); }
+  .hab-flame.heat-3 { color: #ec8a52; background: rgba(236,138,82,0.22); box-shadow: 0 0 15px -2px rgba(236,138,82,0.6); }
+  .hab-flame.heat-4 { color: #f5683f; background: rgba(245,104,63,0.24); box-shadow: 0 0 18px -2px rgba(245,104,63,0.65); }
   :root[data-theme="light"] .hab-flame.heat-0 { background: rgba(0,0,0,0.05); }
   @keyframes flameGlow2 { 0%, 100% { box-shadow: 0 0 12px -2px rgba(226,160,95,0.65); } 50% { box-shadow: 0 0 16px -1px rgba(226,160,95,0.85); } }
   @keyframes flameGlow3 { 0%, 100% { box-shadow: 0 0 15px -2px rgba(236,138,82,0.75); } 50% { box-shadow: 0 0 20px -1px rgba(236,138,82,0.95); } }
@@ -1451,7 +1454,8 @@
   .panel { box-shadow: var(--shadow), inset 0 1px 0 rgba(255,255,255,0.04); }
   /* ---- atmosphere mode (Oura-style test): richer time-of-day sky + grain + floating panels ---- */
   body.atmo #ambient { opacity: 1; }
-  body.atmo::after { content: ""; position: fixed; inset: 0; z-index: 1; pointer-events: none; opacity: 0.05; mix-blend-mode: overlay;
+  /* grain WITHOUT mix-blend-mode — full-page blend compositing every frame was a major lag source */
+  body.atmo::after { content: ""; position: fixed; inset: 0; z-index: 1; pointer-events: none; opacity: 0.045;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E"); }
   body.atmo .panel { background: rgba(18, 18, 20, 0.62); -webkit-backdrop-filter: blur(18px) saturate(1.1); backdrop-filter: blur(18px) saturate(1.1); border-color: rgba(255,255,255,0.09); }
   @supports not (backdrop-filter: blur(1px)) { body.atmo .panel { background: rgba(18, 18, 20, 0.88); } }
@@ -2138,7 +2142,7 @@
     width: auto; max-width: calc(100% - 20px);
     border-radius: 999px; padding: 6px 9px;
     background: rgba(40,40,44,0.44);
-    -webkit-backdrop-filter: blur(34px) saturate(1.9); backdrop-filter: blur(34px) saturate(1.9);
+    -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px);   /* was blur(34px) saturate(1.9) — re-blurred every scroll frame on iOS */
     border: 1px solid rgba(255,255,255,0.12);
     box-shadow: 0 12px 38px -10px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.14), inset 0 -1px 0 rgba(0,0,0,0.22);
     transition: transform 0.34s cubic-bezier(.4,0,.2,1), opacity 0.34s ease, left 0.3s ease;
@@ -2171,7 +2175,7 @@
     display: flex; align-items: center; justify-content: center;
     color: var(--accent); cursor: pointer;
     background: rgba(40,40,44,0.5);
-    -webkit-backdrop-filter: blur(34px) saturate(1.9); backdrop-filter: blur(34px) saturate(1.9);
+    -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px);   /* was blur(34px) saturate(1.9) — re-blurred every scroll frame on iOS */
     border: 1px solid rgba(212,175,110,0.34);
     box-shadow: 0 12px 38px -10px rgba(0,0,0,0.7), 0 0 0 0 rgba(212,175,110,0.36), inset 0 1px 0 rgba(255,255,255,0.16);
     transition: transform 0.28s cubic-bezier(.34,1.56,.64,1), opacity 0.34s ease, background 0.2s ease, box-shadow 0.3s ease, border-color 0.2s ease;
@@ -4305,17 +4309,21 @@
   // the last known data-loss hole. Every memo now also backs up to <uid>/<ref> in Storage, and a
   // new device pulls it back down during rehydrate. Uploads are idempotent (tracked in db.audioUp).
   function audPath(refKey) { return myId() + "/" + refKey.replace(/[^a-zA-Z0-9._-]/g, "_"); }
+  var _audUploading = {};   // in-flight guard: stashAudio fires on every save() until the first upload lands
   function audioUpload(refKey, dataUrl) {
     try {
       if (!sb || !myId() || !isDataUrl(dataUrl)) return;
       db.audioUp = db.audioUp || {};
       if (db.audioUp[refKey] === dataUrl.length) return;   // this exact audio is already up
+      if (_audUploading[refKey] === dataUrl.length) return;   // this exact audio is uploading right now — don't re-send MBs on cellular
+      _audUploading[refKey] = dataUrl.length;
       fetch(dataUrl).then(function (r) { return r.blob(); }).then(function (blob) {
         return sb.storage.from("voice").upload(audPath(refKey), blob, { upsert: true, contentType: blob.type || "audio/webm" });
       }).then(function (res) {
+        delete _audUploading[refKey];
         if (res && !res.error) { db.audioUp[refKey] = dataUrl.length; save(); }
         else if (res && res.error) console.error("voice backup failed:", res.error);
-      }).catch(function (e) { console.error("voice backup failed:", e); });
+      }).catch(function (e) { delete _audUploading[refKey]; console.error("voice backup failed:", e); });
     } catch (e) {}
   }
   function audioDownload(refKey) {   // resolves a dataURL, or null
@@ -4372,8 +4380,20 @@
       })(key, blobs[key].length);
     }
   }
+  // The Bible cache is re-fetchable and was UNBOUNDED — a heavy reader made every save() (every
+  // Forge tap, every score) stringify hundreds of KB on the main thread, and would eventually blow
+  // the localStorage quota. Cap it to the most-recent chapters so saves stay cheap and bounded.
+  function pruneBibleCache() {
+    try {
+      var bc = db.bibleCache; if (!bc) return;
+      var ks = Object.keys(bc);
+      if (ks.length <= 24) return;
+      ks.slice(0, ks.length - 24).forEach(function (k) { delete bc[k]; });   // insertion order = oldest first
+    } catch (e) {}
+  }
   // THE single durable write. Text always fits (audio stripped out), so it can't fail on quota.
   function writeLocal() {
+    pruneBibleCache();
     var sp = splitAudio(db);
     var ok = false;
     try { localStorage.setItem(KEY, JSON.stringify(sp.clean)); ok = true; } catch (e) { ok = false; }
@@ -6319,7 +6339,11 @@
     clearTimeout(s._t); s._t = setTimeout(function () { s.classList.remove("ok"); s.textContent = ""; }, 1500);
   }
   function openReflectWriter(c) {
-    if (!$("reflectWriter").hidden) return;            // already open
+    if (!$("reflectWriter").hidden) {                  // already open
+      if (rwCard && rwCard !== c) {                    // switching cards → commit the first to the right day, then rebind
+        db[rwCard.data][todayKey] = $("rwBody").value; save(); syncReflectionNote(rwCard); jcardLoad(rwCard);
+      } else { return; }                               // same card already open
+    }
     rwCard = c;
     $("rwEyebrow").textContent = (c.data === "evening") ? "End of Day" : "Reflection";
     $("rwPrompt").textContent = c.prompts[jcardIdx(c)];
@@ -7257,13 +7281,14 @@
     if (myCov && myCov.signed_day < weekKey) {
       // last week, on the record: how every brother finished before the new week begins
       var recap = circleState.members.map(function (m) {
+        var cv = circleState.covenants[m.user_id];
+        if (!cv) return "";   // a man with no covenant last week gets no scored row (no bogus 0/7)
         var ch = circleState.checks[m.user_id] || {}, n = 0;
         days.forEach(function (dk) {
           var p = dk.split("-"); var prev = keyOf(new Date(+p[0], +p[1] - 1, +p[2] - 7));
           if (ch[prev]) n++;
         });
-        var cv = circleState.covenants[m.user_id];
-        var target = (cv && +cv.freq) ? Math.min(+cv.freq, 7) : 7;
+        var target = (+cv.freq) ? Math.min(+cv.freq, 7) : 7;
         var nm = escapeHtml(bestName([m.member_name, m.name, m.display_name]) || "A brother");
         return '<div class="cov-recap-row"><span>' + nm + '</span><b class="' + (n >= target ? "hit" : "") + '">' + n + "/" + target + "</b></div>";
       }).join("");
@@ -7684,6 +7709,7 @@
   var currentView = "home";
   function setView(name) {
     currentView = name;
+    document.body.classList.toggle("view-off", name !== "home");   // pause the Home background while it's hidden (perf)
     var wrap = document.querySelector(".wrap"); if (wrap) wrap.hidden = (name !== "home");
     $("journalView").hidden = (name !== "journal");
     if (name !== "journal") { document.body.classList.remove("j-notes-wide"); if (journalWide() && !$("writerView").hidden) $("writerView").hidden = true; }
@@ -7724,15 +7750,17 @@
   // Content lives in the21.json (generated from THE-21.md — the scripts are the source of truth).
   // Progress lives in db.the21 and only ever GROWS (see mergeRecover): completions are grow-only,
   // the vision letter is guarded content, and everything rides the same protected save/sync path.
-  var T21 = null, T21_LOADING = false;
+  var T21 = null, T21_LOADING = false, T21_CBS = [];
   function t21Load(cb) {
     if (T21) { if (cb) cb(); return; }
+    if (cb) T21_CBS.push(cb);         // queue every waiter — a second caller mid-load no longer gets dropped
     if (T21_LOADING) return;
     T21_LOADING = true;
     fetch("the21.json").then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (j) {
-      T21 = j; T21_LOADING = false; if (cb) cb();
+      T21 = j; T21_LOADING = false;
+      var cbs = T21_CBS; T21_CBS = []; cbs.forEach(function (fn) { try { fn(); } catch (e) {} });
     }).catch(function () {
-      T21_LOADING = false;
+      T21_LOADING = false; T21_CBS = [];
       var b = $("forgeBody"); if (b && !T21) b.innerHTML = '<div class="f21-err">Couldn’t load The 21. Check your connection and reopen the Forge.</div>';
     });
   }
@@ -8544,6 +8572,7 @@
     if (n) n.disabled = !adjacentPassage(pass, 1);
   }
   function goChapter(dir) {
+    if (typeof closeVerseMenu === "function") closeVerseMenu();   // don't leave a verse menu anchored to the old chapter
     var next = adjacentPassage(db.lastPassage || "John 1", dir);
     if (!next) return;
     showReadingChrome(); openBible(next); buzz(8);
@@ -10582,7 +10611,7 @@
   });
   if (window.matchMedia) { try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { if (db.theme === "auto") applyTheme("auto"); }); } catch (e) {} }
 
-  var APP_VERSION = "v61.66-dev";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v61.67-dev";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
@@ -11541,10 +11570,18 @@
         confirmDialog("Sign out? You'll be fully signed out and need to sign back in to reach your journal.", "Sign out", function () {
           if (pushTimer) { clearTimeout(pushTimer); pushTimer = null; }
           cloudPush();              // flush the latest to the cloud first
-          deliberateSignOut = true; // only a chosen sign-out may wipe this device
-          // give the flush a beat to land — a day completed seconds ago must reach the cloud
-          // before the SIGNED_OUT handler wipes this device and returns to the gate
-          setTimeout(function () { sb.auth.signOut(); }, 900);
+          // WAIT for the flush to actually land before wiping the device. Signing out on weak wifi
+          // used to wipe unsynced edits the instant signOut() fired. Now we poll needsPush; if it
+          // won't clear (bad connection), we WARN before destroying anything on this device.
+          var waited = 0;
+          (function waitFlush() {
+            if (!needsPush) { deliberateSignOut = true; sb.auth.signOut(); return; }   // cloud confirmed → safe to wipe
+            waited += 400;
+            if (waited < 4000) { setTimeout(waitFlush, 400); return; }
+            confirmDialog("Your latest changes haven't reached the cloud yet — your connection looks weak. Sign out anyway (you may lose the most recent edits on this device), or stay signed in?", "Sign out anyway", function () {
+              deliberateSignOut = true; sb.auth.signOut();
+            });
+          })();
         });
       });
     } else {
