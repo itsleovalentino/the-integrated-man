@@ -2472,6 +2472,13 @@
   .cov-invite-btn { flex: 1; padding: 12px; border-radius: 11px; border: 1px solid var(--field-edge); background: var(--field); color: var(--ink); font-family: inherit; font-size: 13.5px; cursor: pointer; }
   .cov-invite-btn.primary { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
   .cov-invite-msg { margin-top: 9px; font-size: 12.5px; color: var(--ink-soft); min-height: 15px; }
+  /* last-week recap inside the renewal prompt */
+  .cov-recap { margin: 12px 0 4px; border: 1px solid var(--line); border-radius: 14px; padding: 10px 14px; }
+  .cov-recap-t { font-size: 9.5px; letter-spacing: .22em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 4px; }
+  .cov-recap-row { display: flex; justify-content: space-between; align-items: baseline; padding: 5px 0; border-bottom: 1px solid var(--line); font-size: 13px; color: var(--ink-soft); }
+  .cov-recap-row:last-child { border-bottom: none; }
+  .cov-recap-row b { font-weight: 600; color: var(--ink-high); }
+  .cov-recap-row b.hit { color: var(--accent); }
   /* renewal prompt */
   .cov-renew { border: 1px solid #c2a86a55; border-radius: 16px; padding: 18px; background: rgba(194,168,106,0.06); margin-bottom: 22px; text-align: center; }
   .cov-renew-t { font-size: 18px; color: var(--ink-high); font-weight: 500; }
@@ -4135,10 +4142,6 @@
       <svg viewBox="0 0 24 24"><path d="M4 11.5 12 5l8 6.5"/><path d="M5.5 10.5V19a1 1 0 0 0 1 1H10v-5h4v5h3.5a1 1 0 0 0 1-1v-8.5"/></svg>
       <span>Home</span>
     </button>
-    <button class="nav-btn" id="nav_journal">
-      <svg viewBox="0 0 24 24"><path d="M4 20.5l4.5-1L19 9l-3.5-3.5L5 16z"/><line x1="14" y1="7" x2="17.5" y2="10.5"/></svg>
-      <span>Journal</span>
-    </button>
     <button class="nav-btn" id="nav_bible">
       <svg viewBox="0 0 24 24"><path d="M5 4a2 2 0 0 1 2-2h11v18H7a2 2 0 0 0-2 2z"/><path d="M5 20a2 2 0 0 1 2-2h11"/><line x1="12" y1="6" x2="12" y2="13"/><line x1="9" y1="9" x2="15" y2="9"/></svg>
       <span>Bible</span>
@@ -4152,6 +4155,10 @@
       <svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.3"/><path d="M3.5 19.5a5.5 5.5 0 0 1 11 0"/><path d="M15.5 14.5a4.6 4.6 0 0 1 5 5"/></svg>
       <span>Fellowship</span>
       <span class="nav-badge" id="navFellowshipBadge"></span>
+    </button>
+    <button class="nav-btn" id="nav_journal">
+      <svg viewBox="0 0 24 24"><path d="M4 20.5l4.5-1L19 9l-3.5-3.5L5 16z"/><line x1="14" y1="7" x2="17.5" y2="10.5"/></svg>
+      <span>Journal</span>
     </button>
   </nav>
 
@@ -6278,10 +6285,24 @@
     openWriterEdit(note);
   }
   function jcardAnother(c) {
-    jcardSwitch(c); // move to a fresh prompt
+    // A fresh page per prompt (Leo). The finished answer keeps living as its own note
+    // in the journal (titled with the prompt it answered); the card resets clean for
+    // the new question. Nothing is combined, nothing is lost.
     var t = $(c.textId);
-    if (t.value.trim()) t.value = t.value.replace(/\s+$/, "") + "\n\n— " + c.prompts[jcardIdx(c)] + " —\n";
-    t.dispatchEvent(new Event("input", { bubbles: true })); // persist the appended header
+    if (t.value.trim()) {
+      var old = reflectionNote(c.data, todayKey);
+      if (old) {
+        old.refCard = null;                       // detach: it's a finished page now, a normal journal note
+        old.edited = new Date().toISOString();
+        save(); if (typeof syncEntry === "function") syncEntry(old);
+      } else {
+        var pr = c.prompts[jcardIdx(c)];
+        addThought({ text: pr + "\n" + t.value.trim(), title: pr, dateKey: todayKey });
+      }
+      db[c.data][todayKey] = ""; save();
+      t.value = ""; grow(t);
+    }
+    jcardSwitch(c); // move to a fresh prompt, on a fresh page
     jcardReopen(c);
   }
   Object.keys(JCARDS).forEach(function (k) {
@@ -7118,9 +7139,10 @@
       '<div class="cov-row-name"><span class="rn">' + escapeHtml(name) + '</span><span class="cov-row-cad">' + covCadenceLabel(freq) + '</span></div>' +
       '<div class="cov-row-vow" title="' + escapeHtml(cov.body) + '">“' + escapeHtml(cov.body) + '”</div>' +
       '<div class="cov-week">' + week + (prog ? '<span class="cov-week-prog">' + prog + '</span>' : "") + '</div></div>';
-    // right-side control
+    // right-side control. My own row keeps the Today tap even while renewing —
+    // Saturday morning's discipline shouldn't have to wait for Saturday's paperwork.
     var right;
-    if (renewing) {
+    if (renewing && !mine) {
       right = '<span class="cov-state-pill renewing">renewing</span>';
     } else if (mine) {
       right = '<div class="cov-row-right"><button class="cov-tap' + (doneToday ? " done" : "") + '" data-act="' + (doneToday ? "unmarkToday" : "markToday") + '" aria-label="Mark today">' + CHECK_SVG + '</button><span class="cov-tap-cap">Today</span></div>';
@@ -7141,7 +7163,20 @@
     html += focusCardHtml(c, isLeader);
     var myCov = circleState.covenants[uid];
     if (myCov && myCov.signed_day < weekKey) {
+      // last week, on the record: how every brother finished before the new week begins
+      var recap = circleState.members.map(function (m) {
+        var ch = circleState.checks[m.user_id] || {}, n = 0;
+        days.forEach(function (dk) {
+          var p = dk.split("-"); var prev = keyOf(new Date(+p[0], +p[1] - 1, +p[2] - 7));
+          if (ch[prev]) n++;
+        });
+        var cv = circleState.covenants[m.user_id];
+        var target = (cv && +cv.freq) ? Math.min(+cv.freq, 7) : 7;
+        var nm = escapeHtml(bestName([m.member_name, m.name, m.display_name]) || "A brother");
+        return '<div class="cov-recap-row"><span>' + nm + '</span><b class="' + (n >= target ? "hit" : "") + '">' + n + "/" + target + "</b></div>";
+      }).join("");
       html += '<div class="cov-renew"><div class="cov-renew-t serif">A new week.</div>' +
+        '<div class="cov-recap"><div class="cov-recap-t">Last week, on the record</div>' + recap + "</div>" +
         '<div class="cov-renew-s">“' + escapeHtml(myCov.body) + '”</div>' +
         '<div class="cov-renew-actions"><button class="cov-renew-btn primary" data-act="renewContinue">Continue this covenant</button>' +
         '<button class="cov-renew-btn ghost" data-act="renewNew">Set a new covenant</button></div></div>';
@@ -7450,7 +7485,7 @@
     else if (act === "unmarkToday") { setCheck(false, el); }
     else if (act === "gotBack") { sendNudge(uid, "back"); showToastMsg("He’ll know you’re with him."); }
     else if (act === "fire") { sendNudge(uid, "fire"); showToastMsg("You celebrated him. 🔥"); }
-    else if (act === "renewContinue") { var pc = circleState.covenants[myId()]; if (pc) { doSign(pc.body, "continue", pc.freq); } }
+    else if (act === "renewContinue") { var pc = circleState.covenants[myId()]; if (pc && confirm("Continue this covenant for another week?")) { doSign(pc.body, "continue", pc.freq); } }
     else if (act === "renewNew") { openCeremony("new"); }
     else if (act === "editFocus") { openFocusEdit(); }
     else if (act === "saveFocus") { saveFocusEdit(); }
@@ -8359,6 +8394,25 @@
   }
   $("chapPrev").addEventListener("click", function () { goChapter(-1); });
   $("chapNext").addEventListener("click", function () { goChapter(1); });
+  // swipe the page like a book: left → next chapter, right → previous.
+  // Deliberately strict (fast + decisively horizontal + no text selected) so normal
+  // vertical reading scrolls and verse long-presses never trigger a page turn.
+  (function () {
+    var bv = $("bibleView"), sx = null, sy = 0, st = 0;
+    bv.addEventListener("touchstart", function (e) {
+      if (e.touches.length !== 1) { sx = null; return; }
+      sx = e.touches[0].clientX; sy = e.touches[0].clientY; st = Date.now();
+    }, { passive: true });
+    bv.addEventListener("touchend", function (e) {
+      if (sx == null) return;
+      var t = e.changedTouches[0], dx = t.clientX - sx, dy = t.clientY - sy;
+      sx = null;
+      if (Date.now() - st > 600) return;                                  // a swipe is quick
+      if (Math.abs(dx) < 70 || Math.abs(dy) > Math.abs(dx) * 0.6) return; // decisive and horizontal
+      try { if (String(window.getSelection() || "").length) return; } catch (err) {}
+      goChapter(dx < 0 ? 1 : -1);
+    }, { passive: true });
+  })();
   function hideReadingChrome() { if (currentView !== "bible") return; $("bottomNav").classList.add("nav-off"); $("journalBubble").classList.add("nav-off"); }
   function showReadingChrome() { $("bottomNav").classList.remove("nav-off"); $("journalBubble").classList.remove("nav-off"); }
   (function () {
@@ -9272,8 +9326,13 @@
   }
   function maybeNudge() {
     if (appGated()) return; // never surface over the sign-in gate / setup / lock
+    // a memory loses its weight when it shows every day — surface one every few days at most
+    if (db.lastMemoryDay) {
+      var gapMs = new Date(todayKey) - new Date(db.lastMemoryDay);
+      if (gapMs < 3 * 86400000) return;
+    }
     var mem = findMemory();
-    if (mem) showToast("memory", mem);   // gently resurface a past reflection ("a week ago…") — no capture nudge
+    if (mem) { db.lastMemoryDay = todayKey; save(); showToast("memory", mem); }   // gently resurface a past reflection ("a week ago…")
   }
 
 
@@ -10349,7 +10408,7 @@
   });
   if (window.matchMedia) { try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { if (db.theme === "auto") applyTheme("auto"); }); } catch (e) {} }
 
-  var APP_VERSION = "v61.63-dev";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v61.64-dev";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
