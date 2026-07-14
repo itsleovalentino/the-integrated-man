@@ -2382,6 +2382,9 @@
   .f21-ra-body { display: none; margin-top: 14px; animation: f21raIn .3s ease; }
   .f21-ra.open .f21-ra-body { display: block; }
   .f21-ra-body .f21-p { font-size: 14px; line-height: 1.7; }   /* a touch smaller/comfier as secondary read */
+  /* sentence-level "follow along": the sentence Leo is on lights gold + scrolls into view (timing estimated from audio length) */
+  .f21-ra-body .f21-s { transition: color .45s ease, text-shadow .45s ease; }
+  .f21-ra-body .f21-s.on { color: var(--accent); text-shadow: 0 0 18px rgba(203,178,126,.28); }
   @keyframes f21raIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
   .f21-speed { display: flex; gap: 8px; justify-content: flex-end; margin-top: 8px; }
   .f21-speed button { font: inherit; font-size: 11px; background: var(--field); border: 1px solid var(--field-edge); color: var(--ink-soft);
@@ -7976,6 +7979,16 @@
     if (/^\*\*[^*]+\*\*$/.test(p.trim())) return '<div class="f21-eyebrow" style="margin-top:24px">' + t21Esc(p.replace(/\*/g, "")) + "</div>";
     return '<p class="f21-p' + (lede ? " f21-lede" : "") + '">' + h + "</p>";
   }
+  function t21RichKara(p) {   // read-along transcript: same markdown, but each sentence is its own span so the karaoke can light it up
+    if (/^\*\*[^*]+\*\*$/.test(p.trim())) return '<div class="f21-eyebrow" style="margin-top:24px">' + t21Esc(p.replace(/\*/g, "")) + "</div>";
+    var sents = p.match(/[^.!?…]+[.!?…]+["'”’)\]]*|[^.!?…]+$/g) || [p];
+    var inner = sents.map(function (raw) {
+      var t = raw.trim(); if (!t) return "";
+      var html = t21Esc(t).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>").replace(/\*(.+?)\*/g, "<i>$1</i>");
+      return '<span class="f21-s">' + html + "</span>";
+    }).filter(Boolean).join(" ");
+    return '<p class="f21-p">' + inner + "</p>";
+  }
   function t21DevBox() {
     if (!(window.TIM_DEV || location.hostname === "localhost" || location.hostname === "127.0.0.1")) return "";
     return '<div class="f21-debug"><span class="f21-tag">Time machine (dev only)</span><div>' +
@@ -8317,13 +8330,70 @@
     arr.forEach(function (a, i) { h += "<div>" + t21Esc(a) + '<button type="button" onclick="t21RmAffirm(' + i + ')" aria-label="Remove">×</button></div>'; });
     return h;
   }
+  // SENTENCE-LEVEL KARAOKE: as the audio plays, light the sentence Leo is on and scroll it into view.
+  // No forced-alignment data — timing is ESTIMATED by weighting each sentence by its length across the
+  // audio's true duration. It tracks the paragraph/sentence he's on (a few seconds of drift on long pauses),
+  // which is the honest, no-pipeline follow-along. Only runs while "Read along" is open.
+  var t21KaraSync = null;   // set by t21WireKaraoke; lets the toggle jump the highlight when opened mid-play
+  function t21WireKaraoke() {
+    t21KaraSync = null;
+    var au = $("f21Audio"), ra = $("f21RA");
+    if (!au || !ra) return;
+    var spans = [].slice.call(ra.querySelectorAll(".f21-s"));
+    if (!spans.length) return;
+    var scroller = $("f21Session") && $("f21Session").querySelector(".f21-sess-scroll");
+    var segs = null, cur = -1, userScrollAt = 0;
+    function build() {
+      var dur = au.duration;
+      if (!dur || !isFinite(dur) || dur <= 0) { segs = null; return; }
+      var weights = spans.map(function (s) { return Math.max(6, (s.textContent || "").trim().length); });
+      var total = weights.reduce(function (a, b) { return a + b; }, 0) || 1;
+      segs = []; var acc = 0;
+      for (var i = 0; i < spans.length; i++) {
+        var start = acc / total * dur; acc += weights[i];
+        segs.push({ start: start, end: acc / total * dur });
+      }
+    }
+    function highlight(i, force) {
+      if (i === cur) return;
+      if (cur >= 0 && spans[cur]) spans[cur].classList.remove("on");
+      cur = i;
+      if (i < 0 || !spans[i]) return;
+      spans[i].classList.add("on");
+      if (force || Date.now() - userScrollAt > 3500) {
+        try { spans[i].scrollIntoView({ behavior: "smooth", block: "center" }); }
+        catch (e) { try { spans[i].scrollIntoView(); } catch (e2) {} }
+      }
+    }
+    function sync(force) {
+      if (!segs) { build(); if (!segs) return; }
+      if (!ra.classList.contains("open")) return;   // only follow along while the transcript is showing
+      var t = au.currentTime, i = cur;
+      if (i < 0 || !segs[i] || t < segs[i].start || t >= segs[i].end) {
+        i = -1;
+        for (var k = 0; k < segs.length; k++) { if (t >= segs[k].start && t < segs[k].end) { i = k; break; } }
+        if (i < 0 && segs.length && t >= segs[segs.length - 1].end) i = segs.length - 1;
+      }
+      if (i >= 0) highlight(i, force);
+    }
+    t21KaraSync = sync;
+    au.addEventListener("loadedmetadata", build);
+    au.addEventListener("timeupdate", function () { sync(false); });
+    au.addEventListener("seeking", function () { cur = -1; });
+    if (scroller) scroller.addEventListener("scroll", function () { userScrollAt = Date.now(); }, { passive: true });
+    if (au.readyState >= 1) build();
+  }
   function t21ToggleRA() {
     var ra = $("f21RA"); if (!ra) return;
     var open = !ra.classList.contains("open");
     ra.classList.toggle("open", open);
     db.the21 = db.the21 || {}; db.the21.readAlong = open; save();   // remember the preference
     buzz(6);
-    if (open) { var b = ra.querySelector(".f21-ra-body"); if (b) setTimeout(function () { b.scrollIntoView({ behavior: "smooth", block: "nearest" }); }, 60); }
+    if (open) {
+      var au = $("f21Audio");
+      if (t21KaraSync && au && au.currentTime > 0.5) setTimeout(function () { t21KaraSync(true); }, 60);   // jump to where his voice is
+      else { var b = ra.querySelector(".f21-ra-body"); if (b) setTimeout(function () { b.scrollIntoView({ behavior: "smooth", block: "nearest" }); }, 60); }
+    }
   }
   function t21ToggleAffirm(btn) {
     var a = btn.getAttribute("data-a");
@@ -8387,7 +8457,7 @@
       h += '<div class="f21-eyebrow"' + (day === 0 ? ' style="text-align:center"' : "") + ">" + (day === 0 ? "The threshold" : "Today’s session") + "</div><h2" + (day === 0 ? ' style="text-align:center"' : "") + ">" + t21Esc(t21Title(d)) + "</h2>";
       // the transcript (read-along)
       var paraHtml = "";
-      d.paras.forEach(function (p, pi) { paraHtml += t21Rich(p, pi === 0 && !d.audio); });
+      d.paras.forEach(function (p, pi) { paraHtml += d.audio ? t21RichKara(p) : t21Rich(p, pi === 0); });
       if (day > 0) paraHtml += '<div class="f21-seal" style="margin-top:18px">— Leo</div>';
       if (d.audio) {
         // AUDIO-FIRST: player up top, transcript COLLAPSED behind a toggle so the action is
@@ -8421,6 +8491,7 @@
         h += '<div class="f21-seal" style="text-align:center;margin-top:20px">Completed ' + t21Esc((s.done && s.done[day]) || "") + "</div>";
       }
       $("f21SessBody").innerHTML = h;
+      if (d.audio) t21WireKaraoke();
       if (d.widget === "mirror" || d.widget === "mirror2") t21WireScorer(d.widget === "mirror2" ? function () { var de = $("f21Delta"); if (de) de.innerHTML = t21DeltaHtml(); } : null);
       var lt = $("f21Letter");
       if (lt) lt.addEventListener("input", function () {
@@ -10788,7 +10859,7 @@
   });
   if (window.matchMedia) { try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { if (db.theme === "auto") applyTheme("auto"); }); } catch (e) {} }
 
-  var APP_VERSION = "v61.77-dev";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v61.78-dev";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------

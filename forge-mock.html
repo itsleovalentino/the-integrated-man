@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>The Forge · concept simulation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..600;1,9..144,300..500&family=Cormorant+Garamond:ital,wght@1,500&family=Spline+Sans+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0a0b; --panel:#121214; --panel2:#17171a; --edge:#242426;
+    --ink:#eae8e1; --ink-high:#f1efe9; --ink-soft:#a2a099; --ink-faint:#807e78;
+    --gold:#cbb27e; --gold-bright:#e0cb9c; --gold-soft:rgba(203,178,126,.12); --gold-line:rgba(203,178,126,.3);
+    --line:#1b1b1d; --green:#8aa85a; --flame:#e08a3c;
+    --display:'Fraunces',Georgia,serif; --scripture:'Cormorant Garamond',Georgia,serif;
+    --mono:'Spline Sans Mono',monospace; --sans:'Inter',-apple-system,sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:#050506;color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased;
+    min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:26px 12px}
+  .sim-label{font-family:var(--mono);font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:14px}
+  .sim-label b{color:var(--gold);font-weight:500}
+
+  /* phone frame */
+  .phone{
+    width:min(400px,96vw);height:min(830px,88vh);border-radius:52px;background:#000;
+    border:1px solid rgba(255,255,255,.15);box-shadow:0 40px 110px rgba(0,0,0,.7),0 0 0 10px rgba(255,255,255,.04);
+    padding:12px;position:relative;
+  }
+  .phone::before{content:"";position:absolute;top:12px;left:50%;transform:translateX(-50%);
+    width:32%;height:26px;background:#000;border-radius:0 0 16px 16px;z-index:30}
+  .app{width:100%;height:100%;border-radius:41px;overflow:hidden;background:var(--bg);position:relative;display:flex;flex-direction:column}
+
+  .screen{position:absolute;inset:0;display:none;flex-direction:column;background:var(--bg)}
+  .screen.on{display:flex}
+  .scroll{flex:1;overflow-y:auto;padding:64px 18px 96px;scrollbar-width:none}
+  .scroll::-webkit-scrollbar{display:none}
+
+  /* ============ header ============ */
+  .hdr{padding:0 2px 18px}
+  .hdr .eyebrow{font-family:var(--mono);font-size:9.5px;letter-spacing:.3em;text-transform:uppercase;color:var(--gold)}
+  .hdr h1{font-family:var(--display);font-weight:400;font-size:34px;letter-spacing:-.01em;color:var(--ink-high);margin-top:6px}
+  .hdr p{font-family:var(--scripture);font-style:italic;font-size:16px;color:var(--ink-soft);margin-top:4px}
+
+  .card{background:var(--panel);border:1px solid var(--edge);border-radius:22px;padding:18px;margin-bottom:14px;position:relative}
+  .card .tag{font-family:var(--mono);font-size:9px;letter-spacing:.26em;text-transform:uppercase;color:var(--gold)}
+  .card h3{font-family:var(--display);font-weight:420;font-size:21px;color:var(--ink-high);margin-top:7px;letter-spacing:-.01em}
+  .card .meta{font-size:12.5px;color:var(--ink-soft);margin-top:5px;line-height:1.55}
+
+  /* active plan */
+  .plan-hero{background:linear-gradient(145deg,#191713,#121214 60%);border-color:var(--gold-line)}
+  .pbar{height:5px;border-radius:10px;background:#232324;margin-top:14px;overflow:hidden}
+  .pbar i{display:block;height:100%;width:33%;border-radius:10px;background:linear-gradient(90deg,var(--gold),var(--gold-bright));transition:width .8s cubic-bezier(.2,.8,.2,1)}
+  .pdays{display:flex;justify-content:space-between;margin-top:7px;font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;color:var(--ink-faint)}
+  .btn{display:block;width:100%;margin-top:15px;font-family:var(--sans);font-size:14px;font-weight:600;color:#151009;
+    background:linear-gradient(135deg,var(--gold-bright),var(--gold));border:none;border-radius:100px;padding:14px;cursor:pointer;
+    box-shadow:0 6px 22px rgba(203,178,126,.2);transition:transform .15s}
+  .btn:active{transform:scale(.97)}
+  .btn.ghost{background:none;border:1px solid var(--gold-line);color:var(--gold-bright);box-shadow:none}
+  .btn.done{background:var(--panel2);color:var(--green);border:1px solid #2a3320;box-shadow:none;pointer-events:none}
+
+  .row2{display:flex;gap:12px;align-items:center;justify-content:space-between}
+  .chip{font-family:var(--mono);font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);
+    background:var(--gold-soft);border:1px solid var(--gold-line);border-radius:100px;padding:6px 12px;white-space:nowrap}
+  .chip.dim{color:var(--ink-faint);background:none;border-color:var(--edge)}
+
+  /* plans shelf */
+  .shelf{display:flex;gap:11px;overflow-x:auto;margin:4px -18px 14px;padding:2px 18px 6px;scrollbar-width:none}
+  .shelf::-webkit-scrollbar{display:none}
+  .pcard{flex:none;width:150px;border-radius:18px;padding:14px;background:var(--panel);border:1px solid var(--edge)}
+  .pcard.rec{border-color:var(--gold-line);background:linear-gradient(160deg,#1a1712,var(--panel) 70%)}
+  .pcard .pc-dot{width:9px;height:9px;border-radius:50%;margin-bottom:10px;box-shadow:0 0 9px var(--c)}
+  .pcard h4{font-family:var(--display);font-weight:420;font-size:15.5px;color:var(--ink-high);line-height:1.2}
+  .pcard span{display:block;font-family:var(--mono);font-size:8.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-faint);margin-top:7px;line-height:1.7}
+  .pcard .rec-tag{color:var(--gold);}
+
+  .sec-title{font-family:var(--mono);font-size:9.5px;letter-spacing:.28em;text-transform:uppercase;color:var(--ink-faint);margin:22px 2px 10px}
+
+  /* gatherings */
+  .gath{display:flex;align-items:center;gap:13px;padding:13px 0;border-bottom:1px solid var(--line)}
+  .gath:last-child{border-bottom:none}
+  .gath .date{flex:none;width:46px;text-align:center;background:var(--panel2);border:1px solid var(--edge);border-radius:12px;padding:7px 0}
+  .gath .date b{display:block;font-family:var(--display);font-size:17px;color:var(--ink-high);font-weight:500}
+  .gath .date span{font-family:var(--mono);font-size:8px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold)}
+  .gath .g-info{flex:1;min-width:0}
+  .gath .g-info h4{font-size:13.5px;font-weight:600;color:var(--ink)}
+  .gath .g-info p{font-size:11px;color:var(--ink-faint);margin-top:2px}
+  .gath button{flex:none;font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;
+    background:none;border:1px solid var(--gold-line);color:var(--gold-bright);border-radius:100px;padding:8px 13px;cursor:pointer}
+  .gath button.in{border-color:#2a3320;color:var(--green)}
+
+  /* ============ session screen ============ */
+  .top{position:absolute;top:0;left:0;right:0;z-index:20;display:flex;align-items:center;gap:10px;
+    padding:50px 16px 10px;background:linear-gradient(var(--bg) 55%,transparent)}
+  .back{background:none;border:none;color:var(--ink-soft);cursor:pointer;font-size:17px;padding:6px 8px}
+  .top span{font-family:var(--mono);font-size:9.5px;letter-spacing:.24em;text-transform:uppercase;color:var(--gold)}
+  .sess-day{font-family:var(--mono);font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:var(--gold);margin-top:8px}
+  .sess h2{font-family:var(--display);font-weight:400;font-size:31px;line-height:1.1;letter-spacing:-.01em;color:var(--ink-high);margin-top:10px}
+  .sess .verse{font-family:var(--scripture);font-style:italic;font-size:16.5px;line-height:1.5;color:var(--ink-soft);margin-top:12px}
+  .sess .verse cite{display:block;font-family:var(--mono);font-style:normal;font-size:8.5px;letter-spacing:.24em;text-transform:uppercase;color:var(--gold);margin-top:5px}
+
+  .player{margin-top:20px;background:var(--panel);border:1px solid var(--edge);border-radius:20px;padding:16px;display:flex;gap:14px;align-items:center}
+  .play{flex:none;width:48px;height:48px;border-radius:50%;border:none;cursor:pointer;
+    background:linear-gradient(135deg,var(--gold-bright),var(--gold));color:#151009;font-size:16px;display:flex;align-items:center;justify-content:center}
+  .wave{flex:1;display:flex;align-items:center;gap:2.5px;height:34px}
+  .wave i{flex:1;background:#2c2c2f;border-radius:3px;height:calc(var(--h)*1%);transition:background .3s}
+  .wave i.lit{background:var(--gold)}
+  .player .t{flex:none;font-family:var(--mono);font-size:9.5px;color:var(--ink-faint)}
+  .player-cap{font-family:var(--mono);font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-faint);margin-top:9px;text-align:center}
+
+  .charge{margin-top:18px;font-size:14px;line-height:1.75;color:var(--ink-soft)}
+  .charge b{color:var(--ink)}
+
+  .action{margin-top:20px;background:linear-gradient(150deg,#191713,var(--panel) 65%);border:1px solid var(--gold-line);border-radius:20px;padding:17px}
+  .action .tag{font-family:var(--mono);font-size:9px;letter-spacing:.26em;text-transform:uppercase;color:var(--gold)}
+  .action p{font-size:14.5px;font-weight:500;color:var(--ink-high);line-height:1.6;margin-top:9px}
+  .action .sub{font-size:11.5px;font-weight:400;color:var(--ink-faint);margin-top:7px}
+
+  /* ============ review screen ============ */
+  .steps{display:flex;gap:5px;margin-top:14px}
+  .steps i{flex:1;height:3px;border-radius:5px;background:#232324}
+  .steps i.on{background:var(--gold)}
+  .rv-step{display:none}
+  .rv-step.on{display:block}
+  .pill-week{margin-top:18px}
+  .pw{display:flex;align-items:center;gap:10px;padding:8px 0}
+  .pw span{flex:none;width:92px;font-family:var(--mono);font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-soft);display:flex;align-items:center;gap:7px}
+  .pw span::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--c);box-shadow:0 0 7px var(--c)}
+  .pw .bar{flex:1;height:5px;border-radius:8px;background:#232324;overflow:hidden}
+  .pw .bar i{display:block;height:100%;width:var(--w);background:var(--c);border-radius:8px;opacity:.85}
+  .pw b{flex:none;width:38px;text-align:right;font-family:var(--mono);font-size:10px;font-weight:400;color:var(--ink-soft)}
+  .pw b.up{color:var(--green)} .pw b.dn{color:#c07a5b}
+  .rv-q{margin-top:18px}
+  .rv-q label{font-family:var(--scripture);font-style:italic;font-size:17.5px;color:var(--ink);line-height:1.4;display:block}
+  .rv-q textarea,.rv-q input{width:100%;margin-top:10px;background:var(--panel);border:1px solid var(--edge);border-radius:14px;
+    color:var(--ink);font-family:var(--sans);font-size:13.5px;line-height:1.6;padding:13px;outline:none;resize:none}
+  .rv-q textarea:focus,.rv-q input:focus{border-color:var(--gold-line)}
+  .sealed{display:none;text-align:center;padding:30px 8px}
+  .sealed .ring{width:64px;height:64px;border-radius:50%;margin:0 auto 16px;border:1px solid var(--gold-line);background:var(--gold-soft);display:flex;align-items:center;justify-content:center;font-size:22px}
+  .sealed h3{font-family:var(--display);font-size:23px;font-weight:420;color:var(--ink-high)}
+  .sealed p{font-size:13px;color:var(--ink-soft);margin-top:9px;line-height:1.65}
+  .sealed p b{color:var(--gold-bright)}
+
+  /* campaign */
+  .camp{background:linear-gradient(150deg,#1c150e,var(--panel) 72%);border-color:var(--gold-line)}
+  .camp .n{font-family:var(--display);font-size:13px;color:var(--gold-bright);font-style:italic;margin-top:8px}
+
+  /* ============ bottom nav ============ */
+  .nav{position:absolute;bottom:0;left:0;right:0;z-index:20;display:flex;justify-content:space-around;align-items:center;
+    padding:12px 8px 26px;background:linear-gradient(transparent,rgba(10,10,11,.94) 34%);backdrop-filter:blur(6px)}
+  .nv{display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:none;cursor:pointer;color:var(--ink-faint);width:58px}
+  .nv svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+  .nv span{font-family:var(--mono);font-size:7.5px;letter-spacing:.14em;text-transform:uppercase}
+  .nv.on{color:var(--gold-bright)}
+  .nv.on svg{filter:drop-shadow(0 0 7px rgba(224,138,60,.55))}
+
+  .toast{position:absolute;left:50%;bottom:104px;transform:translate(-50%,18px);z-index:40;opacity:0;pointer-events:none;
+    font-family:var(--mono);font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold-bright);
+    background:rgba(18,18,20,.96);border:1px solid var(--gold-line);border-radius:100px;padding:11px 19px;white-space:nowrap;
+    transition:opacity .35s,transform .35s}
+  .toast.show{opacity:1;transform:translate(-50%,0)}
+  .ember{position:absolute;width:5px;height:5px;border-radius:50%;background:var(--gold-bright);pointer-events:none;opacity:0;z-index:50}
+  @keyframes emberUp{0%{opacity:0;transform:translate(0,0)}12%{opacity:1}100%{opacity:0;transform:translate(var(--dx),var(--dy)) scale(.3)}}
+</style>
+</head>
+<body>
+
+<div class="sim-label"><b>Simulation</b> · The Forge · tap around, nothing is real</div>
+
+<div class="phone"><div class="app" id="app">
+
+  <!-- ================= FORGE HOME ================= -->
+  <div class="screen on" id="scr-home">
+    <div class="scroll">
+      <div class="hdr">
+        <div class="eyebrow">The Forge</div>
+        <h1>Where men are made.</h1>
+        <p>The rhythm keeps you. The Forge grows you.</p>
+      </div>
+
+      <!-- active plan -->
+      <div class="card plan-hero">
+        <div class="row2">
+          <span class="tag">Your plan · Vitality</span>
+          <span class="chip" id="planChip">Day 7 of 21</span>
+        </div>
+        <h3>The Temple</h3>
+        <p class="meta">Rebuild the body that carries the calling. One session, one action, every day.</p>
+        <div class="pbar"><i id="planBar" style="width:33%"></i></div>
+        <div class="pdays"><span>Day 1</span><span>Day 21</span></div>
+        <button class="btn" id="beginBtn" onclick="go('scr-session')">Begin Day 7 · 4 min</button>
+      </div>
+
+      <!-- weekly review -->
+      <div class="card" id="reviewCard">
+        <div class="row2">
+          <span class="tag">Weekly review</span>
+          <span class="chip" id="rvChip">Ready · Sunday</span>
+        </div>
+        <h3 id="rvTitle">Face the week.</h3>
+        <p class="meta" id="rvMeta">Ten minutes. Your seven pillars, your covenant record, and one honest look in the mirror before the new week starts.</p>
+        <button class="btn ghost" id="rvBtn" onclick="go('scr-review')">Open the review</button>
+      </div>
+
+      <!-- campaign -->
+      <div class="card camp">
+        <div class="row2">
+          <span class="tag">Campaign · starts Sep 1</span>
+          <span class="chip dim">312 men in</span>
+        </div>
+        <h3>The September Forge</h3>
+        <p class="meta">Forty days in the Word, together. Every man, same fight, same fire. Leo leads a weekly charge.</p>
+        <p class="n">"Doors close August 31."</p>
+        <button class="btn ghost" id="campBtn" onclick="joinCamp(this)">Claim your place</button>
+      </div>
+
+      <!-- plans shelf -->
+      <div class="sec-title">Plans · pick your next fight</div>
+      <div class="shelf">
+        <div class="pcard rec" style="--c:#5d8cb4">
+          <div class="pc-dot" style="background:#5d8cb4"></div>
+          <h4>The Guarded Mind</h4>
+          <span class="rec-tag">Recommended</span>
+          <span>Your Mental pillar slipped 3 weeks straight</span>
+          <span>14 days</span>
+        </div>
+        <div class="pcard" style="--c:#a8997d">
+          <div class="pc-dot" style="background:#a8997d"></div>
+          <h4>The Steward</h4>
+          <span>Money serving the mission</span>
+          <span>21 days</span>
+        </div>
+        <div class="pcard" style="--c:#7faab0">
+          <div class="pc-dot" style="background:#7faab0"></div>
+          <h4>The Initiator</h4>
+          <span>Lead your tribe, first</span>
+          <span>14 days</span>
+        </div>
+        <div class="pcard" style="--c:#cdcdca">
+          <div class="pc-dot" style="background:#cdcdca"></div>
+          <h4>21 Days in the Word</h4>
+          <span>Faith before feed</span>
+          <span>21 days</span>
+        </div>
+      </div>
+
+      <!-- gatherings -->
+      <div class="sec-title">Gatherings · in the flesh</div>
+      <div class="card" style="padding:6px 18px">
+        <div class="gath">
+          <div class="date"><span>Jul</span><b>26</b></div>
+          <div class="g-info"><h4>Dallas · First Fire</h4><p>Steakhouse dinner + one honest hour · 18 spots</p></div>
+          <button onclick="rsvp(this)">RSVP</button>
+        </div>
+        <div class="gath">
+          <div class="date"><span>Sep</span><b>13</b></div>
+          <div class="g-info"><h4>Hill Country Ascent</h4><p>One day. Trail, Scripture, brotherhood · 30 spots</p></div>
+          <button onclick="rsvp(this)">RSVP</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- bottom nav -->
+    <div class="nav">
+      <button class="nv"><svg viewBox="0 0 24 24"><path d="M4 11l8-7 8 7"/><path d="M6 9.5V20h12V9.5"/></svg><span>Today</span></button>
+      <button class="nv"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2.5"/><path d="M4 10h16M8 3v4M16 3v4"/></svg><span>Days</span></button>
+      <button class="nv on"><svg viewBox="0 0 24 24"><path d="M12 3.5c1.2 3 5 5.2 5 9.5a5 5 0 0 1-10 0c0-1.8.8-3.3 1.9-4.8.4 1.2 1.1 1.9 2.1 2.3-.9-2.6-.3-5 1-7z"/></svg><span>Forge</span></button>
+      <button class="nv"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="10" r="2.3"/><path d="M4 19c.6-3.2 2.6-4.8 5-4.8s4.4 1.6 5 4.8"/><path d="M15.5 18.6c.4-2 1.6-3.1 3-3.1 1.1 0 2.1.6 2.7 1.9"/></svg><span>Circle</span></button>
+      <button class="nv"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="1.6"/><circle cx="5.5" cy="12" r="1.6"/><circle cx="18.5" cy="12" r="1.6"/></svg><span>More</span></button>
+    </div>
+  </div>
+
+  <!-- ================= DAILY SESSION ================= -->
+  <div class="screen" id="scr-session">
+    <div class="top"><button class="back" onclick="go('scr-home')">←</button><span>The Temple · Day 7 of 21</span></div>
+    <div class="scroll">
+      <div class="sess">
+        <div class="sess-day">Today's session</div>
+        <h2>Kill the snooze.</h2>
+        <p class="verse">"The soul of the sluggard craves and gets nothing, while the soul of the diligent is richly supplied."<cite>Proverbs 13 : 4</cite></p>
+
+        <div class="player">
+          <button class="play" id="playBtn" onclick="playCharge()">▶</button>
+          <div class="wave" id="wave"></div>
+          <span class="t" id="ptime">3:12</span>
+        </div>
+        <div class="player-cap">Leo · today's charge</div>
+
+        <p class="charge">The snooze button is a small surrender, and small surrenders train you. You gave your word to your feet before you gave it to your feelings. <b>Tomorrow the alarm is across the room.</b> When it rings, your feet hit the floor before your thumb finds a reason. That is the whole session. Win the first ninety seconds and the day tilts your way.</p>
+
+        <div class="action">
+          <div class="tag">Today's action · added to your rhythm</div>
+          <p>Alarm across the room tonight. Feet on the floor at first ring. Text your circle one word when you're up: <b style="color:var(--gold-bright)">UP.</b></p>
+          <p class="sub">This lands in tomorrow's Keystone Habits automatically.</p>
+        </div>
+
+        <button class="btn" id="doneBtn" onclick="completeDay(this)">Mark Day 7 complete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= WEEKLY REVIEW ================= -->
+  <div class="screen" id="scr-review">
+    <div class="top"><button class="back" onclick="go('scr-home')">←</button><span>Weekly review · 10 min</span></div>
+    <div class="scroll">
+      <div class="hdr" style="padding-bottom:6px">
+        <h1 style="font-size:27px">Face the week.</h1>
+        <div class="steps"><i class="on" id="st1"></i><i id="st2"></i><i id="st3"></i></div>
+      </div>
+
+      <!-- step 1: the mirror -->
+      <div class="rv-step on" id="rv1">
+        <p class="meta" style="font-size:13px;color:var(--ink-soft);line-height:1.6">Here is your week, without commentary. Sit with it for a moment.</p>
+        <div class="pill-week">
+          <div class="pw" style="--c:#cdcdca"><span>Faith</span><div class="bar"><i style="--w:78%"></i></div><b class="up">+1.2</b></div>
+          <div class="pw" style="--c:#8aa85a"><span>Vitality</span><div class="bar"><i style="--w:64%"></i></div><b class="up">+0.8</b></div>
+          <div class="pw" style="--c:#5d8cb4"><span>Mental</span><div class="bar"><i style="--w:41%"></i></div><b class="dn">−1.4</b></div>
+          <div class="pw" style="--c:#7faab0"><span>Tribe</span><div class="bar"><i style="--w:70%"></i></div><b>0.0</b></div>
+          <div class="pw" style="--c:#897fcf"><span>Vocation</span><div class="bar"><i style="--w:82%"></i></div><b class="up">+0.5</b></div>
+          <div class="pw" style="--c:#a8997d"><span>Wealth</span><div class="bar"><i style="--w:58%"></i></div><b>0.0</b></div>
+          <div class="pw" style="--c:#d59f3b"><span>Environ.</span><div class="bar"><i style="--w:66%"></i></div><b class="dn">−0.3</b></div>
+        </div>
+        <div class="card" style="margin-top:16px;background:var(--panel2)">
+          <span class="tag">Covenant record</span>
+          <p class="meta" style="margin-top:8px"><b style="color:var(--green)">5 of 7 days kept.</b> Your circle saw the gap on Tuesday and Friday.</p>
+        </div>
+        <button class="btn" onclick="rvStep(2)">I've looked. Next</button>
+      </div>
+
+      <!-- step 2: three questions -->
+      <div class="rv-step" id="rv2">
+        <div class="rv-q"><label>Where did I drift this week?</label><textarea rows="2" placeholder="One honest sentence…"></textarea></div>
+        <div class="rv-q"><label>What was I avoiding?</label><textarea rows="2" placeholder="Name it…"></textarea></div>
+        <div class="rv-q"><label>Where did God show up?</label><textarea rows="2" placeholder="Don't rush this one…"></textarea></div>
+        <button class="btn" onclick="rvStep(3)">Next</button>
+      </div>
+
+      <!-- step 3: one becoming action -->
+      <div class="rv-step" id="rv3">
+        <div class="rv-q">
+          <label>Name one becoming action for next week. Your circle will see it every day.</label>
+          <input id="becomeInput" placeholder="e.g. In bed by 10:30, phone outside the room" value="In bed by 10:30, phone outside the room">
+        </div>
+        <p class="meta" style="margin-top:12px;font-size:12px">Signing this puts it on your covenant board. Done, or not yet. No hiding.</p>
+        <button class="btn" onclick="sealIt()">Sign it. Seal it.</button>
+      </div>
+
+      <!-- sealed -->
+      <div class="sealed" id="rvSealed">
+        <div class="ring">✓</div>
+        <h3>Sealed to the board.</h3>
+        <p>"<b id="sealedText">In bed by 10:30, phone outside the room</b>"<br><br>Your brothers see it Monday morning. The week is aimed. Go rest.</p>
+        <button class="btn ghost" style="margin-top:22px" onclick="go('scr-home')">Back to the Forge</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast">Added to your rhythm</div>
+</div></div>
+
+<script>
+  var REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function go(id){
+    document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('on')});
+    document.getElementById(id).classList.add('on');
+    document.getElementById(id).querySelector('.scroll').scrollTop = 0;
+  }
+  function toast(msg){
+    var t = document.getElementById('toast');
+    t.textContent = msg; t.classList.add('show');
+    setTimeout(function(){t.classList.remove('show')}, 2200);
+  }
+  function embers(el){
+    if(REDUCED) return;
+    var app = document.getElementById('app');
+    var ar = app.getBoundingClientRect(), r = el.getBoundingClientRect();
+    for(var i=0;i<22;i++){
+      var em = document.createElement('div'); em.className='ember';
+      em.style.setProperty('--dx',(Math.random()*150-75)+'px');
+      em.style.setProperty('--dy',(-(60+Math.random()*150))+'px');
+      em.style.left=(r.left-ar.left+r.width/2+(Math.random()*40-20))+'px';
+      em.style.top=(r.top-ar.top+r.height/2)+'px';
+      var s=(3+Math.random()*4)+'px'; em.style.width=s; em.style.height=s;
+      em.style.animation='emberUp '+(0.9+Math.random()*0.8)+'s ease-out forwards';
+      app.appendChild(em);
+      (function(n){setTimeout(function(){n.remove()},2000)})(em);
+    }
+  }
+
+  /* fake audio player */
+  (function(){
+    var w = document.getElementById('wave');
+    for(var i=0;i<34;i++){var b=document.createElement('i');b.style.setProperty('--h',18+Math.round(Math.random()*72));w.appendChild(b)}
+  })();
+  var playing=false, pi=0, ptimer=null;
+  function playCharge(){
+    var btn=document.getElementById('playBtn'), bars=document.querySelectorAll('#wave i');
+    if(playing){clearInterval(ptimer);playing=false;btn.textContent='▶';return}
+    playing=true; btn.textContent='❚❚';
+    ptimer=setInterval(function(){
+      if(pi>=bars.length){clearInterval(ptimer);playing=false;btn.textContent='▶';document.getElementById('ptime').textContent='0:00';return}
+      bars[pi].classList.add('lit'); pi++;
+      var rem=Math.max(0,192-Math.round(pi*192/bars.length));
+      document.getElementById('ptime').textContent=Math.floor(rem/60)+':'+('0'+rem%60).slice(-2);
+    }, 140);
+  }
+
+  /* complete the day */
+  function completeDay(btn){
+    embers(btn);
+    btn.classList.add('done'); btn.textContent='Day 7 complete · see you tomorrow';
+    setTimeout(function(){
+      go('scr-home');
+      document.getElementById('planBar').style.width='38%';
+      document.getElementById('planChip').textContent='Day 8 of 21 · tomorrow';
+      var b=document.getElementById('beginBtn'); b.classList.add('done'); b.textContent="Day 7 done · Day 8 unlocks at first light";
+      toast('UP. sent to your circle');
+    }, 1400);
+  }
+
+  /* review flow */
+  function rvStep(n){
+    document.querySelectorAll('.rv-step').forEach(function(s){s.classList.remove('on')});
+    document.getElementById('rv'+n).classList.add('on');
+    for(var i=1;i<=3;i++) document.getElementById('st'+i).classList.toggle('on', i<=n);
+    document.querySelector('#scr-review .scroll').scrollTop=0;
+  }
+  function sealIt(){
+    var v=document.getElementById('becomeInput').value.trim()||'In bed by 10:30, phone outside the room';
+    document.getElementById('sealedText').textContent=v;
+    document.querySelectorAll('.rv-step').forEach(function(s){s.classList.remove('on')});
+    var sealed=document.getElementById('rvSealed'); sealed.style.display='block';
+    embers(sealed.querySelector('.ring'));
+    var chip=document.getElementById('rvChip'); chip.textContent='Done · Sun';
+    document.getElementById('rvTitle').textContent='Week aimed.';
+    document.getElementById('rvMeta').innerHTML='Sealed: <b style="color:var(--gold-bright)">"'+v+'"</b> · on your covenant board Monday.';
+    var rb=document.getElementById('rvBtn'); rb.classList.add('done'); rb.textContent='Reviewed · next Sunday';
+  }
+
+  /* campaign + rsvp */
+  function joinCamp(btn){
+    embers(btn);
+    btn.classList.add('done'); btn.textContent="You're in · man 313 of the September Forge";
+  }
+  function rsvp(btn){
+    btn.classList.add('in'); btn.textContent='Going';
+    toast('Your circle was told you’re going');
+  }
+</script>
+</body>
+</html>
