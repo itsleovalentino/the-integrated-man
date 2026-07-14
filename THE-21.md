@@ -86,23 +86,27 @@ Voice Memos transcripts, prod ship (needs disaster drills + Leo's explicit go).
 ---
 
 ### DAY 0 · THE WELCOME
-*Plays immediately when he taps "Start The 21" · ~2 min · recording #26*
+*Plays immediately when he taps "Start The 21" · ~4 min · Leo's real take (transcript below matches the audio)*
 
 **AUDIO:**
 
-You just did something most men never do. You didn't scroll past.
+Let me tell you exactly what you just walked into. This is The 21. 21 mornings that don't just change what you do. They change who you are. My name is Leo Valentino, and I'm your guide these next 21 days.
 
-Here's what you just signed up for, straight: 21 mornings. A few minutes with me, one clear thing to do, every single day. Some days will feel easy. A few will put a knot in your stomach. All of them are buildable into the man you've been wanting to be, the one God's been waiting to build.
+So before anything else, I want you to see him first. I want you to see the man on the other side of these 21 days, before you accept this challenge. Imagine a man who's respected by everyone around him. Not because of what he has. Because of who he is. The character he holds when nobody else is watching. A leader who can lead his family, his relationships, his woman, his business, his ministry, because he's learned to lead himself first. A man who surrendered it all to God, and still gets up and takes the next faithful step. A man built from the inside out. Mentally, physically, financially, spiritually. Every area integrated with Christ.
 
-`[YOUR STORY: 30 seconds. What was at stake when you started your own 21 days of building the rhythm. Why it mattered.]`
+Can you see him? If you can, that's good. Because here's what you need to know about that man. You didn't just make him up right there in your mind. There's a verse in Ephesians 2:10, written by a man named Paul, and listen to what he says. We are his workmanship, created in Christ Jesus unto good works, which God prepared beforehand, that we should walk in them. Beforehand. That man you just pictured, God drew the blueprints before you were born. You're not inventing him over these next 21 days. You're uncovering him.
 
-One rule in here. One. Don't fake anything. Don't check a box you didn't do. Don't write a nice answer when the true one is ugly. Every man who's ever been changed by anything got changed by the truth, so in here we tell it.
+And here's how it works. Every morning, just a few minutes with me, then one clear action. That's it. Anybody can do one thing a day. Almost nobody does it 21 days straight. And when you do, and you will, you'll come out the other side a completely different man, with the evidence to prove it.
 
-One thing before you sleep tonight: get to bed like a man with an appointment, because you have one.
+I know this works, because it's how I was changed. A few years ago I was sitting down crying, four shots in, no idea what I was doing with my life. And that night I heard one sentence: you are not the man you should be yet. So I made a decision. I woke up early. I worked out. I read. I took action that scared me. Three weeks later, I was a different man. And everything I have today traces back to that 21-day sprint.
 
-Day 1 is called The Mirror, and it takes about ten minutes. It's already open. If you're ready, take it right now. If not, it'll be waiting for you at first light, and morning is where this program lives.
+So now, quickly, count the cost. When you commit: week one, you're going to look at yourself dead in the eye. You're going to find out who you are and what you're made for. Week two, I give you the exact blueprint that changed my life. The exact morning you can run every day. Week three, you're going to go on offense. And on day 21, you'll read a letter from yourself, and you'll feel something move in your chest. And if you walk away? Nothing happens. That's the scary option. 21 days from now arrives either way. The only question is which man is standing there.
 
-Either way: the man who shows up tomorrow morning is already different from the man who almost didn't.
+So there's one rule in here. Don't fake anything. Bring the whole ugly truth. God builds with the worst.
+
+Day one is called The Mirror. Ten minutes. It's already open, right behind this screen. If there's a fire in your chest right now, that fire is not an accident. Take it right now. If it's too late in the night, get to bed like a man with an appointment, because you have one the moment you wake up.
+
+You're the kind of man who came in here. You're the kind of man who's going to make this happen. That already tells me something about you. Now let's find out what God already knows. Take the first step. Or sleep, and let it meet you at first light. See you in there.
 
 **ACTION:** Take Day 1 now, or sleep and let it meet you at first light.
 
@@ -115,23 +119,27 @@ Either way: the man who shows up tomorrow morning is already different from the 
 ---
 
 ### DAY 1 · THE MIRROR
-*Charge · ~3 min · onboards: 7 Pillars*
+*Charge · ~4 min · onboards: 7 Pillars + one-line journal · Leo's real take (transcript matches audio)*
 
-Welcome to The 21. I'm Leo. For the next 21 days I'm with you every morning. A few minutes together, then one thing to do. That's the deal.
+Welcome back to day one. This is The Mirror. And we're going to start with a quick question. Do you actually know where you're at in your life right now? Not where people tell you you're at. Not where you want to be. Where you actually are. Most guys don't know. And to be honest, I didn't know. And it's not because we're clueless. It's because looking at where we truly are is uncomfortable. So we just don't. We stay busy, we stay distracted, and the years go by.
 
-Here's why you're here. There's a version of you that God had in mind when He made you. Strong. Clear. Steady. The man your family gets to lean on. And there's the version of you that showed up today. The 21 is about closing that gap. Not all of it. But enough that you'll never be able to un-feel the difference.
+So welcome to day one. My name is Leo Valentino, and for the next 21 days I'm with you every single morning. As your coach, a brother, a guide. Just a few minutes together, and one clear thing to do. That's the deal.
 
-`[YOUR STORY: 60 seconds. Where you were before this rhythm existed. One specific scene.]`
+Here's the whole reason you're here. There's a version of you that God had in mind when he made you. Strong. Clear. A man of character. The man his family leans on. And there's the version of you that showed up today. These 21 days are about closing that gap. Not all of it. Enough that you'll never be able to go back to pretending it's not there. Because nothing changes until you can see. Nothing changes if nothing changes. So today, we take a look.
 
-Nothing changes until you can see clearly. Not where you want to be. Where you ARE. Most men never do this. They keep the lights dim on purpose, because the dark is comfortable and the truth has edges. Today you turn the lights on.
+I remember the first time I actually looked at my life honestly. And you know what shocked me? It wasn't my habits. It wasn't the workouts. It wasn't the books I was reading. It was my environment. My home was chaos. My space was a mess. The music I listened to was crazy. The stuff I watched on my phone. All of it was programming me, and I had no idea. It was trickling down into my mental health, my body, my spirit, everything. And the crazy part is, the area I hated looking at most turned out to be the door everything else was hiding behind. That's why today we look at all of it. Because the thing that's actually running your life might not be the thing you expect.
 
-In the app there are seven areas of your life. Faith. Body. Mind. Your people. Your work. Your money. Your space. Score yourself in all seven, one to ten. One rule, and it's the rule for all 21 days: don't fake anything. A fake ten is worth less than an honest three. The honest three can grow.
+Now, I know what looking honestly can feel like. It can feel like weakness. Like admitting failure. So let me flip that for you. Because King David, the man after God's own heart, a warrior, a king, prayed one of the boldest prayers in the entire Bible. Psalm 139. He said: search me, O God, and know my heart. Try me and know my thoughts, and see if there is any wicked way in me. Think about that. The strongest man in Israel asked God to search him. Because he knew what most men never figure out. Telling yourself the truth is not weakness. It's the strongest thing a man can do. And starting today, you're a man who tells himself the truth.
 
-That number at the end is your starting line. Not your sentence. You'll score again on Day 21, and the numbers will tell you a story I won't have to sell you on.
+So here's what you're going to do. On this page, there are seven areas of your life. Your faith, your body, your mind, your people, your work, your wealth, your environment. Score yourself in all seven, one to ten. There's one rule, and it's the rule for the entire program. Do not fake anything. A fake ten is worth less than an honest three. The honest three can grow. The fake ten cannot. Nobody's grading this. There's no passing score. And if some of your numbers come back low, good. Now you know where to aim. That number is your starting line, not your sentence.
 
-Go look in the mirror. It's right here on this page: score all seven, right now. See you tomorrow.
+Because here's what's coming. On day 21, you're going to score these same seven again, right next to today's. And as those numbers climb over the next three weeks, and they will, because you're going to do the work, you'll be looking at pure evidence. Proof in your own handwriting that you're not the man you used to be.
 
-**ACTION:** Score all 7 pillars honestly, right here. One sentence in the journal: the truest thing the numbers said about you.
+So go. All seven, right now. Just take a few minutes. Honest rating, all seven. Then one sentence in the journal: the truest thing those numbers said about you. Write it like a man who tells himself the truth. Because as of today, that's who you are.
+
+That's day one. You just did something most men never do. See you tomorrow at first light. Go take action.
+
+**ACTION:** Score all 7 pillars honestly, right here. Then write one sentence: the truest thing the numbers said about you.
 
 ---
 

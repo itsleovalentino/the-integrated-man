@@ -8057,7 +8057,14 @@
   }
   function t21WidgetHtml(d, s, replay) {
     var h = "";
-    if (d.widget === "mirror") h += t21ScorerHtml();
+    if (d.widget === "mirror") {
+      h += t21ScorerHtml();
+      // the Day 1 action also asks for one honest sentence — give him the box to write it, right here
+      h += '<div class="f21-action"><span class="f21-tag">One sentence · right here</span>' +
+           '<div class="f21-seal" style="margin-top:6px">The truest thing those numbers said about you. Write it like a man who tells himself the truth.</div>' +
+           '<textarea class="f21-ta" id="f21J" placeholder="The truest thing I see…"></textarea>' +
+           '<div class="f21-seal">Saves into your journal when you mark today complete.</div></div>';
+    }
     if (d.widget === "mirror2") {
       t21Mirror0Repair();
       // today's honest score first — rendered BLANK (zero bias), THEN the sealed Day 1 comparison
@@ -10607,7 +10614,7 @@
   });
   if (window.matchMedia) { try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { if (db.theme === "auto") applyTheme("auto"); }); } catch (e) {} }
 
-  var APP_VERSION = "v61.71-dev";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v61.72-dev";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
