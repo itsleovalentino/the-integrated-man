@@ -2,12 +2,18 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+> 🔴 **THIS IS A LIVE PRODUCTION APP WITH REAL USERS** (launched July 4 2026, 10+ men and growing,
+> journaling their private walk with God). Default posture is FROZEN: all work happens on `dev`, and
+> **nothing reaches `main`/production without Leo's explicit go for that specific change** (see Hard
+> Rule #5). Treat every prod change — especially data/sync/auth — as surgery on a running patient.
+
 ## What this is
 
 **The Integrated Man (TIM) Journal** — a faith-driven daily journal PWA for men: scripture reading
 plans + in-app Bible reader, journaling, prayer list, keystone habits, weekly 7-pillar check, and a
 shared community Prayer Wall ("Fellowship"). Single-file vanilla HTML/CSS/JS — **no build step, no
-framework, no bundler**. Auth + sync via Supabase. Live at https://itsleovalentino.github.io/the-integrated-man/.
+framework, no bundler**. Auth + sync via Supabase. Live at **https://theintegratedman.app** (custom
+domain; the old `itsleovalentino.github.io/the-integrated-man/` 301-redirects there).
 
 ## File structure
 
@@ -19,6 +25,81 @@ framework, no bundler**. Auth + sync via Supabase. Live at https://itsleovalenti
   `tribes_phase1.sql` is deprecated. `functions/bible` + `functions/oura` are Deno edge functions
   (API proxies so keys stay server-side).
 - `docs/` — design notes
+- `the21.json` — content for The 21 (the Forge's 21-day onboarding program). GENERATED from
+  `THE-21.md` by a build script — never hand-edit the json; edit `THE-21.md` and regenerate.
+- `THE-21.md` — The 21 program bible + all day scripts (source of truth for the21.json)
+- `waitlist.html` — standalone marketing/waitlist page (no service worker, does not touch the app;
+  live path is `/waitlist`, extensionless). Generated from a template kept in the session scratchpad.
+- `forge-mock.html`, `THE-FORTY.md` — untracked concept artifacts (Forge UI mock; the future
+  40-day flagship program design)
+
+## The Forge + The 21 (as of v61.63-dev, on `dev`)
+
+- **The Forge** = bottom-nav flame tab (`nav_forge` → `setView("forge")` → `renderForge()`), with a
+  ready-dot badge (`navForgeBadge`, toggled by `t21NavDot()` when today's session is open). The nav
+  is now 5 tabs: Home · Journal · Bible · Forge · Fellowship (the floating journal bubble is retired
+  via CSS `display:none`; `nav_journal` runs the same handler). Inside the Forge: The 21
+  (centerpiece), unlocked routine cards, a quiet Fall link, teaser cards.
+- **The 21** = the 21-day onboarding program, one session/day. All engine code is prefixed `t21`.
+  Flow: `t21Start()` → Day 0 Welcome plays immediately → Day 1 available on the spot → each next
+  day unlocks at first light (`t21Available()` = `last !== todayLocal()`, which also self-heals
+  westward-timezone travel; enforced in `t21Complete`; the program WAITS on missed days; max one
+  day per calendar day). Locked state renders as an anticipatory teaser (tomorrow's title +
+  "first light (midnight, technically)"); returns after missed days get "The program waited for you."
+  A Home hero card (`t21HomeCard()`, injected at the top of `.wrap`) surfaces today's session.
+- **State**: `db.the21` = { startedAt, startDay, wake ("HH:MM", Day 6 picker), done{day:dateKey},
+  letter, lies[], affirms[], drafts{ "d<day>_<elId>": text }, flows{jesus/praise:{dateKey:1}},
+  mirror0/mirror21 (read-only pillar-score snapshots; `t21Mirror0Repair()` backfills from the Day-1
+  date's ratings), rate, completedAt }. In `CONTENT_KEYS`, union-merged GROW-ONLY in `mergeRecover`:
+  a sync adds progress, never removes it; letter/lies/affirms/drafts keep whichever copy holds more.
+- **Draft autosave**: everything typed on a day page persists (delegated `oninput` on
+  `#f21SessBody`, per-day keys, restored on reopen, cleared in `t21Complete` once the words reach
+  the journal via `addThought`). The back arrow can never eat writing.
+- **In-session widgets** (`t21WidgetHtml`): Day 1/21 pillar scorer with one-line pillar explainers
+  (`T21_PDESC`; writes real `db.ratings` records, same as Home; Day 21 renders BLANK —
+  `t21ScorerHtml(true)` — for zero bias, then the sealed "Day 1 → today" delta + share invite
+  `t21ShareInvite`), Day 2/11 journal → Notes, Day 7/14 weekly-review → one Note, Day 4 letter
+  (sealed until 21, example lines), Day 6 setup (wake-time picker + alarm checkbox + habits list —
+  names only, never `hb.icon`), Day 10 reading-plan status, Day 13 lies/truths, Day 17 pick-a-move
+  (3 selectable options per weakest pillar, `t21PickMove`), Day 18 affirmation bank (+ one-tap
+  `t21AddNoComplain()` habit). Examples in `T21_EX`; `t21GoHome()` for open-on-Home buttons
+  (inline onclick can only reach `window.`-exported functions — everything user-tappable is exported).
+- **Routines**: `T21_FLOWS` (The J.E.S.U.S. Morning / The P.R.A.I.S.E. Night) run as guided flows
+  via `t21OpenFlow(type, previewReturnDay?)`; unlock at Days 12/15 (`t21FlowUnlocked`). Preview mode
+  (from the Day 12/15 sessions) never writes the done-for-today flag and returns to the day session.
+  Silence step has a 1–10 min countdown (`t21Timer`, ends with `playChime` + buzz); Pray/Entrust
+  steps carry sample prayers; the Affirmation step reads his bank + Day-13 truths.
+- **THE FALL** (`t21OpenFall`, `T21_FALL`): course-correction, not a panic button. A quiet text link
+  on the Forge → "What happened?" → three protocols: tempted-right-now / fell / missed-a-morning
+  (1 Cor 10:13, 1 John 1:9, Prov 24:16). Kept deliberately low-key so it means something when needed.
+- **Celebrations**: `t21Strike` (full-screen gold flash + embers + chime + haptic) on every
+  completion; `t21Gate` week interstitial at Days 7/14 (AWAKE→BUILD→BECOME); Day 21 never
+  auto-closes (he sits with the delta and his letter).
+- **Audio**: each day in the21.json has an `audio` field (null until Leo's recordings land in
+  Supabase Storage); the player (1x/1.25x/1.5x, `t21Rate`) renders automatically when set.
+  Read mode until then. Session typography: serif lede first paragraph, "— Leo" signature,
+  read-time in the crumb.
+- **Dev time machine** on the Forge screen (TIM_DEV/localhost only): shift progress back a day,
+  reset the run. NOT YET BUILT: Leo's audio, circle-board auto-events, transcript read-along,
+  prod ship (disaster drills + Leo's explicit go first).
+- **Perf rules learned the hard way**: never animate box-shadow (transform/opacity only); any fixed
+  full-screen overlay with an explicit `display` MUST pair with `[hidden]{display:none!important}`;
+  session overlays lock body scroll + `overscroll-behavior: contain` (iOS scroll-trap) + own
+  compositor layer (`translateZ(0)`); `body.f21-open` pauses background animations while a session
+  is up; closing a session only re-renders the visible view. `t21Esc` escapes `&`, `<`, AND `"` —
+  user text goes into HTML attributes, and un-escaped quotes silently truncated a man's own words.
+- **DEV-ONLY DATA CAUTION**: dev doesn't cloud-sync the blob by design, so signing out on the dev
+  site (or a uid-mismatch wipe) destroys `db.the21` unrecoverably there. Don't sign out mid-test on
+  dev. Prod restores everything through the merge block.
+
+## Signup gate (as of v61.57-dev, on `dev`)
+
+- Creating an account requires a valid invite code (`GATE_SIGNUPS` flag). Sign-IN is never gated;
+  existing accounts are unaffected. Valid codes: any circle code, or wave codes in the
+  `invite_codes` table (`supabase/invite-gate.sql`, additive-only; Leo runs it once, seeds
+  `FIRSTFRUIT`). `validate_invite` RPC checks pre-signup; `redeem_invite` counts wave-code uses;
+  `?join=` links pre-fill the code. Client-side gate only for now — API-level enforcement is a
+  future task to be done WITH Leo (it touches live auth/policies).
 
 ## Navigating index.html
 
@@ -165,6 +246,11 @@ There is no hard delete of user content anywhere, and it must stay that way:
 4. Keep `APP_VERSION` and the sw.js `CACHE` version in lockstep on every deploy.
 5. **NEVER push/merge/revert `main` (production) without Leo's EXPLICIT permission** — not even for
    an urgent hotfix. Do all work on `dev`, then ask "ship to production?" and wait for a clear yes.
+   The app is LIVE with real users, so "explicit permission" = a clear yes to shipping THAT change;
+   a general "fix it" is NOT a blanket prod license. Only ship what is proven AND approved. Note:
+   `dev` and `main` version numbers may be DIVERGED (things were shipped straight to main) — do NOT
+   blindly `merge dev→main` (it can revert prod or carry frozen dev-only work); cherry-pick the
+   specific approved change instead, and reconcile branches deliberately.
 6. **Sync must never blank or shrink user data.** Invariants that must hold: a sync may UPDATE a
    preference but may NEVER replace a field that holds data with an empty one (`hasData` guard in
    `applyCloud`); every key in `CONTENT_KEYS` MUST have a real union-merge branch in `mergeRecover`
