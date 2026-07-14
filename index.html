@@ -2370,6 +2370,19 @@
   .f21-fl-dots i.on { background: var(--accent); }
   .f21-audio { margin-top: 16px; background: var(--panel); border: 1px solid var(--panel-edge); border-radius: 16px; padding: 12px; }
   .f21-audio audio { width: 100%; }
+  /* read-along: collapsed by default when there's audio (audio-first; no wall of text to scroll) */
+  .f21-ra { margin-top: 16px; }
+  .f21-ra-toggle { display: flex; align-items: center; justify-content: center; gap: 7px; width: 100%; font: inherit;
+    font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: var(--ink-soft);
+    background: none; border: 1px solid var(--field-edge); border-radius: 100px; padding: 11px; cursor: pointer; transition: color .2s, border-color .2s; }
+  .f21-ra-toggle:active { transform: scale(.99); }
+  .f21-ra.open .f21-ra-toggle { color: var(--accent); border-color: var(--gold-line); }
+  .f21-ra-chev { width: 15px; height: 15px; stroke: currentColor; transition: transform .3s ease; }
+  .f21-ra.open .f21-ra-chev { transform: rotate(180deg); }
+  .f21-ra-body { display: none; margin-top: 14px; animation: f21raIn .3s ease; }
+  .f21-ra.open .f21-ra-body { display: block; }
+  .f21-ra-body .f21-p { font-size: 14px; line-height: 1.7; }   /* a touch smaller/comfier as secondary read */
+  @keyframes f21raIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
   .f21-speed { display: flex; gap: 8px; justify-content: flex-end; margin-top: 8px; }
   .f21-speed button { font: inherit; font-size: 11px; background: var(--field); border: 1px solid var(--field-edge); color: var(--ink-soft);
     border-radius: 100px; padding: 5px 11px; cursor: pointer; }
@@ -8304,6 +8317,14 @@
     arr.forEach(function (a, i) { h += "<div>" + t21Esc(a) + '<button type="button" onclick="t21RmAffirm(' + i + ')" aria-label="Remove">×</button></div>'; });
     return h;
   }
+  function t21ToggleRA() {
+    var ra = $("f21RA"); if (!ra) return;
+    var open = !ra.classList.contains("open");
+    ra.classList.toggle("open", open);
+    db.the21 = db.the21 || {}; db.the21.readAlong = open; save();   // remember the preference
+    buzz(6);
+    if (open) { var b = ra.querySelector(".f21-ra-body"); if (b) setTimeout(function () { b.scrollIntoView({ behavior: "smooth", block: "nearest" }); }, 60); }
+  }
   function t21ToggleAffirm(btn) {
     var a = btn.getAttribute("data-a");
     db.the21 = db.the21 || {}; db.the21.affirms = db.the21.affirms || [];
@@ -8364,17 +8385,30 @@
              '<div class="f21-emblem" style="margin-top:2px"><div class="f21-flame"><svg viewBox="0 0 24 24"><path d="M12 3c1.5 3.6 6 6.3 6 11.4A6 6 0 0 1 6 14.4c0-2.2 1-4 2.3-5.8.5 1.5 1.4 2.3 2.6 2.8-1.1-3.1-.4-6 1.1-8.4z" fill="none" stroke="currentColor" stroke-width="1.3"/></svg></div><div class="f21-ignite">' + ig0 + "</div></div>";
       }
       h += '<div class="f21-eyebrow"' + (day === 0 ? ' style="text-align:center"' : "") + ">" + (day === 0 ? "The threshold" : "Today’s session") + "</div><h2" + (day === 0 ? ' style="text-align:center"' : "") + ">" + t21Esc(t21Title(d)) + "</h2>";
+      // the transcript (read-along)
+      var paraHtml = "";
+      d.paras.forEach(function (p, pi) { paraHtml += t21Rich(p, pi === 0 && !d.audio); });
+      if (day > 0) paraHtml += '<div class="f21-seal" style="margin-top:18px">— Leo</div>';
       if (d.audio) {
+        // AUDIO-FIRST: player up top, transcript COLLAPSED behind a toggle so the action is
+        // right there — no scrolling a wall of text. Preference (open/closed) is remembered.
         var rate = (s.rate || 1);
+        var raOpen = !!s.readAlong;
         h += '<div class="f21-seal" style="text-align:center;margin-top:14px">🎧 ' + (day === 0 ? "Press play. Leo’s got you." : "Leo · this morning’s charge") + "</div>" +
              '<div class="f21-audio"><audio id="f21Audio" src="' + t21Esc(d.audio) + '" controls preload="metadata"></audio>' +
              '<div class="f21-speed">' + [1, 1.25, 1.5].map(function (r) {
                return '<button type="button" data-r="' + r + '" class="' + (r === rate ? "on" : "") + '" onclick="t21Rate(this)">' + r + "x</button>";
              }).join("") + "</div></div>" +
-             '<div class="f21-seal" style="text-align:center">Or read along below.</div>';
+             '<div class="f21-ra' + (raOpen ? " open" : "") + '" id="f21RA">' +
+               '<button type="button" class="f21-ra-toggle" onclick="t21ToggleRA()">' +
+                 '<span class="f21-ra-label">Read along</span>' +
+                 '<svg class="f21-ra-chev" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
+               "</button>" +
+               '<div class="f21-ra-body">' + paraHtml + "</div>" +
+             "</div>";
+      } else {
+        h += paraHtml;
       }
-      d.paras.forEach(function (p, pi) { h += t21Rich(p, pi === 0); });
-      if (day > 0) h += '<div class="f21-seal" style="margin-top:18px">— Leo</div>';
       h += t21WidgetHtml(d, s, replay);
       if (d.action) h += '<div class="f21-action main"><span class="f21-tag">Today’s action</span><p>' + t21Esc(d.action) + "</p></div>";
       var next = t21NextDay();
@@ -8640,7 +8674,7 @@
   window.t21CloseSession = t21CloseSession; window.t21DebugShift = t21DebugShift; window.t21DebugReset = t21DebugReset;
   window.t21OpenFlow = t21OpenFlow; window.t21FlowNext = t21FlowNext; window.t21ShareInvite = t21ShareInvite;
   window.t21ToggleAffirm = t21ToggleAffirm; window.t21AddAffirm = t21AddAffirm; window.t21RmAffirm = t21RmAffirm;
-  window.t21Rate = t21Rate; window.t21GoHome = t21GoHome; window.t21OpenFall = t21OpenFall;
+  window.t21Rate = t21Rate; window.t21GoHome = t21GoHome; window.t21OpenFall = t21OpenFall; window.t21ToggleRA = t21ToggleRA;
   window.t21Timer = t21Timer; window.t21PickMove = t21PickMove; window.t21AddNoComplain = t21AddNoComplain;
 
   // ---- web push (test harness — iOS 16.4+, must be opened from the Home-Screen icon) ----
@@ -10754,7 +10788,7 @@
   });
   if (window.matchMedia) { try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { if (db.theme === "auto") applyTheme("auto"); }); } catch (e) {} }
 
-  var APP_VERSION = "v61.76-dev";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v61.77-dev";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------

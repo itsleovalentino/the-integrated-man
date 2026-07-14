@@ -144,21 +144,29 @@ That's day one. You just did something most men never do. See you tomorrow at fi
 ---
 
 ### DAY 2 · THE THIEVES
-*Charge · ~3 min · onboards: Journal, the Fall button*
+*Charge · ~6 min · Leo's real take (transcript matches audio) · onboards: Journal, the Fall button*
 
-Yesterday you looked in the mirror. Today we name what's been robbing you.
+Welcome back to day two. Yesterday, you looked straight in the mirror. You got to see exactly who you are right now. And today, we're going to name what has been robbing you of the man you want to become.
 
-Every man has thieves. The snooze button that steals your mornings. The scroll that steals your evenings an hour at a time and hands you nothing back. Laziness, which never announces itself, it just whispers "later." Complaining, the sneakiest one, because it feels like talking but it's actually agreeing with defeat. And for a lot of us, porn. Stealing more than we want to admit.
+Jesus says something in John 10:10. He says: the thief comes only to steal and kill and destroy. But I have come that they might have life, and have it more abundantly. So two options are on the table for you. The thief's plan for you, or the abundant one. And most men are getting robbed every single day, and they're simply calling it a routine.
 
-`[YOUR STORY: 45 seconds. Your thief. What it took from you. When you realized it.]`
+Every man has thieves. The snooze button that hits right in the morning, where you hit it once, twice, three, four, five times, and eventually over months you've snoozed for hours and hours. Or maybe it's the mindless scroll that steals your evenings, an hour at a time, and hands you nothing back. Or maybe it's laziness, which never truly announces itself. It just whispers, you know what, I'll do it later. Or maybe complaining, which is really the sneakiest one. It poisons your relationships, because it feels like talking, just regular chatting, but it's actually agreeing with defeat. And for a lot of us, it's pornography. It steals more than we can even admit.
 
-Here's what I need you to get: the thief isn't the real problem. The thief is a painkiller. You reach for it because something hurts or something's empty. We'll deal with that this week. But first you name them, because a thief you won't name is a thief you can't catch.
+And I can talk about this, because I lived it. My biggest thief was pornography. Eight years of it. From about 10 years old when I first found it, all the way to 18 when I started to get rid of it, and around 19, 20 when I got rid of it completely. Today I can say I'm set free from that trap. And here's what it cost me in that time. Confidence. Nights full of shame. And progress, because every single time I fell, I reset. I was back to zero, over and over and over. You can't build anything when you're always starting over.
 
-Today, write the list. Every thief. Real names, not soft ones. "I waste a little time on my phone" is soft. "The scroll takes ninety minutes a night and I hate myself after" is a name. Then circle the big one. The one that, if it lost, everything else gets easier.
+And then one night, I caught it. I'm sitting there, phone in my hand, and this question cut through: what am I doing? This is not who I want to be. I got off. I journaled. And I barely slept that night, because the urge was screaming at me. But the next morning I realized something. I overcame it once. And then days went by and it got easier, and easier, and easier. And I took all that energy that used to go into the temptation, and I poured it into work. Into the gym. And it started giving me life again. I started becoming more energized every single day.
 
-Two more things. Tonight your phone sleeps outside your bedroom. Starting tonight, not negotiable. And from today there's a button in this app called the Fall. If a thief gets you at 1am some night during these 21 days, press it, and I'll be there. No shame in this program. Shame is the thief's best friend, and we're starving them both.
+So here's what I need you to get. The thief is not the real problem. The thief is a painkiller. For me, it was emptiness. Whenever I felt bored or empty, I wanted to feel something, and the thief was always right there offering. It medicates the quiet, because the quiet is where you'd have to actually see yourself. We're going to deal with that emptiness this week, I promise you. But first you name them. Because a thief you won't name is a thief you cannot catch. And starting today, you're the one doing the catching.
 
-Write the list. Circle the one. Phone out of the room.
+So today, write the list. Every thief. Real names, not soft ones. "I waste a little time on my phone" is soft. "The scroll takes ninety minutes a night and I hate myself after" is a true name. Write them down, and look at the big one. The one that, if it lost, everything else in your life gets easier.
+
+And when the temptation comes this week, and it will, don't just resist it. Redirect it. Take that energy and put it into prayer. Into your work. Into the gym. Into the mission. That's going to be your offense.
+
+Two more things tonight. Your phone is going to sleep outside your bedroom. Starting tonight, non-negotiable. And all of a sudden the snooze is no longer possible. The temptation to grab your phone and go to that site is no longer possible. And from today, there's a button in this app called The Fall. If a thief gets to you at 1am some night during these 21 days, press it. I'll be there. I have a voice recording ready to go. No shame in this program. Shame is the thief's best friend, and we're going to starve them both.
+
+So write the list. Look at the big one. Keep the phone out of the room. And watch the man you're going to become over the next couple of days. You are no longer the man who gets robbed quietly. As of today, you are the man who catches the thief and destroys it.
+
+That's day two. See you tomorrow.
 
 **ACTION:** Write your thieves list right here on this page (it saves into your journal). Name the big one. Phone sleeps outside the bedroom from tonight on.
 

@@ -1,6 +1,6 @@
 // The Integrated Man — offline service worker
 // Network-first for the page (so updates always show), cache-first for static assets.
-var CACHE = "tim-v61.76-dev";
+var CACHE = "tim-v61.77-dev";
 var PRECACHE = ["./", "index.html", "the21.json",
   "assets/orb-vitality.png?v=2", "assets/orb-mental.png?v=2", "assets/orb-faith.png?v=2",
   "assets/orb-vocation.png?v=2", "assets/orb-wealth.png?v=2", "assets/orb-environment.png?v=2",
