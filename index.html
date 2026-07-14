@@ -8217,11 +8217,13 @@
       var d = t21Day(day); if (!d) return;
       var s = t21() || {};
       var mins = Math.max(1, Math.round(d.paras.join(" ").split(/\s+/).length / 180));
-      $("f21Crumb").textContent = (day === 0 ? "The 21 · Welcome" : "The 21 · Day " + day + " of 21 · " + d.movement) + " · ~" + mins + " min";
+      // only show the reading estimate when there's NO audio (the player shows the real length)
+      $("f21Crumb").textContent = (day === 0 ? "The 21 · Welcome" : "The 21 · Day " + day + " of 21 · " + d.movement) + (d.audio ? "" : " · ~" + mins + " min");
       var h = '<div class="f21-eyebrow">' + (day === 0 ? "Before Day 1" : "Today’s session") + "</div><h2>" + t21Esc(t21Title(d)) + "</h2>";
       if (d.audio) {
         var rate = (s.rate || 1);
-        h += '<div class="f21-audio"><audio id="f21Audio" src="' + t21Esc(d.audio) + '" controls preload="metadata"></audio>' +
+        h += '<div class="f21-seal" style="text-align:center;margin-top:14px">🎧 ' + (day === 0 ? "Press play. Leo’s got you." : "Leo · this morning’s charge") + "</div>" +
+             '<div class="f21-audio"><audio id="f21Audio" src="' + t21Esc(d.audio) + '" controls preload="metadata"></audio>' +
              '<div class="f21-speed">' + [1, 1.25, 1.5].map(function (r) {
                return '<button type="button" data-r="' + r + '" class="' + (r === rate ? "on" : "") + '" onclick="t21Rate(this)">' + r + "x</button>";
              }).join("") + "</div></div>" +
@@ -10605,7 +10607,7 @@
   });
   if (window.matchMedia) { try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { if (db.theme === "auto") applyTheme("auto"); }); } catch (e) {} }
 
-  var APP_VERSION = "v61.70-dev";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v61.71-dev";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
