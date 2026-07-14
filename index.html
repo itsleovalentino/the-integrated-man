@@ -2237,9 +2237,10 @@
   .f21-ig { width: 12px; height: 12px; border-radius: 50%; background: var(--pc); opacity: .12; transform: scale(.65); animation: f21ig .55s ease forwards; }
   @keyframes f21ig { to { opacity: 1; transform: scale(1); box-shadow: 0 0 9px var(--pc); } }
   @media (prefers-reduced-motion: reduce) { .f21-flame, .f21-ig, .f21-embers span { animation: none; opacity: 1; } .f21-flame { transform: none; } .f21-ig { transform: scale(1); opacity: 1; } }
-  .f21-adv-eyebrow { text-align: center; font-size: 10px; letter-spacing: .34em; text-transform: uppercase; color: var(--accent); margin-top: 10px; }
-  .f21-adv-h1 { text-align: center; font-family: Georgia, serif; font-weight: 500; font-size: clamp(27px, 7.4vw, 39px); line-height: 1.12; color: var(--ink-high); max-width: 15ch; margin: 13px auto 0; letter-spacing: -.01em; }
-  .f21-adv-sub { text-align: center; font-size: 15px; line-height: 1.65; color: var(--ink-soft); max-width: 40ch; margin: 16px auto 0; }
+  .f21-adv-eyebrow { text-align: center; font-size: 10px; letter-spacing: .34em; text-transform: uppercase; color: var(--accent); margin-top: 22px; }
+  .f21-adv-h1 { text-align: center; font-family: Georgia, serif; font-weight: 500; font-size: clamp(26px, 7vw, 37px); line-height: 1.16; color: var(--ink-high); max-width: 17ch; margin: 22px auto 0; letter-spacing: -.01em; text-wrap: balance; }
+  .f21-adv-h1 span { display: block; }   /* deliberate two-phrase read: "…made to be" / "is 21 mornings away." */
+  .f21-adv-sub { text-align: center; font-size: 15px; line-height: 1.65; color: var(--ink-soft); max-width: 38ch; margin: 22px auto 0; }
   .f21-journey { margin: 32px auto 0; max-width: 460px; position: relative; padding-left: 30px; }
   .f21-journey::before { content: ""; position: absolute; left: 9px; top: 8px; bottom: 26px; width: 2px; background: linear-gradient(var(--gold-line), rgba(203,178,126,.05)); }
   .f21-jstep { position: relative; padding: 0 0 22px; }
@@ -2257,6 +2258,21 @@
     background: linear-gradient(135deg, var(--accent-hover), var(--accent)); border: none; border-radius: 100px; padding: 17px; cursor: pointer; box-shadow: 0 8px 30px rgba(203,178,126,.26); transition: transform .15s; }
   .f21-adv-cta:active { transform: scale(.98); }
   .f21-adv-ctas { text-align: center; font-size: 11.5px; color: var(--ink-faint); margin-top: 11px; letter-spacing: .05em; }
+
+  /* ===== The 21 · in-progress daily hero (the return screen) ===== */
+  .f21-home-eyebrow { font-size: 10px; letter-spacing: .32em; text-transform: uppercase; color: var(--accent); margin: 4px 0 0 2px; }
+  .f21-today { background: linear-gradient(158deg, #1b1712, #121214 60%); border: 1px solid var(--gold-line); border-radius: 22px; padding: 20px 20px 22px; margin-top: 12px; position: relative; overflow: hidden; }
+  .f21-today::before { content: ""; position: absolute; top: -55%; right: -25%; width: 230px; height: 230px; border-radius: 50%; background: radial-gradient(circle, rgba(203,178,126,.15), transparent 68%); pointer-events: none; }
+  .f21-today > * { position: relative; }
+  .f21-today-top { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+  .f21-today-title { font-family: Georgia, serif; font-weight: 500; font-size: 27px; line-height: 1.1; color: var(--ink-high); margin-top: 13px; letter-spacing: -.01em; }
+  .f21-prog { height: 5px; border-radius: 10px; background: rgba(255,255,255,.07); margin-top: 14px; overflow: hidden; }
+  .f21-prog i { display: block; height: 100%; border-radius: 10px; background: linear-gradient(90deg, var(--accent), var(--accent-hover)); transition: width .8s cubic-bezier(.2,.8,.2,1); }
+  .f21-prog-cap { font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-faint); margin-top: 8px; }
+  .f21-begin { display: block; width: 100%; margin-top: 18px; font: inherit; font-size: 15.5px; font-weight: 600; color: #151009; background: linear-gradient(135deg, var(--accent-hover), var(--accent)); border: none; border-radius: 100px; padding: 15px; cursor: pointer; box-shadow: 0 7px 26px rgba(203,178,126,.24); transition: transform .15s; }
+  .f21-begin:active { transform: scale(.98); }
+  .f21-today.rest { background: var(--panel); border-color: var(--panel-edge); }
+  .f21-today.rest::before { display: none; }
 
   .f21-card { background: var(--panel); border: 1px solid var(--panel-edge); border-radius: 20px; padding: 18px; margin-top: 16px; }
   .f21-card.hero { background: linear-gradient(150deg, #191713, var(--panel) 65%); border-color: var(--gold-line); }
@@ -7799,7 +7815,7 @@
     if (cb) T21_CBS.push(cb);         // queue every waiter — a second caller mid-load no longer gets dropped
     if (T21_LOADING) return;
     T21_LOADING = true;
-    fetch("the21.json").then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (j) {
+    fetch("the21.json?v=" + APP_VERSION).then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (j) {   // version-bust so content is never stale
       T21 = j; T21_LOADING = false;
       var cbs = T21_CBS; T21_CBS = []; cbs.forEach(function (fn) { try { fn(); } catch (e) {} });
     }).catch(function () {
@@ -7916,17 +7932,17 @@
     var journey = [
       ["Week 1 · Awake", "Look yourself dead in the eye. Find out who you are and what you’re made for."],
       ["Week 2 · Build", "The exact morning that changed my life, installed in you."],
-      ["Week 3 · Become", "Go on offense. Step into the man."],
+      ["Week 3 · Become", "Go on offense. Become the man you were called to be."],
       ["Day 21", "Read a letter from yourself. Feel it move in your chest."]
     ].map(function (j) { return '<div class="f21-jstep"><div class="f21-jw">' + j[0] + "</div><p>" + t21Esc(j[1]) + "</p></div>"; }).join("");
-    var waiting = [["🎧", "Leo in your ear, every morning."], ["◎", "Your seven-pillar mirror."], ["✉", "A sealed letter to your future self."], ["△", "Your becoming, tracked as evidence."]]
+    var waiting = [["🎧", "Leo as your coach, every morning."], ["◎", "Your seven-pillar mirror."], ["✉", "A sealed letter to your future self."], ["△", "Your becoming, tracked as evidence."]]
       .map(function (w) { return '<div class="f21-wrow"><span class="f21-wi">' + w[0] + '</span><span>' + t21Esc(w[1]) + "</span></div>"; }).join("");
     return '<div class="f21-adv">' +
       '<div class="f21-embers" aria-hidden="true">' + embers + "</div>" +
       '<div class="f21-emblem"><div class="f21-flame"><svg viewBox="0 0 24 24"><path d="M12 3c1.5 3.6 6 6.3 6 11.4A6 6 0 0 1 6 14.4c0-2.2 1-4 2.3-5.8.5 1.5 1.4 2.3 2.6 2.8-1.1-3.1-.4-6 1.1-8.4z"/></svg></div>' +
       '<div class="f21-ignite">' + ignite + "</div></div>" +
       '<div class="f21-adv-eyebrow">The 21 · a call to every man</div>' +
-      '<div class="f21-adv-h1">The man you were made to be is 21 mornings away.</div>' +
+      '<div class="f21-adv-h1"><span>The man you were made to be</span><span>is 21 mornings away.</span></div>' +
       '<div class="f21-adv-sub">A few minutes with Leo each morning. One clear action. Twenty-one days. Then look at who’s standing there.</div>' +
       '<div class="f21-journey">' + journey + "</div>" +
       '<div class="f21-waiting">' + waiting + "</div>" +
@@ -7942,32 +7958,32 @@
     // PRE-START: the full immersive Call to Adventure (no generic header, no teasers)
     if (!s || !s.startedAt) { body.innerHTML = t21AdventureHtml() + t21DevBox(); return; }
     var h = "";
-    h += '<div class="f21-eyebrow">The Forge</div><div class="f21-h1">Where men are made.</div>' +
-         '<div class="f21-sub">The rhythm keeps you. The Forge grows you.</div>';
+    var doneN = t21DoneCount(), pct = Math.round(doneN / 21 * 100);
     if (s.completedAt) {
-      h += '<div class="f21-card hero"><span class="f21-tag">The 21 · complete</span><h3>You finished what you started.</h3>' +
-           '<div class="f21-meta">All 21 days, marked and witnessed. Revisit any day below — men re-listen in hard seasons.</div></div>';
+      h += '<div class="f21-home-eyebrow">The 21 · complete</div>' +
+           '<div class="f21-today"><span class="f21-tag">21 of 21 · forged</span>' +
+           '<h3 class="f21-today-title">You finished what you started.</h3>' +
+           '<div class="f21-prog"><i style="width:100%"></i></div>' +
+           '<div class="f21-meta" style="margin-top:12px">All 21 days, marked and witnessed. Revisit any day below — men re-listen in hard seasons.</div></div>';
       h += t21PathHtml(s);
     } else {
       var next = t21NextDay(), open = t21Available();
       var d = t21Day(next);
-      var waited = "";
       var lastDone = t21LastDoneDate();
-      if (open && lastDone && lastDone < keyOf(new Date(Date.now() - 86400000))) {
-        waited = '<div class="f21-meta" style="margin-top:8px">The program waited for you. Day ' + next + " is right where you left it.</div>";
-      }
-      h += '<div class="f21-card hero"><div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px">' +
-           '<span class="f21-tag">The 21 · ' + (d ? d.movement : "") + '</span><span class="f21-chip">Day ' + next + " of 21</span></div>" +
-           '<h3>' + (d ? t21Esc(t21Title(d)) : "…") + "</h3>" + waited +
+      var waited = (open && lastDone && lastDone < keyOf(new Date(Date.now() - 86400000)))
+        ? '<div class="f21-meta" style="margin-top:10px">The program waited for you. Day ' + next + " is right where you left it.</div>" : "";
+      h += '<div class="f21-home-eyebrow">The 21 · your climb</div>' +
+           '<div class="f21-today' + (open ? "" : " rest") + '">' +
+           '<div class="f21-today-top"><span class="f21-tag">' + (d ? d.movement : "") + '</span><span class="f21-chip">Day ' + next + " of 21</span></div>" +
+           '<h3 class="f21-today-title">' + (open ? (d ? t21Esc(t21Title(d)) : "…") : "Today is done.") + "</h3>" +
+           '<div class="f21-prog"><i style="width:' + pct + '%"></i></div>' +
+           '<div class="f21-prog-cap">' + doneN + ' of 21 forged</div>' + waited +
            (open
-             ? '<button class="f21-btn" onclick="t21OpenSession(' + next + ')">Begin Day ' + next + "</button>"
-             : '<div class="f21-meta" style="margin-top:12px">Done for today. Tomorrow’s waiting above.</div>' +
-               '<div class="f21-seal">Unlocks at first light (midnight, technically). Tonight: phone out of the room.</div>') +
+             ? '<button class="f21-begin" onclick="t21OpenSession(' + next + ')">Begin Day ' + next + " &rarr;</button>"
+             : '<div class="f21-meta" style="margin-top:14px">Tomorrow’s Day ' + next + ' waits at first light. Tonight: phone out of the room.</div>') +
            "</div>";
       h += t21PathHtml(s);
-      if (s.letter && !s.completedAt) {
-        h += '<div class="f21-seal" style="text-align:center;margin-top:10px">Your letter is sealed in the vault · it opens on Day 21</div>';
-      }
+      if (s.letter) h += '<div class="f21-seal" style="text-align:center;margin-top:10px">✉ Your letter is sealed in the vault · it opens on Day 21</div>';
       h += '<div class="f21-seal" style="text-align:center;margin-top:16px"><button class="f21-ex-toggle" onclick="t21OpenFall()" style="text-transform:none;letter-spacing:0;font-size:12px">Hard night? Missed a morning? The Fall is here when you need it.</button></div>';
     }
     if (s && (t21FlowUnlocked("jesus") || t21FlowUnlocked("praise"))) {
@@ -10688,7 +10704,7 @@
   });
   if (window.matchMedia) { try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { if (db.theme === "auto") applyTheme("auto"); }); } catch (e) {} }
 
-  var APP_VERSION = "v61.73-dev";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v61.74-dev";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
