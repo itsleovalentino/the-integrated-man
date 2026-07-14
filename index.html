@@ -1370,6 +1370,8 @@
   .toast-body { flex: 1; cursor: pointer; }
   .toast-kicker { font-size: 10.5px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent); margin-bottom: 3px; }
   .toast-text { font-size: 14px; line-height: 1.45; color: var(--ink); }
+  /* a resurfaced memory is a PREVIEW — clamp it so a long entry can't fill the whole screen */
+  .toast-text.clamp { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4; overflow: hidden; }
   .toast-text em { color: var(--ink-soft); font-style: italic; }
   .toast-close { background: none; border: none; color: var(--ink-faint); font-size: 18px; cursor: pointer; padding: 2px 4px; flex-shrink: 0; }
 
@@ -9591,7 +9593,10 @@
     if (!mem) return;
     var b = $("toastBody");
     var ago = mem.days >= 365 ? "A year ago" : (mem.days >= 30 ? "A month ago" : "A week ago");
-    b.innerHTML = '<div class="toast-kicker">Memory · ' + ago + '</div><div class="toast-text"><em>“' + escapeHtml(mem.t.text) + '”</em></div>';
+    var long = (mem.t.text || "").length > 150;   // long entries get clamped to a preview + a "tap to read" hint
+    b.innerHTML = '<div class="toast-kicker">Memory · ' + ago + '</div>' +
+      '<div class="toast-text' + (long ? " clamp" : "") + '"><em>“' + escapeHtml(mem.t.text) + '”</em></div>' +
+      (long ? '<div class="toast-kicker" style="margin-top:5px;color:var(--accent)">Tap to read it</div>' : "");
     b._action = openThoughts;
     $("toast").hidden = false;
     clearTimeout(toastTimer); toastTimer = setTimeout(function () { $("toast").hidden = true; }, 9000);
@@ -10704,7 +10709,7 @@
   });
   if (window.matchMedia) { try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { if (db.theme === "auto") applyTheme("auto"); }); } catch (e) {} }
 
-  var APP_VERSION = "v61.74";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v61.75";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
