@@ -2220,6 +2220,44 @@
   .f21-eyebrow { font-size: 10.5px; letter-spacing: .28em; text-transform: uppercase; color: var(--accent); }
   .f21-h1 { font-family: var(--serif, Georgia), Georgia, serif; font-weight: 500; font-size: 30px; color: var(--ink-high); margin-top: 6px; letter-spacing: -.01em; }
   .f21-sub { font-size: 14px; color: var(--ink-soft); margin-top: 5px; line-height: 1.55; font-style: italic; }
+  /* ===== The 21 · Call to Adventure landing ===== */
+  .f21-adv { position: relative; padding: 4px 2px 30px; overflow: hidden; }
+  .f21-adv > * { position: relative; z-index: 1; }
+  .f21-embers { position: absolute; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+  .f21-embers span { position: absolute; bottom: -10px; width: 4px; height: 4px; border-radius: 50%; background: var(--accent-hover);
+    opacity: 0; animation: f21ember var(--dur) linear infinite; animation-delay: var(--del); }
+  @keyframes f21ember { 0% { opacity: 0; transform: translate(0,0) scale(1); } 10% { opacity: .5; } 70% { opacity: .28; } 100% { opacity: 0; transform: translate(var(--dx), -58vh) scale(.4); } }
+  body.view-off .f21-embers span { animation: none; }
+  /* the igniting emblem: seven pillars light one by one, then a flame rises — the whole man, forged */
+  .f21-emblem { display: flex; flex-direction: column; align-items: center; gap: 15px; margin: 16px auto 2px; }
+  .f21-flame { width: 40px; height: 40px; opacity: 0; animation: f21flameIn 1.1s ease 1.5s forwards; }
+  .f21-flame svg { width: 100%; height: 100%; fill: none; stroke: var(--accent); stroke-width: 1.3; filter: drop-shadow(0 0 11px rgba(203,178,126,.55)); }
+  @keyframes f21flameIn { from { opacity: 0; transform: translateY(9px) scale(.8); } to { opacity: 1; transform: none; } }
+  .f21-ignite { display: flex; gap: 9px; }
+  .f21-ig { width: 12px; height: 12px; border-radius: 50%; background: var(--pc); opacity: .12; transform: scale(.65); animation: f21ig .55s ease forwards; }
+  @keyframes f21ig { to { opacity: 1; transform: scale(1); box-shadow: 0 0 9px var(--pc); } }
+  @media (prefers-reduced-motion: reduce) { .f21-flame, .f21-ig, .f21-embers span { animation: none; opacity: 1; } .f21-flame { transform: none; } .f21-ig { transform: scale(1); opacity: 1; } }
+  .f21-adv-eyebrow { text-align: center; font-size: 10px; letter-spacing: .34em; text-transform: uppercase; color: var(--accent); margin-top: 10px; }
+  .f21-adv-h1 { text-align: center; font-family: Georgia, serif; font-weight: 500; font-size: clamp(27px, 7.4vw, 39px); line-height: 1.12; color: var(--ink-high); max-width: 15ch; margin: 13px auto 0; letter-spacing: -.01em; }
+  .f21-adv-sub { text-align: center; font-size: 15px; line-height: 1.65; color: var(--ink-soft); max-width: 40ch; margin: 16px auto 0; }
+  .f21-journey { margin: 32px auto 0; max-width: 460px; position: relative; padding-left: 30px; }
+  .f21-journey::before { content: ""; position: absolute; left: 9px; top: 8px; bottom: 26px; width: 2px; background: linear-gradient(var(--gold-line), rgba(203,178,126,.05)); }
+  .f21-jstep { position: relative; padding: 0 0 22px; }
+  .f21-jstep::before { content: ""; position: absolute; left: -30px; top: 2px; width: 12px; height: 12px; border-radius: 50%; background: var(--bg); border: 2px solid var(--accent); }
+  .f21-jstep .f21-jw { font-size: 10px; letter-spacing: .26em; text-transform: uppercase; color: var(--accent); }
+  .f21-jstep p { font-size: 14.5px; line-height: 1.5; color: var(--ink-soft); margin-top: 6px; font-style: italic; font-family: Georgia, serif; }
+  .f21-waiting { margin: 24px auto 0; max-width: 440px; }
+  .f21-wrow { display: flex; align-items: center; gap: 13px; padding: 11px 0; border-bottom: 1px solid var(--line); }
+  .f21-wrow:last-child { border-bottom: none; }
+  .f21-wi { flex: none; width: 30px; height: 30px; border-radius: 50%; background: var(--accent-soft); border: 1px solid var(--gold-line); display: flex; align-items: center; justify-content: center; color: var(--accent); font-size: 13px; }
+  .f21-wrow > span:last-child { font-size: 14px; color: var(--ink); }
+  .f21-rule { text-align: center; margin: 26px auto 0; font-family: Georgia, serif; font-style: italic; font-size: 17px; color: var(--ink-high); }
+  .f21-rule b { font-style: normal; color: var(--accent-hover); }
+  .f21-adv-cta { display: block; width: 100%; max-width: 420px; margin: 24px auto 0; font: inherit; font-size: 16px; font-weight: 600; color: #151009;
+    background: linear-gradient(135deg, var(--accent-hover), var(--accent)); border: none; border-radius: 100px; padding: 17px; cursor: pointer; box-shadow: 0 8px 30px rgba(203,178,126,.26); transition: transform .15s; }
+  .f21-adv-cta:active { transform: scale(.98); }
+  .f21-adv-ctas { text-align: center; font-size: 11.5px; color: var(--ink-faint); margin-top: 11px; letter-spacing: .05em; }
+
   .f21-card { background: var(--panel); border: 1px solid var(--panel-edge); border-radius: 20px; padding: 18px; margin-top: 16px; }
   .f21-card.hero { background: linear-gradient(150deg, #191713, var(--panel) 65%); border-color: var(--gold-line); }
   .f21-tag { font-size: 9.5px; letter-spacing: .24em; text-transform: uppercase; color: var(--accent); }
@@ -2260,7 +2298,8 @@
   .f21-back { font: inherit; font-size: 18px; background: none; border: none; color: var(--ink-soft); cursor: pointer; padding: 4px 8px; }
   .f21-crumb { font-size: 10px; letter-spacing: .24em; text-transform: uppercase; color: var(--accent); }
   .f21-sess-scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
-  .f21-sess-inner { max-width: 560px; margin: 0 auto; padding: 22px 18px calc(env(safe-area-inset-bottom, 0px) + 40px); }
+  .f21-sess-inner { max-width: 560px; margin: 0 auto; padding: 22px 18px calc(env(safe-area-inset-bottom, 0px) + 40px); position: relative; }
+  .f21-sess-inner > *:not(.f21-embers) { position: relative; z-index: 1; }   /* content sits above the Day 0 embers */
   .f21-sess-inner h2 { font-family: Georgia, serif; font-weight: 500; font-size: 28px; line-height: 1.15; color: var(--ink-high); margin-top: 6px; }
   .f21-story { font-size: 12px; color: var(--ink-faint); border: 1px dashed var(--panel-edge); border-radius: 12px; padding: 10px 12px; margin: 14px 0; font-style: italic; }
   .f21-p { font-size: 15px; line-height: 1.75; color: var(--ink-soft); margin-top: 14px; }
@@ -7861,17 +7900,51 @@
     if (/^\*\*[^*]+\*\*$/.test(p.trim())) return '<div class="f21-eyebrow" style="margin-top:24px">' + t21Esc(p.replace(/\*/g, "")) + "</div>";
     return '<p class="f21-p' + (lede ? " f21-lede" : "") + '">' + h + "</p>";
   }
+  function t21DevBox() {
+    if (!(window.TIM_DEV || location.hostname === "localhost" || location.hostname === "127.0.0.1")) return "";
+    return '<div class="f21-debug"><span class="f21-tag">Time machine (dev only)</span><div>' +
+      '<button onclick="t21DebugShift()">⏪ Make today’s progress “yesterday”</button>' +
+      '<button onclick="t21DebugReset()">Reset The 21</button>' +
+      '<button onclick="pushEnable()">🔔 Enable push (this device)</button>' +
+      '<button onclick="pushTest()">Send me a test in 10s</button></div></div>';
+  }
+  function t21AdventureHtml() {
+    var cols = ["#cdcdca", "#8aa85a", "#5d8cb4", "#7faab0", "#897fcf", "#a8997d", "#d59f3b"]; // the 7 pillars
+    var embers = "";
+    for (var e = 0; e < 14; e++) embers += '<span style="left:' + (4 + e * 7) + '%;--dur:' + (9 + (e % 5) * 1.4) + 's;--del:-' + (e * 0.9).toFixed(1) + 's;--dx:' + ((e % 2 ? 1 : -1) * (10 + (e % 3) * 8)) + 'px"></span>';
+    var ignite = cols.map(function (c, i) { return '<span class="f21-ig" style="--pc:' + c + ';animation-delay:' + (0.15 + i * 0.12).toFixed(2) + 's"></span>'; }).join("");
+    var journey = [
+      ["Week 1 · Awake", "Look yourself dead in the eye. Find out who you are and what you’re made for."],
+      ["Week 2 · Build", "The exact morning that changed my life, installed in you."],
+      ["Week 3 · Become", "Go on offense. Step into the man."],
+      ["Day 21", "Read a letter from yourself. Feel it move in your chest."]
+    ].map(function (j) { return '<div class="f21-jstep"><div class="f21-jw">' + j[0] + "</div><p>" + t21Esc(j[1]) + "</p></div>"; }).join("");
+    var waiting = [["🎧", "Leo in your ear, every morning."], ["◎", "Your seven-pillar mirror."], ["✉", "A sealed letter to your future self."], ["△", "Your becoming, tracked as evidence."]]
+      .map(function (w) { return '<div class="f21-wrow"><span class="f21-wi">' + w[0] + '</span><span>' + t21Esc(w[1]) + "</span></div>"; }).join("");
+    return '<div class="f21-adv">' +
+      '<div class="f21-embers" aria-hidden="true">' + embers + "</div>" +
+      '<div class="f21-emblem"><div class="f21-flame"><svg viewBox="0 0 24 24"><path d="M12 3c1.5 3.6 6 6.3 6 11.4A6 6 0 0 1 6 14.4c0-2.2 1-4 2.3-5.8.5 1.5 1.4 2.3 2.6 2.8-1.1-3.1-.4-6 1.1-8.4z"/></svg></div>' +
+      '<div class="f21-ignite">' + ignite + "</div></div>" +
+      '<div class="f21-adv-eyebrow">The 21 · a call to every man</div>' +
+      '<div class="f21-adv-h1">The man you were made to be is 21 mornings away.</div>' +
+      '<div class="f21-adv-sub">A few minutes with Leo each morning. One clear action. Twenty-one days. Then look at who’s standing there.</div>' +
+      '<div class="f21-journey">' + journey + "</div>" +
+      '<div class="f21-waiting">' + waiting + "</div>" +
+      '<div class="f21-rule">One rule in here. <b>Don’t fake anything.</b></div>' +
+      '<button class="f21-adv-cta" onclick="t21Start()">Step in →</button>' +
+      '<div class="f21-adv-ctas">It starts the moment you tap.</div>' +
+      "</div>";
+  }
   function renderForge() {
     var body = $("forgeBody"); if (!body) return;
     if (!T21) { body.innerHTML = '<div class="f21-err">Lighting the fire…</div>'; t21Load(renderForge); return; }
-    var s = t21(), h = "";
+    var s = t21();
+    // PRE-START: the full immersive Call to Adventure (no generic header, no teasers)
+    if (!s || !s.startedAt) { body.innerHTML = t21AdventureHtml() + t21DevBox(); return; }
+    var h = "";
     h += '<div class="f21-eyebrow">The Forge</div><div class="f21-h1">Where men are made.</div>' +
          '<div class="f21-sub">The rhythm keeps you. The Forge grows you.</div>';
-    if (!s || !s.startedAt) {
-      h += '<div class="f21-card hero"><span class="f21-tag">The 21 · your first forging</span><h3>21 mornings. One clear action a day.</h3>' +
-           '<div class="f21-meta">Leo with you every morning: see where you stand, write the man you’re becoming, hand over the controls, and build the morning that changes everything. The door to the rest of the Forge opens through it.</div>' +
-           '<button class="f21-btn" onclick="t21Start()">Start The 21</button></div>';
-    } else if (s.completedAt) {
+    if (s.completedAt) {
       h += '<div class="f21-card hero"><span class="f21-tag">The 21 · complete</span><h3>You finished what you started.</h3>' +
            '<div class="f21-meta">All 21 days, marked and witnessed. Revisit any day below — men re-listen in hard seasons.</div></div>';
       h += t21PathHtml(s);
@@ -7914,16 +7987,8 @@
                  : '<button class="f21-btn ghost" onclick="t21OpenFlow(\'praise\')">Run it now</button>') + "</div>";
       }
     }
-    h += '<div class="f21-eyebrow" style="margin-top:30px">In the fire · coming</div>' +
-         '<div class="f21-card f21-teaser"><h3>The Forty</h3><div class="f21-meta">The mountain after the on-ramp. 40 days, six movements, a rite of passage.</div></div>' +
-         '<div class="f21-card f21-teaser"><h3>Growth Plans</h3><div class="f21-meta">Focused forging for your weakest pillar.</div></div>';
-    if (window.TIM_DEV || location.hostname === "localhost" || location.hostname === "127.0.0.1") {
-      h += '<div class="f21-debug"><span class="f21-tag">Time machine (dev only)</span><div>' +
-           '<button onclick="t21DebugShift()">⏪ Make today’s progress “yesterday”</button>' +
-           '<button onclick="t21DebugReset()">Reset The 21</button>' +
-           '<button onclick="pushEnable()">🔔 Enable push (this device)</button>' +
-           '<button onclick="pushTest()">Send me a test in 10s</button></div></div>';
-    }
+    // (teasers removed — for now the Forge is all about The 21)
+    h += t21DevBox();
     body.innerHTML = h;
   }
   function t21Title(d) { return d.title.replace(/^THE /, "The ").replace(/\b([A-Z])([A-Z]+)\b/g, function (m, a, b) { return a + b.toLowerCase(); }); }
@@ -8226,7 +8291,16 @@
       var mins = Math.max(1, Math.round(d.paras.join(" ").split(/\s+/).length / 180));
       // only show the reading estimate when there's NO audio (the player shows the real length)
       $("f21Crumb").textContent = (day === 0 ? "The 21 · Welcome" : "The 21 · Day " + day + " of 21 · " + d.movement) + (d.audio ? "" : " · ~" + mins + " min");
-      var h = '<div class="f21-eyebrow">' + (day === 0 ? "Before Day 1" : "Today’s session") + "</div><h2>" + t21Esc(t21Title(d)) + "</h2>";
+      // Day 0 = crossing the threshold: rising embers + the igniting emblem behind the welcome
+      var h = "";
+      if (day === 0) {
+        var emb0 = "";
+        for (var e0 = 0; e0 < 12; e0++) emb0 += '<span style="left:' + (5 + e0 * 8) + '%;--dur:' + (10 + (e0 % 4) * 1.5) + 's;--del:-' + (e0 * 1.1).toFixed(1) + 's;--dx:' + ((e0 % 2 ? 1 : -1) * (10 + (e0 % 3) * 7)) + 'px"></span>';
+        var ig0 = ["#cdcdca", "#8aa85a", "#5d8cb4", "#7faab0", "#897fcf", "#a8997d", "#d59f3b"].map(function (c, i) { return '<span class="f21-ig" style="--pc:' + c + ';animation-delay:' + (0.2 + i * 0.13).toFixed(2) + 's"></span>'; }).join("");
+        h += '<div class="f21-embers" aria-hidden="true">' + emb0 + "</div>" +
+             '<div class="f21-emblem" style="margin-top:2px"><div class="f21-flame"><svg viewBox="0 0 24 24"><path d="M12 3c1.5 3.6 6 6.3 6 11.4A6 6 0 0 1 6 14.4c0-2.2 1-4 2.3-5.8.5 1.5 1.4 2.3 2.6 2.8-1.1-3.1-.4-6 1.1-8.4z" fill="none" stroke="currentColor" stroke-width="1.3"/></svg></div><div class="f21-ignite">' + ig0 + "</div></div>";
+      }
+      h += '<div class="f21-eyebrow"' + (day === 0 ? ' style="text-align:center"' : "") + ">" + (day === 0 ? "The threshold" : "Today’s session") + "</div><h2" + (day === 0 ? ' style="text-align:center"' : "") + ">" + t21Esc(t21Title(d)) + "</h2>";
       if (d.audio) {
         var rate = (s.rate || 1);
         h += '<div class="f21-seal" style="text-align:center;margin-top:14px">🎧 ' + (day === 0 ? "Press play. Leo’s got you." : "Leo · this morning’s charge") + "</div>" +
@@ -10614,7 +10688,7 @@
   });
   if (window.matchMedia) { try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { if (db.theme === "auto") applyTheme("auto"); }); } catch (e) {} }
 
-  var APP_VERSION = "v61.72-dev";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v61.73-dev";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
