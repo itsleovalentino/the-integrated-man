@@ -10605,7 +10605,7 @@
   });
   if (window.matchMedia) { try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { if (db.theme === "auto") applyTheme("auto"); }); } catch (e) {} }
 
-  var APP_VERSION = "v61.69-dev";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v61.70-dev";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
@@ -11027,9 +11027,16 @@
       if (s21.flows) { d21.flows = d21.flows || {};   // routine run-days union — never lost
         for (var fk21 in s21.flows) { d21.flows[fk21] = d21.flows[fk21] || {};
           for (var fd21 in s21.flows[fk21]) { if (s21.flows[fk21][fd21] && !d21.flows[fk21][fd21]) { d21.flows[fk21][fd21] = 1; added++; } } } }
-      // lies + affirmations: keep whichever list holds MORE of his words
-      if (Array.isArray(s21.lies) && s21.lies.length > (Array.isArray(d21.lies) ? d21.lies.length : 0)) { d21.lies = s21.lies; added++; }
-      if (Array.isArray(s21.affirms) && s21.affirms.length > (Array.isArray(d21.affirms) ? d21.affirms.length : 0)) { d21.affirms = s21.affirms; added++; }
+      // lies + affirmations: UNION by value (never replace-whole — two devices could each hold
+      // different entries, and "longer list wins" would drop the shorter device's words)
+      if (Array.isArray(s21.affirms)) { d21.affirms = d21.affirms || [];
+        var aHave21 = {}; d21.affirms.forEach(function (a) { if (a) aHave21[a] = 1; });
+        s21.affirms.forEach(function (a) { if (a && !aHave21[a]) { d21.affirms.push(a); aHave21[a] = 1; added++; } }); }
+      if (Array.isArray(s21.lies)) { d21.lies = d21.lies || [];
+        var lHave21 = {}; d21.lies.forEach(function (x) { if (x && x.lie) lHave21[x.lie] = x; });
+        s21.lies.forEach(function (x) { if (!x || !x.lie) return;
+          if (!lHave21[x.lie]) { d21.lies.push(x); lHave21[x.lie] = x; added++; }
+          else { var cur21 = lHave21[x.lie]; if ((x.truth || "").length > (cur21.truth || "").length) { cur21.truth = x.truth; added++; } } }); }
       if (s21.drafts) { d21.drafts = d21.drafts || {};   // unfinished writing: keep whichever copy holds more
         for (var dr21 in s21.drafts) { if ((s21.drafts[dr21] || "").length > (d21.drafts[dr21] || "").length) { d21.drafts[dr21] = s21.drafts[dr21]; added++; } } }
     }
