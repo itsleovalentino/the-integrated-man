@@ -7703,6 +7703,7 @@
   // ===== App shell: bottom nav + destinations (Home / Bible / Fellowship) =====
   var currentView = "home";
   function setView(name) {
+    if (name === "forge" && typeof forgeVisible === "function" && !forgeVisible()) name = "home";   // Forge hidden on prod
     currentView = name;
     document.body.classList.toggle("view-off", name !== "home");   // pause the Home background while it's hidden (perf)
     var wrap = document.querySelector(".wrap"); if (wrap) wrap.hidden = (name !== "home");
@@ -7739,7 +7740,15 @@
   $("journalBubble").addEventListener("click", openJournalNav);
   $("nav_bible").addEventListener("click", function () { if (currentView !== "bible") openBible(db.lastPassage || "John 1"); buzz(8); });
   $("nav_fellowship").addEventListener("click", function () { setView("fellowship"); buzz(8); });
-  $("nav_forge").addEventListener("click", function () { setView("forge"); buzz(8); });
+  // ===== The Forge visibility gate =====
+  // The Forge (The 21) is DEV-ONLY until it's ready to reveal. On prod it's fully hidden — the
+  // nav tab, the Home card, and the nav dot all disappear — so shipping the under-the-hood fixes
+  // never exposes an unfinished feature. When The 21 is recorded and you've lived it a week, flip
+  // FORGE_LIVE = true and ship: it goes public for everyone at once (Leo's call — public, not code-gated).
+  var FORGE_LIVE = false;
+  function forgeVisible() { return !!(window.TIM_DEV || FORGE_LIVE); }
+  if (!forgeVisible()) { var _nf = $("nav_forge"); if (_nf) _nf.style.display = "none"; }
+  $("nav_forge").addEventListener("click", function () { if (!forgeVisible()) return; setView("forge"); buzz(8); });
 
   // ================= THE FORGE + THE 21 =================
   // Content lives in the21.json (generated from THE-21.md — the scripts are the source of truth).
@@ -8449,12 +8458,13 @@
   function t21NavDot() {
     var b = $("navForgeBadge"); if (!b) return;
     var s = t21();
-    b.classList.toggle("on", !!(s && s.startedAt && !s.completedAt && t21Available()));
+    b.classList.toggle("on", forgeVisible() && !!(s && s.startedAt && !s.completedAt && t21Available()));
   }
   // The 21 on Home: the morning screen he already opens says today's session is ready
   function t21HomeCard() {
     var wrap = document.querySelector(".wrap"); if (!wrap) return;
     var old = $("t21HomeCard"); if (old) old.remove();
+    if (!forgeVisible()) return;   // Forge hidden on prod → no Home card either
     var s = t21();
     t21NavDot();
     if (!s || !s.startedAt || s.completedAt || !t21Available()) return;
@@ -10595,7 +10605,7 @@
   });
   if (window.matchMedia) { try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { if (db.theme === "auto") applyTheme("auto"); }); } catch (e) {} }
 
-  var APP_VERSION = "v61.68-dev";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v61.69-dev";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
