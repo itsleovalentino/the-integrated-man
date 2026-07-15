@@ -198,23 +198,29 @@ Tomorrow, we turn those pictures into something you'll carry for the rest of you
 ---
 
 ### DAY 4 · WRITE IT DOWN
-*Descent · ~4 min · onboards: the vault (sealed letter)*
+*Descent · ~5 min · Leo's real take (transcript matches audio) · onboards: the vault (sealed letter)*
 
-Yesterday you saw him. Today you write him down, because a vision that stays in your head is a daydream. A vision written clearly is a target.
+Welcome back to day four. Yesterday you were able to see a very clear picture of the man that God is calling you to become. Today, you are going to write him down. Because a vision that is just in your head is simply a daydream. But a vision that is written clearly is a target that you can actually achieve.
 
-There's a verse this whole app is built on. Romans 12:2. Paul says: don't be conformed to this world, be TRANSFORMED, by the renewing of your mind. Read that again slowly. Transformation doesn't start with your habits. It starts with what you can see. A man can't become what he can't picture. You pictured him yesterday. Today you make it permanent.
+Romans 12:2. Paul says: do not be conformed to the pattern of this world, but be transformed by the renewing of your mind. Transformation does not start with just your habits. It begins with what you can see. A man cannot become what he cannot picture. Yesterday you pictured him. Today you make it permanent and clear.
 
-`[YOUR STORY: 45 seconds. The moment you first wrote your vision down, and what changed once it existed on paper.]`
+And just in case you think writing it down is optional — there's a prophet named Habakkuk, and God gave him a direct command. He says: write the vision, make it plain, that he may run who reads it. Hear that again. God's own instruction manual for vision was to write it, make it plain — and it turns a reader into a runner. That's what today is going to build. This will be the fuel that you will run on for the next 17 days.
 
-In the app there's a letter waiting for you. It seals when you finish, and it stays sealed until Day 21. Nobody sees it but you, and you won't see it again until the last day.
+I remember the first time I wrote my vision. At the top of the page I wrote five words: the man that I'm becoming. And then I just wrote him, very clearly. What version of myself do I want to be? How does he feel? What does he do? What kind of character does he carry?
 
-Write the man. His character: how he talks, what he refuses, what people feel when he walks in. Write the life he stewards, all seven pillars: his faith, his body, his mind, his people, his work, his money, his space. Write the lifestyle: what a normal Tuesday looks like when it's him living it.
+And this is what changed everything for me. Because finally, this version of myself that I wanted to become existed. It was real. I could read it. I could carry it with me. And I want to tell you something: when I go back to that vision today, 95% of what I wrote down has come alive in my life. The last 5% is because I outgrew it. God changed my heart. God changed my desires. That's what happens when you write it down and you start walking — you're going to achieve a lot of these things, but some of it you're going to outgrow. And that's okay.
 
-Write in the present tense, like he already exists, because in God's mind, he already does. "He gets up when the alarm sounds. He opens the Word before the world gets to him. His kids know his eyes, not the top of his head."
+So in the app, there's a space. It's a letter waiting for you. As soon as you write it, it's going to seal. Now, of course, it's going to save into your app. But it stays sealed until day 21. Nobody sees it but you. And honestly, if you let it happen, you won't be able to see it again until the last day.
 
-Pull up yesterday's notes and write for fifteen minutes. Don't edit. Don't be realistic. Realistic is just fear wearing glasses. And if you stall, there are a few example lines on this page to prime the pump. Borrow the shape, not the words.
+I want you to write that man. His character: how he talks, what he refuses, what people feel when he walks into the room. Write the life that he stewards, all seven pillars: his faith, his mental, his tribe, his wealth, his vocation, his environment. Write the lifestyle: what a normal Tuesday looks like with him living it.
 
-On Day 21 you're going to read this letter, and something in your chest is going to move. Write it like you mean it.
+And here's the thing. Write it in the present tense, as if it's already happened. Like he already exists — because in God's mind, he already does. He gets up when the alarm sounds. He opens the Word before the world gets to him. His kids know his eyes, not the top of his head. He is somebody who is bright, somebody who is strong, somebody who wants to please God. He is somebody that has a strong nature, somebody who is respected by the people around him. This is the man that you are becoming.
+
+If you want, pull up yesterday's notes, and write for 15 minutes. Don't edit. Don't be realistic. Realistic is just fear wearing glasses. And if you stall, there's a few example lines on this page to really get you going.
+
+On day 21, you're going to open this letter and read it. And something in your chest is going to move. Because you won't just be reading a vision — you'll be reading it as a man who's 17 days closer to him, and with the receipts to prove it.
+
+Write it like you mean it. Because you do. That's your action: write the vision letter, present tense, all of it clearly, and it will seal until day 21. We'll see you tomorrow.
 
 **ACTION:** Write the vision letter, present tense, all of it clearly. It seals until Day 21.
 
