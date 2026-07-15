@@ -2379,6 +2379,25 @@
   .f21-sdots button { aspect-ratio: 1; max-width: 26px; width: 100%; justify-self: center; border-radius: 50%;
     background: var(--field); border: 1px solid var(--field-edge); cursor: pointer; padding: 0; }
   .f21-sdots button.on { background: var(--pc); border-color: var(--pc); }
+  /* Day 1/21 Mirror — the live Integration meter that stacks up as you rate yourself */
+  .f21-meter { background: linear-gradient(158deg, #171310, #121214 62%); border: 1px solid var(--gold-line); border-radius: 18px; padding: 16px 18px 14px; margin-bottom: 18px; position: relative; overflow: hidden; transition: border-color .4s ease; }
+  .f21-meter::after { content: ""; position: absolute; inset: 0; background: radial-gradient(120% 90% at 50% 0%, rgba(203,178,126,.10), transparent 62%); opacity: 0; transition: opacity .5s ease; pointer-events: none; }
+  .f21-meter.complete { border-color: var(--accent); }
+  .f21-meter.complete::after { opacity: 1; }
+  .f21-meter-top { display: flex; justify-content: space-between; align-items: baseline; }
+  .f21-meter-num { font-size: 40px; font-weight: 300; line-height: 1; letter-spacing: -.02em; color: var(--accent); font-variant-numeric: tabular-nums; display: inline-block; }
+  .f21-meter.bump .f21-meter-num { animation: f21mBump .42s cubic-bezier(.2,.8,.2,1); }
+  @keyframes f21mBump { 0% { transform: scale(1); } 34% { transform: scale(1.14); } 100% { transform: scale(1); } }
+  .f21-meter-unit { font-size: 12px; color: var(--ink-faint); margin-left: 7px; }
+  .f21-meter-count { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-faint); transition: color .4s ease; }
+  .f21-meter.complete .f21-meter-count { color: var(--accent); }
+  .f21-meter-bars { display: grid; grid-template-columns: repeat(7, 1fr); gap: 7px; align-items: end; height: 46px; margin-top: 14px; }
+  .f21-mbar { position: relative; height: 100%; border-radius: 5px; background: rgba(255,255,255,.05); overflow: hidden; }
+  .f21-mbar > i { position: absolute; left: 0; right: 0; bottom: 0; height: 0; background: linear-gradient(to top, var(--pc), color-mix(in srgb, var(--pc) 72%, white)); border-radius: 5px; transition: height .52s cubic-bezier(.2,.8,.2,1); }
+  .f21-mbar.set { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--pc) 42%, transparent); }
+  .f21-mbar.pop { animation: f21mPop .42s cubic-bezier(.2,.8,.2,1); }
+  @keyframes f21mPop { 0% { transform: translateY(0) scaleY(1); } 32% { transform: translateY(-3px) scaleY(1.06); } 100% { transform: translateY(0) scaleY(1); } }
+  @media (prefers-reduced-motion: reduce) { .f21-meter.bump .f21-meter-num, .f21-mbar.pop { animation: none; } .f21-mbar > i { transition: none; } }
   .f21-delta { margin-top: 12px; }
   .f21-delta div { display: flex; justify-content: space-between; align-items: baseline; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
   .f21-delta span { color: var(--ink-soft); }
@@ -8262,6 +8281,18 @@
   function t21ScorerHtml(blankStart) {
     var h = '<div class="f21-action"><span class="f21-tag">Score your seven · right here, right now</span>' +
             (blankStart ? '<div class="f21-seal" style="margin-top:6px">Blank on purpose. Zero bias: score the man of TODAY.</div>' : "");
+    // live Integration meter — stacks up as he rates each pillar (Day 1 only; Day 21 stays blank for zero bias)
+    if (!blankStart) {
+      var mbars = "";
+      t21Pillars().forEach(function (p) { mbars += '<div class="f21-mbar" data-pk="' + p.key + '" style="--pc:' + p.color + '"><i></i></div>'; });
+      h += '<div class="f21-meter" id="f21Meter">' +
+             '<div class="f21-meter-top">' +
+               '<div><span class="f21-meter-num serif" id="f21MeterNum">—</span><span class="f21-meter-unit">/10 integration</span></div>' +
+               '<div class="f21-meter-count" id="f21MeterCount">0 of 7 scored</div>' +
+             '</div>' +
+             '<div class="f21-meter-bars" id="f21MeterBars">' + mbars + '</div>' +
+           '</div>';
+    }
     t21Pillars().forEach(function (p) {
       var cur = blankStart ? null : t21RatingOf(p.key);
       h += '<div class="f21-score-row' + (cur != null ? " rated" : "") + '" style="--pc:' + p.color + '" data-pk="' + p.key + '">' +
@@ -8273,6 +8304,42 @@
     });
     return h + '<div class="f21-seal">These are your real pillar scores. Your Home page shows the same numbers.</div></div>';
   }
+  // the live Mirror meter: integration = average of pillars rated TODAY, with the bars stacked in pillar order
+  var t21MeterShown = 0;
+  function t21UpdateMeter(animate, pulseKey) {
+    var meter = $("f21Meter"); if (!meter) return;
+    var dk = todayLocal(), r = (db.ratings && db.ratings[dk]) || {};
+    var sum = 0, n = 0, total = t21Pillars().length;
+    var bars = $("f21MeterBars");
+    if (bars) Array.prototype.forEach.call(bars.querySelectorAll(".f21-mbar"), function (b) {
+      var k = b.getAttribute("data-pk"), x = r[k];
+      var sc = (x && x.rated !== false && isNum(x.score)) ? x.score : 0;
+      var fill = b.querySelector("i"); if (fill) fill.style.height = (sc * 10) + "%";
+      b.classList.toggle("set", sc > 0);
+      if (pulseKey && k === pulseKey) { b.classList.remove("pop"); void b.offsetWidth; b.classList.add("pop"); }
+    });
+    t21Pillars().forEach(function (p) { var x = r[p.key]; if (x && x.rated !== false && isNum(x.score)) { sum += x.score; n++; } });
+    var avg = n ? sum / n : null;
+    var cnt = $("f21MeterCount"); if (cnt) cnt.textContent = n === total ? "All seven · your mirror" : (n + " of " + total + " scored");
+    meter.classList.toggle("complete", n === total);
+    var num = $("f21MeterNum"); if (!num) return;
+    var target = avg == null ? 0 : avg;
+    if (!animate) { num.textContent = avg == null ? "—" : target.toFixed(1); t21MeterShown = target; return; }
+    // correctness first: show the true value immediately (survives throttled rAF), then tween for flourish
+    var from = t21MeterShown;
+    num.textContent = target.toFixed(1); t21MeterShown = target;
+    meter.classList.remove("bump"); void meter.offsetWidth; meter.classList.add("bump");
+    var startTs = null, dur = 460;
+    function step(ts) {
+      if (startTs == null) startTs = ts;
+      var t = Math.min(1, (ts - startTs) / dur), e = 1 - Math.pow(1 - t, 3), val = from + (target - from) * e;
+      num.textContent = val.toFixed(1);
+      if (t < 1) requestAnimationFrame(step); else num.textContent = target.toFixed(1);
+    }
+    requestAnimationFrame(step);
+    // safety: if rAF is throttled and freezes mid-tween, force the true value once the tween window passes
+    setTimeout(function () { if (t21MeterShown === target) num.textContent = target.toFixed(1); }, dur + 90);
+  }
   function t21WireScorer(onChange) {
     var rows = $("f21SessBody").querySelectorAll(".f21-score-row");
     Array.prototype.forEach.call(rows, function (row) {
@@ -8282,14 +8349,19 @@
           var v = +btn.getAttribute("data-v"), dk = todayLocal();
           db.ratings = db.ratings || {}; db.ratings[dk] = db.ratings[dk] || {};
           var rec = db.ratings[dk][key] || {}; rec.score = v; rec.rated = true; db.ratings[dk][key] = rec;
+          var wasRated = row.classList.contains("rated");
           save(); buzz(6);
           row.classList.add("rated");
           row.querySelector(".f21-score-top b").textContent = v;
           Array.prototype.forEach.call(row.querySelectorAll(".f21-sdots button"), function (b2, i) { b2.classList.toggle("on", i < v); });
+          var wasComplete = $("f21Meter") && $("f21Meter").classList.contains("complete");
+          t21UpdateMeter(true, key);
+          if (!wasComplete && $("f21Meter") && $("f21Meter").classList.contains("complete")) { playChime(); buzz(16); }  // all seven — a small reward
           if (onChange) onChange();
         });
       });
     });
+    t21UpdateMeter(false);   // set the initial state (bars for any already-rated pillars)
   }
   function t21DeltaHtml() {
     var s = t21() || {}, m0 = s.mirror0 && s.mirror0.scores;
@@ -10983,7 +11055,7 @@
   });
   if (window.matchMedia) { try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { if (db.theme === "auto") applyTheme("auto"); }); } catch (e) {} }
 
-  var APP_VERSION = "v61.81-dev";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v61.82-dev";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
