@@ -221,25 +221,33 @@ On Day 21 you're going to read this letter, and something in your chest is going
 ---
 
 ### DAY 5 · THE HANDOVER
-*Descent · ~5 min · onboards: Prayer · THE SURRENDER DAY*
+*Descent · ~6 min · Leo's real take (transcript matches audio) · THE SURRENDER DAY · onboards: Prayer*
 
-Today is the most important day of the 21. It doesn't look like it. There's nothing to check off that'll impress anybody. But everything else rests on today.
+Welcome back to day five. Brother, today is, I would argue, the most important day out of all the 21. It's not gonna look like it. It probably won't feel like it in one day. There's nothing big to check off the list. Nobody will be impressed if you tell them you did this. But everything else that you do from this day forward is going to rest on today.
 
-You've got the letter now. The man, the life, the lifestyle. So let me ask you the hard question: what makes you think you can build him?
+You've gone through a couple days. You've got the letter, you did the vision, you got to see where you are now. And now it comes to the hard question: what makes you think that you can build him?
 
-Be honest. How many times have you tried to become that guy? White knuckles. New Year's. Deleting the app and re-downloading it two weeks later. How'd it go?
+Be honest. How many times have you already tried to become this man? Maybe it was a challenge you've done, maybe it was 75 Hard, maybe it was New Year's. Maybe it was deleting the app and then redownloading it two weeks later, or telling yourself you're not gonna do that thing anymore, you're not gonna go on that site anymore, and then hopping right back on the next day.
 
-Same way it went for me.
+That's the same way it went for me. I was sitting in church one day, before I became a Christian. This was about a year and a half ago — it's 2026 right now, the day of recording this — and I was sitting down, and the pastor said this. He said: you are either building your kingdom, or you are building His. But if God, the creator of the entire universe, the one who made everything that you see around you — if He made all of that, why would He put His hand under you while you build your kingdom? But how much more will He lift you up if you're building His?
 
-`[YOUR STORY: 90 seconds. The day you stopped building your own kingdom. What surrender actually looked like, in a real room, on a real day. This is the heart of the program. Take your time on this one.]`
+That was it for me. That day I dedicated my life to truly building His kingdom. And I will tell you, it has not been an easy journey. Because my lifestyle, my business, the man that I had made myself into — I didn't want to let any of that go. And the real reason is because I didn't fully trust in God yet. I didn't surrender it to God, because why would I surrender something to someone I don't fully know or trust yet?
 
-Here's the truth nobody told me. That man in your letter? You can't build him. Not because you're weak. Because you were never the power source. You've been trying to be the engine, and you were only ever built to be the vessel. The power was never supposed to come from you. It was supposed to come THROUGH you.
+But there's a proverb that I want you to listen to. It says: trust in the Lord with all of your heart, and lean not on your own understanding. My own understanding got me to a certain point in life, but it had a ceiling. And yours does too. However, God does not have a ceiling.
 
-And here's the question that flipped everything for me: why would God bless YOUR kingdom? Your empire, your ego, your plans with your name on them. Why would He pour His power into that? But imagine, just imagine, if you started building HIS. Jesus said it plainly: seek first His kingdom, and all these things get added to you. All these things. The letter you wrote yesterday is full of "all these things."
+And so when I finally opened up my hands, when I finally opened up my heart, I noticed my desires started to change. The things I used to chase, I just didn't want anymore. New desires started to show up — to truly serve people, to help people, to build up men — which is what built this ministry. And I know, brother, that this might scare you right now. The idea that God might change what you want. But I want you to hear me: the desires He puts in your heart are the ones that were always meant to be there. He's not shrinking your dreams. He is trading them up for some of the greatest things that you could ever imagine, and the greatest adventure that you can ever be put on in your entire life.
 
-So here's today. Five minutes. Somewhere quiet, phone in another room. Open your hands, palms up on your knees. It'll feel strange. Do it anyway. And say one sentence out loud, your own words: "I can't build him on my own. It's Yours now. I'm the vessel, You're the power. Your kingdom, not mine."
+And one more thing, because I refuse to let these words be empty. My surrender was not one clean moment. It was a prayer asking God to guide me and give me the courage to obey. And then it became a posture. A true heart posture. Every couple of days I still do a surrender prayer, because my old self wants to come back and take over control. I still stop in the middle of a Tuesday and say: God, take this. Guide me. Show me what to do. It is simply a way of standing. It's simply a posture in the way that you show up every single day and give it to God.
 
-The men who skip today have a hard week two. The men who mean it today are different by Day 21, and they know exactly why.
+And here's the truth that nobody ever really told me. That man in your letter? You cannot build him. And it's not because you are weak. It's because you were never the power source. You've been trying to be the engine, and you were only ever built to be the vessel. The power was never supposed to come from you. It was supposed to come through you.
+
+So just imagine. Imagine what your life would look like if you fully gave yourself for the kingdom. If you fully allowed yourself to be a vessel for God.
+
+So here's what today looks like. Five minutes. Just five, somewhere quiet. Put the phone in another room. Open your hands, palms up on your knees. It feels strange — trust me, it does. In this generation it is a strange thing to do. But do it anyway. And say one sentence out loud, use your own words: I can't build this man that you want me to be on my own. It's Yours. Father, guide me. Guide me through this. Give me the courage, the obedience, to become that man so I can serve You. I am the vessel and You are the power. It is Your kingdom, not mine.
+
+And listen — this will not be the last time you pray this prayer. It's not supposed to be. Today, maybe you pray it for the first time. By day 21, it will be how you stand. The men who skip today have a hard week two. The men who mean it today are different by day 21, and they know exactly why. Be the second man. You already are, or you wouldn't still be listening.
+
+So the action: five minutes. Again, it's not glamorous. Quiet, open hands. Say it in your own words, and give it to Him. I'll see you tomorrow.
 
 **ACTION:** 5 minutes, quiet, open hands, the handover sentence out loud. Log the prayer in the app in your own words.
 
