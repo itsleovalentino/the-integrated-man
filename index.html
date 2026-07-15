@@ -1521,7 +1521,31 @@
   /* ---- View Trends glassy popup ---- */
   .trends-pop { position: fixed; inset: 0; z-index: 96; display: flex; align-items: center; justify-content: center; padding: 22px; background: rgba(0,0,0,0.74); -webkit-backdrop-filter: blur(7px); backdrop-filter: blur(7px); animation: tpFade 0.2s ease; }
   .trends-pop[hidden] { display: none; }
-  .trends-pop-card { width: 100%; max-width: 460px; background: var(--panel); border: 1px solid var(--gold-line); border-radius: 20px; padding: 24px 22px 22px; box-shadow: 0 30px 80px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.04); position: relative; animation: tpPop 0.26s cubic-bezier(.2,.7,.2,1); }
+  .trends-pop-card { width: 100%; max-width: 460px; max-height: 86vh; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; background: var(--panel); border: 1px solid var(--gold-line); border-radius: 20px; padding: 24px 22px 22px; box-shadow: 0 30px 80px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.04); position: relative; animation: tpPop 0.26s cubic-bezier(.2,.7,.2,1); }
+  .tp-delta { font-size: 11.5px; font-weight: 600; letter-spacing: 0.03em; margin-left: 9px; padding: 3px 8px; border-radius: 100px; vertical-align: 3px; white-space: nowrap; }
+  .tp-delta.up { color: var(--accent); background: var(--accent-soft); border: 1px solid var(--gold-line); }
+  .tp-delta.down { color: #d08a72; background: rgba(208,138,114,0.09); border: 1px solid rgba(208,138,114,0.25); }
+  .tp-delta.flat { color: var(--ink-faint); background: var(--field); border: 1px solid var(--field-edge); }
+  /* per-pillar trend rows — each pillar tells its own story */
+  .tp-pillars { margin-top: 18px; padding-top: 6px; border-top: 1px solid var(--line); }
+  .tp-prow { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--line); }
+  .tp-prow:last-child { border-bottom: none; }
+  .tp-porb { width: 13px; height: 13px; border-radius: 50%; flex-shrink: 0; border: 1px solid rgba(255,255,255,0.14); }
+  .tp-pname { flex: 1; min-width: 0; font-size: 12.5px; color: var(--ink-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tp-pspark { width: 86px; height: 24px; flex-shrink: 0; }
+  .tp-pval { font-size: 13.5px; font-variant-numeric: tabular-nums; flex-shrink: 0; min-width: 30px; text-align: right; }
+  .tp-parrow { font-size: 10.5px; font-variant-numeric: tabular-nums; flex-shrink: 0; min-width: 42px; text-align: right; letter-spacing: 0.02em; }
+  .tp-parrow.up { color: var(--accent); }
+  .tp-parrow.down { color: #d08a72; }
+  .tp-parrow.flat { color: var(--ink-faint); }
+  /* what the numbers are saying, in plain words */
+  .tp-insight { margin-top: 16px; font-size: 13px; line-height: 1.65; color: var(--ink-soft); }
+  .tp-insight b { color: var(--ink); font-weight: 600; }
+  /* the one thing to do about it */
+  .tp-step { margin-top: 14px; background: var(--accent-soft); border: 1px solid var(--gold-line); border-radius: 14px; padding: 12px 14px; }
+  .tp-step .tp-step-eyebrow { font-size: 10.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); margin-bottom: 5px; display: flex; align-items: center; gap: 7px; }
+  .tp-step .tp-step-eyebrow i { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .tp-step p { font-size: 13px; line-height: 1.55; color: var(--ink); margin: 0; }
   .tp-close { position: absolute; top: 12px; right: 12px; width: 34px; height: 34px; border-radius: 50%; background: none; border: none; color: var(--ink-faint); font-size: 22px; line-height: 1; cursor: pointer; z-index: 1; }
   .tp-close:hover { color: var(--ink); }
   .tp-title { font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 18px; }
@@ -2370,6 +2394,22 @@
   .f21-fl-dots i.on { background: var(--accent); }
   .f21-audio { margin-top: 16px; background: var(--panel); border: 1px solid var(--panel-edge); border-radius: 16px; padding: 12px; }
   .f21-audio audio { width: 100%; }
+  /* read-along: collapsed by default when there's audio (audio-first; no wall of text to scroll) */
+  .f21-ra { margin-top: 16px; }
+  .f21-ra-toggle { display: flex; align-items: center; justify-content: center; gap: 7px; width: 100%; font: inherit;
+    font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: var(--ink-soft);
+    background: none; border: 1px solid var(--field-edge); border-radius: 100px; padding: 11px; cursor: pointer; transition: color .2s, border-color .2s; }
+  .f21-ra-toggle:active { transform: scale(.99); }
+  .f21-ra.open .f21-ra-toggle { color: var(--accent); border-color: var(--gold-line); }
+  .f21-ra-chev { width: 15px; height: 15px; stroke: currentColor; transition: transform .3s ease; }
+  .f21-ra.open .f21-ra-chev { transform: rotate(180deg); }
+  .f21-ra-body { display: none; margin-top: 14px; animation: f21raIn .3s ease; }
+  .f21-ra.open .f21-ra-body { display: block; }
+  .f21-ra-body .f21-p { font-size: 14px; line-height: 1.7; }   /* a touch smaller/comfier as secondary read */
+  /* sentence-level "follow along": the sentence Leo is on lights gold + scrolls into view (timing estimated from audio length) */
+  .f21-ra-body .f21-s { transition: color .45s ease, text-shadow .45s ease; }
+  .f21-ra-body .f21-s.on { color: var(--accent); text-shadow: 0 0 18px rgba(203,178,126,.28); }
+  @keyframes f21raIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
   .f21-speed { display: flex; gap: 8px; justify-content: flex-end; margin-top: 8px; }
   .f21-speed button { font: inherit; font-size: 11px; background: var(--field); border: 1px solid var(--field-edge); color: var(--ink-soft);
     border-radius: 100px; padding: 5px 11px; cursor: pointer; }
@@ -2959,25 +2999,61 @@
   @keyframes streakHit { 0% { transform: scale(1); } 32% { transform: scale(1.32); box-shadow: 0 0 0 5px var(--accent-soft); } 100% { transform: scale(1); } }
   @media (prefers-reduced-motion: reduce) { .scel-flame, .scel-inner, .streak-cel { animation: none; } }
   /* ===== Welcome / landing (the one screen styled in the brand design system) ===== */
-  .welcome-overlay { background: #0a0908; backdrop-filter: none; z-index: 90; }
+  .welcome-overlay { background: #0a0908; backdrop-filter: none; z-index: 90; overflow: hidden; }
+  /* ambient rising embers — the brand's fire, subtle warmth behind the emblem */
+  .we-embers { position: absolute; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+  .we-embers span { position: absolute; bottom: -10px; width: 4px; height: 4px; border-radius: 50%; background: #d8b878;
+    opacity: 0; animation: weEmber var(--dur) linear infinite; animation-delay: var(--del); }
+  @keyframes weEmber { 0% { opacity: 0; transform: translate(0,0) scale(1); } 12% { opacity: .42; } 70% { opacity: .22; } 100% { opacity: 0; transform: translate(var(--dx), -78vh) scale(.4); } }
   .welcome-card {
-    width: 100%; max-width: 360px; margin: auto; padding: 8px 24px 24px;
+    width: 100%; max-width: 360px; margin: auto; padding: 8px 24px 24px; position: relative; z-index: 1;
     display: flex; flex-direction: column; align-items: center; text-align: center;
     font-family: "Hanken Grotesk", -apple-system, sans-serif;
   }
   .welcome-emblem { position: relative; width: 210px; height: 210px; margin: 0 auto 26px; }
   .we-glow { position: absolute; left: 50%; top: 50%; width: 150px; height: 150px; transform: translate(-50%,-50%);
-    border-radius: 50%; background: radial-gradient(circle, rgba(182,146,86,0.20), rgba(10,9,8,0) 70%); animation: weGlow 6s ease-in-out infinite; }
+    border-radius: 50%; background: radial-gradient(circle, rgba(182,146,86,0.20), rgba(10,9,8,0) 70%); }
   .we-ring { position: absolute; left: 50%; top: 50%; width: 176px; height: 176px; transform: translate(-50%,-50%);
     border-radius: 50%; border: 1px solid rgba(182,146,86,0.16); }
+  .we-orbit { position: absolute; inset: 0; }
   .we-cross { position: absolute; left: 50%; top: 50%; height: 122px; width: auto; transform: translate(-50%,-50%);
-    animation: weFloat 7s ease-in-out infinite; filter: drop-shadow(0 6px 18px rgba(0,0,0,0.7)); }
+    filter: drop-shadow(0 6px 18px rgba(0,0,0,0.7)); }
   .we-orb { position: absolute; width: 28px; height: 28px; border-radius: 50%; transform: translate(-50%,-50%);
     background-size: cover; background-position: center; /* the real text-free marbled orb art, full bleed */
     border: 1px solid rgba(236,231,221,0.10); box-shadow: 0 4px 12px rgba(0,0,0,0.45); }
   @keyframes weFloat { 0%,100% { transform: translate(-50%,-50%); } 50% { transform: translate(-50%, calc(-50% - 7px)); } }
   @keyframes weGlow { 0%,100% { opacity: 0.4; } 50% { opacity: 0.78; } }
-  @media (prefers-reduced-motion: reduce) { .we-cross, .we-glow { animation: none; } }
+  @keyframes weOrbit { to { transform: rotate(360deg); } }
+  @keyframes weIgnite { from { opacity: 0; transform: translate(-50%,-50%) scale(.2); } to { opacity: 1; transform: translate(-50%,-50%) scale(1); } }
+  @keyframes weCrossIn { from { opacity: 0; transform: translate(-50%, calc(-50% + 14px)) scale(.86); } to { opacity: 1; transform: translate(-50%,-50%) scale(1); } }
+  @keyframes weRise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+  @keyframes weSheen { 0% { transform: translateX(-140%) skewX(-18deg); } 60%,100% { transform: translateX(340%) skewX(-18deg); } }
+
+  /* ===== the cinematic entrance (played each time the gate opens via .we-in) ===== */
+  .we-in .we-glow { animation: weGlowIn 1s ease .1s both, weGlow 6s ease-in-out 1.2s infinite; }
+  @keyframes weGlowIn { from { opacity: 0; transform: translate(-50%,-50%) scale(.5); } to { opacity: .55; transform: translate(-50%,-50%) scale(1); } }
+  .we-in .we-orbit { animation: weOrbit 90s linear 1.6s infinite; }
+  .we-in .we-cross { animation: weCrossIn 1s cubic-bezier(.2,.8,.2,1) .3s both, weFloat 7s ease-in-out 1.4s infinite; }
+  .we-in .we-orb { opacity: 0; animation: weIgnite .55s cubic-bezier(.2,.8,.3,1.2) both; }
+  .we-in .we-orb:nth-child(1) { animation-delay: .55s; } .we-in .we-orb:nth-child(2) { animation-delay: .66s; }
+  .we-in .we-orb:nth-child(3) { animation-delay: .77s; } .we-in .we-orb:nth-child(4) { animation-delay: .88s; }
+  .we-in .we-orb:nth-child(5) { animation-delay: .99s; } .we-in .we-orb:nth-child(6) { animation-delay: 1.10s; }
+  .we-in .we-orb:nth-child(7) { animation-delay: 1.21s; }
+  .we-in .welcome-title { animation: weRise .8s cubic-bezier(.2,.8,.2,1) 1.15s both; }
+  .we-in .welcome-usp { animation: weRise .8s cubic-bezier(.2,.8,.2,1) 1.3s both; }
+  .we-in .welcome-create { animation: weRise .8s cubic-bezier(.2,.8,.2,1) 1.45s both; }
+  .we-in .welcome-signin { animation: weRise .8s cubic-bezier(.2,.8,.2,1) 1.55s both; }
+  /* a slow sheen sweep to draw the eye to the CTA, after the entrance settles */
+  .welcome-create { position: relative; overflow: hidden; }
+  .we-in .welcome-create::after { content: ""; position: absolute; top: 0; left: 0; width: 45%; height: 100%; pointer-events: none;
+    background: linear-gradient(100deg, transparent, rgba(255,255,255,.35), transparent);
+    animation: weSheen 5s ease-in-out 3.2s infinite; }
+  @media (prefers-reduced-motion: reduce) {
+    .we-embers span, .we-in .we-glow, .we-in .we-orbit, .we-in .we-cross, .we-in .we-orb,
+    .we-in .welcome-title, .we-in .welcome-usp, .we-in .welcome-create, .we-in .welcome-signin { animation: none; opacity: 1; }
+    .we-in .welcome-create::after { display: none; }
+    .we-in .we-orb { transform: translate(-50%,-50%); }
+  }
   .welcome-title { font-family: "Fraunces", Georgia, serif; font-weight: 500; font-size: 36px; line-height: 1.08; letter-spacing: -0.01em; margin: 0; color: #f3eee4; }
   .welcome-usp { font-size: 14px; line-height: 1.55; color: #9a9186; margin: 15px 10px 30px; }
   .welcome-create {
@@ -3693,14 +3769,17 @@
   <div class="trends-pop" id="trendsPop" hidden>
     <div class="trends-pop-card">
       <button class="tp-close" id="tpClose" aria-label="Close">&times;</button>
-      <div class="tp-title">Integration · over time</div>
+      <div class="tp-title">Trends · your 7 pillars</div>
       <div id="tpChartWrap">
         <div class="trend-head">
-          <div><span class="trend-big serif" id="tpAvg">—</span><span class="trend-unit">/10 average</span></div>
+          <div><span class="trend-big serif" id="tpAvg">—</span><span class="trend-unit">/10 integration</span><span class="tp-delta" id="tpDelta" hidden></span></div>
           <div class="trend-range" id="tpRange"></div>
         </div>
-        <svg class="trend-chart" id="tpChart" viewBox="0 0 600 180"></svg>
+        <svg class="trend-chart" id="tpChart" viewBox="0 0 600 150"></svg>
         <div class="trend-xaxis" id="tpX"></div>
+        <div class="tp-pillars" id="tpPillars"></div>
+        <div class="tp-insight" id="tpInsight" hidden></div>
+        <div class="tp-step" id="tpStep" hidden></div>
       </div>
       <div class="tp-wait" id="tpWait" hidden>
         <svg viewBox="0 0 24 24"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="15 7 21 7 21 13"/></svg>
@@ -3786,18 +3865,27 @@
   <!-- Onboarding -->
   <!-- Welcome / landing (first thing a new person sees) -->
   <div class="modal-overlay welcome-overlay" id="welcome" hidden>
+    <div class="we-embers" aria-hidden="true">
+      <span style="left:8%;--dur:12s;--del:-2s;--dx:22px"></span><span style="left:18%;--dur:15s;--del:-9s;--dx:-26px"></span>
+      <span style="left:29%;--dur:11s;--del:-5s;--dx:16px"></span><span style="left:41%;--dur:14s;--del:-11s;--dx:-14px"></span>
+      <span style="left:52%;--dur:10s;--del:-3s;--dx:24px"></span><span style="left:63%;--dur:13s;--del:-7s;--dx:-20px"></span>
+      <span style="left:74%;--dur:11.5s;--del:-1s;--dx:14px"></span><span style="left:85%;--dur:14.5s;--del:-6s;--dx:-24px"></span>
+      <span style="left:93%;--dur:12.5s;--del:-10s;--dx:18px"></span>
+    </div>
     <div class="welcome-card">
       <div class="welcome-emblem" aria-hidden="true">
         <div class="we-glow"></div>
         <div class="we-ring"></div>
+        <div class="we-orbit">
+          <span class="we-orb" style="left:105px;top:17px;background-image:url(assets/orb-vitality.png?v=2)"></span>
+          <span class="we-orb" style="left:173.8px;top:50.1px;background-image:url(assets/orb-mental.png?v=2)"></span>
+          <span class="we-orb" style="left:190.8px;top:124.6px;background-image:url(assets/orb-faith.png?v=2)"></span>
+          <span class="we-orb" style="left:143.2px;top:184.3px;background-image:url(assets/orb-vocation.png?v=2)"></span>
+          <span class="we-orb" style="left:66.8px;top:184.3px;background-image:url(assets/orb-wealth.png?v=2)"></span>
+          <span class="we-orb" style="left:19.2px;top:124.6px;background-image:url(assets/orb-environment.png?v=2)"></span>
+          <span class="we-orb" style="left:36.2px;top:50.1px;background-image:url(assets/orb-tribe.png?v=2)"></span>
+        </div>
         <img class="we-cross" src="assets/cross.png" alt="" />
-        <span class="we-orb" style="left:105px;top:17px;background-image:url(assets/orb-vitality.png?v=2)"></span>
-        <span class="we-orb" style="left:173.8px;top:50.1px;background-image:url(assets/orb-mental.png?v=2)"></span>
-        <span class="we-orb" style="left:190.8px;top:124.6px;background-image:url(assets/orb-faith.png?v=2)"></span>
-        <span class="we-orb" style="left:143.2px;top:184.3px;background-image:url(assets/orb-vocation.png?v=2)"></span>
-        <span class="we-orb" style="left:66.8px;top:184.3px;background-image:url(assets/orb-wealth.png?v=2)"></span>
-        <span class="we-orb" style="left:19.2px;top:124.6px;background-image:url(assets/orb-environment.png?v=2)"></span>
-        <span class="we-orb" style="left:36.2px;top:50.1px;background-image:url(assets/orb-tribe.png?v=2)"></span>
       </div>
       <h1 class="welcome-title serif">The Integrated<br>Man Journal</h1>
       <p class="welcome-usp">A daily rhythm for becoming whole.</p>
@@ -5515,22 +5603,49 @@
   });
   // View Trends → glassy popup
   $("viewTrends").addEventListener("click", function () { openTrendsPop(); buzz(8); });
+  // Trends that mean something: recent window vs the one before it, per pillar, in plain words.
+  // Windows are counted in CHECK-INS (rated days), not calendar days, so sparse tracking still works.
+  function tpPillarAvg(keys, pk) {
+    var s = 0, n = 0;
+    keys.forEach(function (k) {
+      var r = db.ratings[k] && db.ratings[k][pk];
+      if (r && r.rated !== false && isNum(r.score)) { s += r.score; n++; }
+    });
+    return n ? s / n : null;
+  }
+  function tpFmt(v) { return (Math.round(v * 10) / 10).toFixed(1); }
   function openTrendsPop() {
-    var pts = Object.keys(db.ratings)
+    var allKeys = Object.keys(db.ratings)
       .filter(function (k) { return dayIntegration(db.ratings[k]) != null && !db.pillarSkip[k]; })
-      .sort()
-      .map(function (k) { return { k: k, v: dayIntegration(db.ratings[k]) }; }).slice(-30);
+      .sort();
+    var pts = allKeys.map(function (k) { return { k: k, v: dayIntegration(db.ratings[k]) }; }).slice(-30);
     var enough = pts.length >= 3;   // needs a few check-ins before a trend is meaningful
     $("tpChartWrap").hidden = !enough;
     $("tpWait").hidden = enough;
     if (enough) {
-      var W = 600, H = 180, padL = 10, padR = 10, padT = 14, padB = 14;
+      // ---- the two windows: your last 7 check-ins vs the 7 before them ----
+      var recentKeys = allKeys.slice(-7);
+      var prevKeys = allKeys.slice(-14, -7);
+      var havePrev = prevKeys.length >= 3;   // don't fake a comparison out of thin air
+      // ---- header: current integration + honest delta ----
+      var rSum = 0; recentKeys.forEach(function (k) { rSum += dayIntegration(db.ratings[k]); });
+      var rAvg = rSum / recentKeys.length;
+      $("tpAvg").textContent = tpFmt(rAvg);
+      var dEl = $("tpDelta");
+      if (havePrev) {
+        var pSum = 0; prevKeys.forEach(function (k) { pSum += dayIntegration(db.ratings[k]); });
+        var iDelta = rAvg - pSum / prevKeys.length;
+        var cls = iDelta >= 0.3 ? "up" : (iDelta <= -0.3 ? "down" : "flat");
+        dEl.className = "tp-delta " + cls;
+        dEl.textContent = cls === "flat" ? "steady" : ((iDelta > 0 ? "▲ +" : "▼ ") + tpFmt(iDelta));
+        dEl.hidden = false;
+      } else dEl.hidden = true;
+      $("tpRange").textContent = pts.length + " check-ins · " + trendLabel(pts[0].k) + " – " + trendLabel(pts[pts.length - 1].k);
+      // ---- the integration line (the pulse) ----
+      var W = 600, H = 150, padL = 10, padR = 10, padT = 12, padB = 12;
       var innerW = W - padL - padR, innerH = H - padT - padB;
-      var X = function (i) { return padL + innerW * i / (pts.length - 1); };
+      var X = function (i) { return padL + (pts.length <= 1 ? innerW / 2 : innerW * i / (pts.length - 1)); };
       var Y = function (v) { return padT + (1 - v / 10) * innerH; };
-      var sum = 0; pts.forEach(function (pt) { sum += pt.v; });
-      $("tpAvg").textContent = (Math.round(sum / pts.length * 10) / 10).toFixed(1);
-      $("tpRange").textContent = pts.length + " days · " + trendLabel(pts[0].k) + " – " + trendLabel(pts[pts.length - 1].k);
       var grid = ""; [0, 5, 10].forEach(function (g) { var y = Y(g); grid += '<line class="tg-grid" x1="' + padL + '" y1="' + y + '" x2="' + (W - padR) + '" y2="' + y + '"/>'; });
       var line = "", area = "M " + X(0) + " " + Y(0);
       pts.forEach(function (pt, i) { var x = X(i), y = Y(pt.v); line += (i ? " L " : "M ") + x + " " + y; area += " L " + x + " " + y; });
@@ -5538,6 +5653,76 @@
       var dots = ""; pts.forEach(function (pt, i) { var last = i === pts.length - 1; dots += '<circle class="tg-dot' + (last ? ' tg-last' : '') + '" cx="' + X(i) + '" cy="' + Y(pt.v) + '" r="' + (last ? 4 : 2.6) + '"><title>' + trendLabel(pt.k) + ': ' + (Math.round(pt.v * 10) / 10) + '</title></circle>'; });
       $("tpChart").innerHTML = grid + '<path class="tg-area" d="' + area + '"/><path class="tg-line" d="' + line + '"/>' + dots;
       $("tpX").innerHTML = '<span>' + trendLabel(pts[0].k) + '</span><span>' + trendLabel(pts[Math.floor((pts.length - 1) / 2)].k) + '</span><span>' + trendLabel(pts[pts.length - 1].k) + '</span>';
+      // ---- per-pillar rows: each pillar's own story, strongest first ----
+      var chartKeys = pts.map(function (pt) { return pt.k; });
+      var rows = [];
+      pillars.forEach(function (p) {
+        var cur = tpPillarAvg(recentKeys, p.key);
+        if (cur == null) return;   // never rated recently → no row, no guilt
+        var prev = havePrev ? tpPillarAvg(prevKeys, p.key) : null;
+        rows.push({ p: p, cur: cur, delta: prev == null ? null : cur - prev });
+      });
+      rows.sort(function (a, b) { return b.cur - a.cur; });
+      var ph = "";
+      rows.forEach(function (r) {
+        var p = r.p;
+        // sparkline over the same window as the big chart
+        var ser = chartKeys.map(function (k) {
+          var rr = db.ratings[k] && db.ratings[k][p.key];
+          return (rr && rr.rated !== false && isNum(rr.score)) ? rr.score : null;
+        });
+        var w = 86, h = 24, pad = 3.5;
+        var sx = function (i) { return pad + (ser.length <= 1 ? (w - 2 * pad) / 2 : (w - 2 * pad) * i / (ser.length - 1)); };
+        var sy = function (v) { return pad + (1 - v / 10) * (h - 2 * pad); };
+        var d = "", started = false, lastX = null, lastY = null;
+        ser.forEach(function (v, i) { if (v == null) return; lastX = sx(i); lastY = sy(v); d += (started ? " L " : "M ") + lastX + " " + lastY; started = true; });
+        var aCls = r.delta == null ? "flat" : (r.delta >= 0.3 ? "up" : (r.delta <= -0.3 ? "down" : "flat"));
+        var aTxt = r.delta == null ? "" : (aCls === "flat" ? "·" : (r.delta > 0 ? "▲ +" + tpFmt(r.delta) : "▼ " + tpFmt(r.delta)));
+        ph += '<div class="tp-prow">' +
+          '<span class="tp-porb" style="background:' + p.orb + '"></span>' +
+          '<span class="tp-pname">' + p.name.replace(" / Stewardship", "") + '</span>' +
+          '<svg class="tp-pspark" viewBox="0 0 ' + w + ' ' + h + '"><path d="' + d + '" fill="none" stroke="' + p.color + '" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" opacity="0.9"/>' +
+            (lastX != null ? '<circle cx="' + lastX + '" cy="' + lastY + '" r="2.6" fill="' + p.color + '"/>' : '') + '</svg>' +
+          '<span class="tp-pval" style="color:' + p.color + '">' + tpFmt(r.cur) + '</span>' +
+          '<span class="tp-parrow ' + aCls + '">' + aTxt + '</span>' +
+        '</div>';
+      });
+      $("tpPillars").innerHTML = ph;
+      // ---- what it says, in plain words ----
+      var lines = [];
+      if (rows.length >= 2) {
+        var withDelta = rows.filter(function (r) { return r.delta != null; });
+        var riser = null, slipper = null;
+        withDelta.forEach(function (r) {
+          if (r.delta >= 0.7 && (!riser || r.delta > riser.delta)) riser = r;
+          if (r.delta <= -0.7 && (!slipper || r.delta < slipper.delta)) slipper = r;
+        });
+        var nm = function (r) { return "<b>" + r.p.name.replace(" / Stewardship", "") + "</b>"; };
+        if (riser) lines.push(nm(riser) + " is climbing — up " + tpFmt(riser.delta) + " on the week before.");
+        if (slipper) lines.push(nm(slipper) + " slipped " + tpFmt(Math.abs(slipper.delta)) + " this week — worth a look.");
+        if (!riser && !slipper && withDelta.length >= 2) lines.push("Steady across the board this week — no pillar moved much either way.");
+        var low = rows[rows.length - 1], high = rows[0];
+        if (havePrev) {
+          // was the current lowest ALSO the lowest in the previous window? that's a pattern, not a day
+          var prevLow = null;
+          rows.forEach(function (r) {
+            var pv = tpPillarAvg(prevKeys, r.p.key);
+            if (pv != null && (prevLow == null || pv < prevLow.v)) prevLow = { r: r, v: pv };
+          });
+          if (prevLow && prevLow.r === low && low !== high) lines.push(nm(low) + " has been your lowest pillar two weeks running.");
+        }
+        if (!lines.length) lines.push(nm(high) + " is carrying you right now; " + nm(low) + " needs the most attention.");
+      }
+      var insEl = $("tpInsight");
+      insEl.innerHTML = lines.join(" ");
+      insEl.hidden = !lines.length;
+      // ---- one small next step, from the pillar that needs it most ----
+      var stepEl = $("tpStep");
+      if (rows.length >= 2) {
+        var focus = rows[rows.length - 1].p;
+        stepEl.innerHTML = '<div class="tp-step-eyebrow"><i style="background:' + focus.orb + '"></i>Smallest next step · ' + focus.name.replace(" / Stewardship", "") + '</div><p>' + focus.tip + "</p>";
+        stepEl.hidden = false;
+      } else stepEl.hidden = true;
     }
     $("trendsPop").hidden = false;
     if (typeof playPage === "function") playPage();
@@ -7918,6 +8103,16 @@
     if (/^\*\*[^*]+\*\*$/.test(p.trim())) return '<div class="f21-eyebrow" style="margin-top:24px">' + t21Esc(p.replace(/\*/g, "")) + "</div>";
     return '<p class="f21-p' + (lede ? " f21-lede" : "") + '">' + h + "</p>";
   }
+  function t21RichKara(p) {   // read-along transcript: same markdown, but each sentence is its own span so the karaoke can light it up
+    if (/^\*\*[^*]+\*\*$/.test(p.trim())) return '<div class="f21-eyebrow" style="margin-top:24px">' + t21Esc(p.replace(/\*/g, "")) + "</div>";
+    var sents = p.match(/[^.!?…]+[.!?…]+["'”’)\]]*|[^.!?…]+$/g) || [p];
+    var inner = sents.map(function (raw) {
+      var t = raw.trim(); if (!t) return "";
+      var html = t21Esc(t).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>").replace(/\*(.+?)\*/g, "<i>$1</i>");
+      return '<span class="f21-s">' + html + "</span>";
+    }).filter(Boolean).join(" ");
+    return '<p class="f21-p">' + inner + "</p>";
+  }
   function t21DevBox() {
     if (!(window.TIM_DEV || location.hostname === "localhost" || location.hostname === "127.0.0.1")) return "";
     return '<div class="f21-debug"><span class="f21-tag">Time machine (dev only)</span><div>' +
@@ -8259,6 +8454,71 @@
     arr.forEach(function (a, i) { h += "<div>" + t21Esc(a) + '<button type="button" onclick="t21RmAffirm(' + i + ')" aria-label="Remove">×</button></div>'; });
     return h;
   }
+  // SENTENCE-LEVEL KARAOKE: as the audio plays, light the sentence Leo is on and scroll it into view.
+  // No forced-alignment data — timing is ESTIMATED by weighting each sentence by its length across the
+  // audio's true duration. It tracks the paragraph/sentence he's on (a few seconds of drift on long pauses),
+  // which is the honest, no-pipeline follow-along. Only runs while "Read along" is open.
+  var t21KaraSync = null;   // set by t21WireKaraoke; lets the toggle jump the highlight when opened mid-play
+  function t21WireKaraoke() {
+    t21KaraSync = null;
+    var au = $("f21Audio"), ra = $("f21RA");
+    if (!au || !ra) return;
+    var spans = [].slice.call(ra.querySelectorAll(".f21-s"));
+    if (!spans.length) return;
+    var scroller = $("f21Session") && $("f21Session").querySelector(".f21-sess-scroll");
+    var segs = null, cur = -1, userScrollAt = 0;
+    function build() {
+      var dur = au.duration;
+      if (!dur || !isFinite(dur) || dur <= 0) { segs = null; return; }
+      var weights = spans.map(function (s) { return Math.max(6, (s.textContent || "").trim().length); });
+      var total = weights.reduce(function (a, b) { return a + b; }, 0) || 1;
+      segs = []; var acc = 0;
+      for (var i = 0; i < spans.length; i++) {
+        var start = acc / total * dur; acc += weights[i];
+        segs.push({ start: start, end: acc / total * dur });
+      }
+    }
+    function highlight(i, force) {
+      if (i === cur) return;
+      if (cur >= 0 && spans[cur]) spans[cur].classList.remove("on");
+      cur = i;
+      if (i < 0 || !spans[i]) return;
+      spans[i].classList.add("on");
+      if (force || Date.now() - userScrollAt > 3500) {
+        try { spans[i].scrollIntoView({ behavior: "smooth", block: "center" }); }
+        catch (e) { try { spans[i].scrollIntoView(); } catch (e2) {} }
+      }
+    }
+    function sync(force) {
+      if (!segs) { build(); if (!segs) return; }
+      if (!ra.classList.contains("open")) return;   // only follow along while the transcript is showing
+      var t = au.currentTime, i = cur;
+      if (i < 0 || !segs[i] || t < segs[i].start || t >= segs[i].end) {
+        i = -1;
+        for (var k = 0; k < segs.length; k++) { if (t >= segs[k].start && t < segs[k].end) { i = k; break; } }
+        if (i < 0 && segs.length && t >= segs[segs.length - 1].end) i = segs.length - 1;
+      }
+      if (i >= 0) highlight(i, force);
+    }
+    t21KaraSync = sync;
+    au.addEventListener("loadedmetadata", build);
+    au.addEventListener("timeupdate", function () { sync(false); });
+    au.addEventListener("seeking", function () { cur = -1; });
+    if (scroller) scroller.addEventListener("scroll", function () { userScrollAt = Date.now(); }, { passive: true });
+    if (au.readyState >= 1) build();
+  }
+  function t21ToggleRA() {
+    var ra = $("f21RA"); if (!ra) return;
+    var open = !ra.classList.contains("open");
+    ra.classList.toggle("open", open);
+    db.the21 = db.the21 || {}; db.the21.readAlong = open; save();   // remember the preference
+    buzz(6);
+    if (open) {
+      var au = $("f21Audio");
+      if (t21KaraSync && au && au.currentTime > 0.5) setTimeout(function () { t21KaraSync(true); }, 60);   // jump to where his voice is
+      else { var b = ra.querySelector(".f21-ra-body"); if (b) setTimeout(function () { b.scrollIntoView({ behavior: "smooth", block: "nearest" }); }, 60); }
+    }
+  }
   function t21ToggleAffirm(btn) {
     var a = btn.getAttribute("data-a");
     db.the21 = db.the21 || {}; db.the21.affirms = db.the21.affirms || [];
@@ -8319,17 +8579,30 @@
              '<div class="f21-emblem" style="margin-top:2px"><div class="f21-flame"><svg viewBox="0 0 24 24"><path d="M12 3c1.5 3.6 6 6.3 6 11.4A6 6 0 0 1 6 14.4c0-2.2 1-4 2.3-5.8.5 1.5 1.4 2.3 2.6 2.8-1.1-3.1-.4-6 1.1-8.4z" fill="none" stroke="currentColor" stroke-width="1.3"/></svg></div><div class="f21-ignite">' + ig0 + "</div></div>";
       }
       h += '<div class="f21-eyebrow"' + (day === 0 ? ' style="text-align:center"' : "") + ">" + (day === 0 ? "The threshold" : "Today’s session") + "</div><h2" + (day === 0 ? ' style="text-align:center"' : "") + ">" + t21Esc(t21Title(d)) + "</h2>";
+      // the transcript (read-along)
+      var paraHtml = "";
+      d.paras.forEach(function (p, pi) { paraHtml += d.audio ? t21RichKara(p) : t21Rich(p, pi === 0); });
+      if (day > 0) paraHtml += '<div class="f21-seal" style="margin-top:18px">— Leo</div>';
       if (d.audio) {
+        // AUDIO-FIRST: player up top, transcript COLLAPSED behind a toggle so the action is
+        // right there — no scrolling a wall of text. Preference (open/closed) is remembered.
         var rate = (s.rate || 1);
+        var raOpen = !!s.readAlong;
         h += '<div class="f21-seal" style="text-align:center;margin-top:14px">🎧 ' + (day === 0 ? "Press play. Leo’s got you." : "Leo · this morning’s charge") + "</div>" +
              '<div class="f21-audio"><audio id="f21Audio" src="' + t21Esc(d.audio) + '" controls preload="metadata"></audio>' +
              '<div class="f21-speed">' + [1, 1.25, 1.5].map(function (r) {
                return '<button type="button" data-r="' + r + '" class="' + (r === rate ? "on" : "") + '" onclick="t21Rate(this)">' + r + "x</button>";
              }).join("") + "</div></div>" +
-             '<div class="f21-seal" style="text-align:center">Or read along below.</div>';
+             '<div class="f21-ra' + (raOpen ? " open" : "") + '" id="f21RA">' +
+               '<button type="button" class="f21-ra-toggle" onclick="t21ToggleRA()">' +
+                 '<span class="f21-ra-label">Read along</span>' +
+                 '<svg class="f21-ra-chev" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
+               "</button>" +
+               '<div class="f21-ra-body">' + paraHtml + "</div>" +
+             "</div>";
+      } else {
+        h += paraHtml;
       }
-      d.paras.forEach(function (p, pi) { h += t21Rich(p, pi === 0); });
-      if (day > 0) h += '<div class="f21-seal" style="margin-top:18px">— Leo</div>';
       h += t21WidgetHtml(d, s, replay);
       if (d.action) h += '<div class="f21-action main"><span class="f21-tag">Today’s action</span><p>' + t21Esc(d.action) + "</p></div>";
       var next = t21NextDay();
@@ -8342,6 +8615,7 @@
         h += '<div class="f21-seal" style="text-align:center;margin-top:20px">Completed ' + t21Esc((s.done && s.done[day]) || "") + "</div>";
       }
       $("f21SessBody").innerHTML = h;
+      if (d.audio) t21WireKaraoke();
       if (d.widget === "mirror" || d.widget === "mirror2") t21WireScorer(d.widget === "mirror2" ? function () { var de = $("f21Delta"); if (de) de.innerHTML = t21DeltaHtml(); } : null);
       var lt = $("f21Letter");
       if (lt) lt.addEventListener("input", function () {
@@ -8595,7 +8869,7 @@
   window.t21CloseSession = t21CloseSession; window.t21DebugShift = t21DebugShift; window.t21DebugReset = t21DebugReset;
   window.t21OpenFlow = t21OpenFlow; window.t21FlowNext = t21FlowNext; window.t21ShareInvite = t21ShareInvite;
   window.t21ToggleAffirm = t21ToggleAffirm; window.t21AddAffirm = t21AddAffirm; window.t21RmAffirm = t21RmAffirm;
-  window.t21Rate = t21Rate; window.t21GoHome = t21GoHome; window.t21OpenFall = t21OpenFall;
+  window.t21Rate = t21Rate; window.t21GoHome = t21GoHome; window.t21OpenFall = t21OpenFall; window.t21ToggleRA = t21ToggleRA;
   window.t21Timer = t21Timer; window.t21PickMove = t21PickMove; window.t21AddNoComplain = t21AddNoComplain;
 
   // ---- web push (test harness — iOS 16.4+, must be opened from the Home-Screen icon) ----
@@ -10709,7 +10983,7 @@
   });
   if (window.matchMedia) { try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { if (db.theme === "auto") applyTheme("auto"); }); } catch (e) {} }
 
-  var APP_VERSION = "v61.75";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v61.81";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
@@ -10798,7 +11072,11 @@
     $("onboard").hidden = true; $("authModal").hidden = true;
     $("journalDrawer").hidden = true; $("journalOverlay").hidden = true; document.body.classList.remove("journal-docked");
     $("bottomNav").hidden = true; $("journalBubble").hidden = true; $("bibleView").hidden = true; $("fellowshipView").hidden = true;
-    $("welcome").hidden = false;
+    var wel = $("welcome");
+    wel.classList.remove("we-in");
+    wel.hidden = false;
+    void wel.offsetWidth;            // reflow so the cinematic entrance restarts on each open
+    wel.classList.add("we-in");
   }
   $("welcomeCreate").addEventListener("click", function () { $("welcome").hidden = true; openAuth("signup"); });
   $("welcomeSignin").addEventListener("click", function () { $("welcome").hidden = true; openAuth("signin"); });
