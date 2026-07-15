@@ -1521,7 +1521,31 @@
   /* ---- View Trends glassy popup ---- */
   .trends-pop { position: fixed; inset: 0; z-index: 96; display: flex; align-items: center; justify-content: center; padding: 22px; background: rgba(0,0,0,0.74); -webkit-backdrop-filter: blur(7px); backdrop-filter: blur(7px); animation: tpFade 0.2s ease; }
   .trends-pop[hidden] { display: none; }
-  .trends-pop-card { width: 100%; max-width: 460px; background: var(--panel); border: 1px solid var(--gold-line); border-radius: 20px; padding: 24px 22px 22px; box-shadow: 0 30px 80px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.04); position: relative; animation: tpPop 0.26s cubic-bezier(.2,.7,.2,1); }
+  .trends-pop-card { width: 100%; max-width: 460px; max-height: 86vh; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; background: var(--panel); border: 1px solid var(--gold-line); border-radius: 20px; padding: 24px 22px 22px; box-shadow: 0 30px 80px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.04); position: relative; animation: tpPop 0.26s cubic-bezier(.2,.7,.2,1); }
+  .tp-delta { font-size: 11.5px; font-weight: 600; letter-spacing: 0.03em; margin-left: 9px; padding: 3px 8px; border-radius: 100px; vertical-align: 3px; white-space: nowrap; }
+  .tp-delta.up { color: var(--accent); background: var(--accent-soft); border: 1px solid var(--gold-line); }
+  .tp-delta.down { color: #d08a72; background: rgba(208,138,114,0.09); border: 1px solid rgba(208,138,114,0.25); }
+  .tp-delta.flat { color: var(--ink-faint); background: var(--field); border: 1px solid var(--field-edge); }
+  /* per-pillar trend rows — each pillar tells its own story */
+  .tp-pillars { margin-top: 18px; padding-top: 6px; border-top: 1px solid var(--line); }
+  .tp-prow { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--line); }
+  .tp-prow:last-child { border-bottom: none; }
+  .tp-porb { width: 13px; height: 13px; border-radius: 50%; flex-shrink: 0; border: 1px solid rgba(255,255,255,0.14); }
+  .tp-pname { flex: 1; min-width: 0; font-size: 12.5px; color: var(--ink-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tp-pspark { width: 86px; height: 24px; flex-shrink: 0; }
+  .tp-pval { font-size: 13.5px; font-variant-numeric: tabular-nums; flex-shrink: 0; min-width: 30px; text-align: right; }
+  .tp-parrow { font-size: 10.5px; font-variant-numeric: tabular-nums; flex-shrink: 0; min-width: 42px; text-align: right; letter-spacing: 0.02em; }
+  .tp-parrow.up { color: var(--accent); }
+  .tp-parrow.down { color: #d08a72; }
+  .tp-parrow.flat { color: var(--ink-faint); }
+  /* what the numbers are saying, in plain words */
+  .tp-insight { margin-top: 16px; font-size: 13px; line-height: 1.65; color: var(--ink-soft); }
+  .tp-insight b { color: var(--ink); font-weight: 600; }
+  /* the one thing to do about it */
+  .tp-step { margin-top: 14px; background: var(--accent-soft); border: 1px solid var(--gold-line); border-radius: 14px; padding: 12px 14px; }
+  .tp-step .tp-step-eyebrow { font-size: 10.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); margin-bottom: 5px; display: flex; align-items: center; gap: 7px; }
+  .tp-step .tp-step-eyebrow i { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .tp-step p { font-size: 13px; line-height: 1.55; color: var(--ink); margin: 0; }
   .tp-close { position: absolute; top: 12px; right: 12px; width: 34px; height: 34px; border-radius: 50%; background: none; border: none; color: var(--ink-faint); font-size: 22px; line-height: 1; cursor: pointer; z-index: 1; }
   .tp-close:hover { color: var(--ink); }
   .tp-title { font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 18px; }
@@ -3745,14 +3769,17 @@
   <div class="trends-pop" id="trendsPop" hidden>
     <div class="trends-pop-card">
       <button class="tp-close" id="tpClose" aria-label="Close">&times;</button>
-      <div class="tp-title">Integration · over time</div>
+      <div class="tp-title">Trends · your 7 pillars</div>
       <div id="tpChartWrap">
         <div class="trend-head">
-          <div><span class="trend-big serif" id="tpAvg">—</span><span class="trend-unit">/10 average</span></div>
+          <div><span class="trend-big serif" id="tpAvg">—</span><span class="trend-unit">/10 integration</span><span class="tp-delta" id="tpDelta" hidden></span></div>
           <div class="trend-range" id="tpRange"></div>
         </div>
-        <svg class="trend-chart" id="tpChart" viewBox="0 0 600 180"></svg>
+        <svg class="trend-chart" id="tpChart" viewBox="0 0 600 150"></svg>
         <div class="trend-xaxis" id="tpX"></div>
+        <div class="tp-pillars" id="tpPillars"></div>
+        <div class="tp-insight" id="tpInsight" hidden></div>
+        <div class="tp-step" id="tpStep" hidden></div>
       </div>
       <div class="tp-wait" id="tpWait" hidden>
         <svg viewBox="0 0 24 24"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="15 7 21 7 21 13"/></svg>
@@ -5576,22 +5603,49 @@
   });
   // View Trends → glassy popup
   $("viewTrends").addEventListener("click", function () { openTrendsPop(); buzz(8); });
+  // Trends that mean something: recent window vs the one before it, per pillar, in plain words.
+  // Windows are counted in CHECK-INS (rated days), not calendar days, so sparse tracking still works.
+  function tpPillarAvg(keys, pk) {
+    var s = 0, n = 0;
+    keys.forEach(function (k) {
+      var r = db.ratings[k] && db.ratings[k][pk];
+      if (r && r.rated !== false && isNum(r.score)) { s += r.score; n++; }
+    });
+    return n ? s / n : null;
+  }
+  function tpFmt(v) { return (Math.round(v * 10) / 10).toFixed(1); }
   function openTrendsPop() {
-    var pts = Object.keys(db.ratings)
+    var allKeys = Object.keys(db.ratings)
       .filter(function (k) { return dayIntegration(db.ratings[k]) != null && !db.pillarSkip[k]; })
-      .sort()
-      .map(function (k) { return { k: k, v: dayIntegration(db.ratings[k]) }; }).slice(-30);
+      .sort();
+    var pts = allKeys.map(function (k) { return { k: k, v: dayIntegration(db.ratings[k]) }; }).slice(-30);
     var enough = pts.length >= 3;   // needs a few check-ins before a trend is meaningful
     $("tpChartWrap").hidden = !enough;
     $("tpWait").hidden = enough;
     if (enough) {
-      var W = 600, H = 180, padL = 10, padR = 10, padT = 14, padB = 14;
+      // ---- the two windows: your last 7 check-ins vs the 7 before them ----
+      var recentKeys = allKeys.slice(-7);
+      var prevKeys = allKeys.slice(-14, -7);
+      var havePrev = prevKeys.length >= 3;   // don't fake a comparison out of thin air
+      // ---- header: current integration + honest delta ----
+      var rSum = 0; recentKeys.forEach(function (k) { rSum += dayIntegration(db.ratings[k]); });
+      var rAvg = rSum / recentKeys.length;
+      $("tpAvg").textContent = tpFmt(rAvg);
+      var dEl = $("tpDelta");
+      if (havePrev) {
+        var pSum = 0; prevKeys.forEach(function (k) { pSum += dayIntegration(db.ratings[k]); });
+        var iDelta = rAvg - pSum / prevKeys.length;
+        var cls = iDelta >= 0.3 ? "up" : (iDelta <= -0.3 ? "down" : "flat");
+        dEl.className = "tp-delta " + cls;
+        dEl.textContent = cls === "flat" ? "steady" : ((iDelta > 0 ? "▲ +" : "▼ ") + tpFmt(iDelta));
+        dEl.hidden = false;
+      } else dEl.hidden = true;
+      $("tpRange").textContent = pts.length + " check-ins · " + trendLabel(pts[0].k) + " – " + trendLabel(pts[pts.length - 1].k);
+      // ---- the integration line (the pulse) ----
+      var W = 600, H = 150, padL = 10, padR = 10, padT = 12, padB = 12;
       var innerW = W - padL - padR, innerH = H - padT - padB;
-      var X = function (i) { return padL + innerW * i / (pts.length - 1); };
+      var X = function (i) { return padL + (pts.length <= 1 ? innerW / 2 : innerW * i / (pts.length - 1)); };
       var Y = function (v) { return padT + (1 - v / 10) * innerH; };
-      var sum = 0; pts.forEach(function (pt) { sum += pt.v; });
-      $("tpAvg").textContent = (Math.round(sum / pts.length * 10) / 10).toFixed(1);
-      $("tpRange").textContent = pts.length + " days · " + trendLabel(pts[0].k) + " – " + trendLabel(pts[pts.length - 1].k);
       var grid = ""; [0, 5, 10].forEach(function (g) { var y = Y(g); grid += '<line class="tg-grid" x1="' + padL + '" y1="' + y + '" x2="' + (W - padR) + '" y2="' + y + '"/>'; });
       var line = "", area = "M " + X(0) + " " + Y(0);
       pts.forEach(function (pt, i) { var x = X(i), y = Y(pt.v); line += (i ? " L " : "M ") + x + " " + y; area += " L " + x + " " + y; });
@@ -5599,6 +5653,76 @@
       var dots = ""; pts.forEach(function (pt, i) { var last = i === pts.length - 1; dots += '<circle class="tg-dot' + (last ? ' tg-last' : '') + '" cx="' + X(i) + '" cy="' + Y(pt.v) + '" r="' + (last ? 4 : 2.6) + '"><title>' + trendLabel(pt.k) + ': ' + (Math.round(pt.v * 10) / 10) + '</title></circle>'; });
       $("tpChart").innerHTML = grid + '<path class="tg-area" d="' + area + '"/><path class="tg-line" d="' + line + '"/>' + dots;
       $("tpX").innerHTML = '<span>' + trendLabel(pts[0].k) + '</span><span>' + trendLabel(pts[Math.floor((pts.length - 1) / 2)].k) + '</span><span>' + trendLabel(pts[pts.length - 1].k) + '</span>';
+      // ---- per-pillar rows: each pillar's own story, strongest first ----
+      var chartKeys = pts.map(function (pt) { return pt.k; });
+      var rows = [];
+      pillars.forEach(function (p) {
+        var cur = tpPillarAvg(recentKeys, p.key);
+        if (cur == null) return;   // never rated recently → no row, no guilt
+        var prev = havePrev ? tpPillarAvg(prevKeys, p.key) : null;
+        rows.push({ p: p, cur: cur, delta: prev == null ? null : cur - prev });
+      });
+      rows.sort(function (a, b) { return b.cur - a.cur; });
+      var ph = "";
+      rows.forEach(function (r) {
+        var p = r.p;
+        // sparkline over the same window as the big chart
+        var ser = chartKeys.map(function (k) {
+          var rr = db.ratings[k] && db.ratings[k][p.key];
+          return (rr && rr.rated !== false && isNum(rr.score)) ? rr.score : null;
+        });
+        var w = 86, h = 24, pad = 3.5;
+        var sx = function (i) { return pad + (ser.length <= 1 ? (w - 2 * pad) / 2 : (w - 2 * pad) * i / (ser.length - 1)); };
+        var sy = function (v) { return pad + (1 - v / 10) * (h - 2 * pad); };
+        var d = "", started = false, lastX = null, lastY = null;
+        ser.forEach(function (v, i) { if (v == null) return; lastX = sx(i); lastY = sy(v); d += (started ? " L " : "M ") + lastX + " " + lastY; started = true; });
+        var aCls = r.delta == null ? "flat" : (r.delta >= 0.3 ? "up" : (r.delta <= -0.3 ? "down" : "flat"));
+        var aTxt = r.delta == null ? "" : (aCls === "flat" ? "·" : (r.delta > 0 ? "▲ +" + tpFmt(r.delta) : "▼ " + tpFmt(r.delta)));
+        ph += '<div class="tp-prow">' +
+          '<span class="tp-porb" style="background:' + p.orb + '"></span>' +
+          '<span class="tp-pname">' + p.name.replace(" / Stewardship", "") + '</span>' +
+          '<svg class="tp-pspark" viewBox="0 0 ' + w + ' ' + h + '"><path d="' + d + '" fill="none" stroke="' + p.color + '" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" opacity="0.9"/>' +
+            (lastX != null ? '<circle cx="' + lastX + '" cy="' + lastY + '" r="2.6" fill="' + p.color + '"/>' : '') + '</svg>' +
+          '<span class="tp-pval" style="color:' + p.color + '">' + tpFmt(r.cur) + '</span>' +
+          '<span class="tp-parrow ' + aCls + '">' + aTxt + '</span>' +
+        '</div>';
+      });
+      $("tpPillars").innerHTML = ph;
+      // ---- what it says, in plain words ----
+      var lines = [];
+      if (rows.length >= 2) {
+        var withDelta = rows.filter(function (r) { return r.delta != null; });
+        var riser = null, slipper = null;
+        withDelta.forEach(function (r) {
+          if (r.delta >= 0.7 && (!riser || r.delta > riser.delta)) riser = r;
+          if (r.delta <= -0.7 && (!slipper || r.delta < slipper.delta)) slipper = r;
+        });
+        var nm = function (r) { return "<b>" + r.p.name.replace(" / Stewardship", "") + "</b>"; };
+        if (riser) lines.push(nm(riser) + " is climbing — up " + tpFmt(riser.delta) + " on the week before.");
+        if (slipper) lines.push(nm(slipper) + " slipped " + tpFmt(Math.abs(slipper.delta)) + " this week — worth a look.");
+        if (!riser && !slipper && withDelta.length >= 2) lines.push("Steady across the board this week — no pillar moved much either way.");
+        var low = rows[rows.length - 1], high = rows[0];
+        if (havePrev) {
+          // was the current lowest ALSO the lowest in the previous window? that's a pattern, not a day
+          var prevLow = null;
+          rows.forEach(function (r) {
+            var pv = tpPillarAvg(prevKeys, r.p.key);
+            if (pv != null && (prevLow == null || pv < prevLow.v)) prevLow = { r: r, v: pv };
+          });
+          if (prevLow && prevLow.r === low && low !== high) lines.push(nm(low) + " has been your lowest pillar two weeks running.");
+        }
+        if (!lines.length) lines.push(nm(high) + " is carrying you right now; " + nm(low) + " needs the most attention.");
+      }
+      var insEl = $("tpInsight");
+      insEl.innerHTML = lines.join(" ");
+      insEl.hidden = !lines.length;
+      // ---- one small next step, from the pillar that needs it most ----
+      var stepEl = $("tpStep");
+      if (rows.length >= 2) {
+        var focus = rows[rows.length - 1].p;
+        stepEl.innerHTML = '<div class="tp-step-eyebrow"><i style="background:' + focus.orb + '"></i>Smallest next step · ' + focus.name.replace(" / Stewardship", "") + '</div><p>' + focus.tip + "</p>";
+        stepEl.hidden = false;
+      } else stepEl.hidden = true;
     }
     $("trendsPop").hidden = false;
     if (typeof playPage === "function") playPage();
@@ -10859,7 +10983,7 @@
   });
   if (window.matchMedia) { try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { if (db.theme === "auto") applyTheme("auto"); }); } catch (e) {} }
 
-  var APP_VERSION = "v61.80-dev";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v61.81-dev";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
