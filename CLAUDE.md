@@ -7,6 +7,46 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 > **nothing reaches `main`/production without Leo's explicit go for that specific change** (see Hard
 > Rule #5). Treat every prod change — especially data/sync/auth — as surgery on a running patient.
 
+## ⏱️ CURRENT STATE — session handoff (read this first)
+
+_Last updated July 15 2026. This block is the running handoff so any session (incl. on a second Mac)
+picks up cold. Keep it current when versions/state change._
+
+- **Versions:** PROD (`main`) = **v61.81** · DEV (`dev`) = **v61.82-dev**. `FORGE_LIVE=false` and
+  `GATE_SIGNUPS=true` on both (Forge hidden on prod, invite gate on). Keep `APP_VERSION` (index.html)
+  and `CACHE` (sw.js) in lockstep on every bump.
+- **Recently shipped to PROD (v61.81, approved):** welcome/sign-in cinematic entrance + the 7-Pillars
+  "View Trends" redesign (per-pillar rows, plain-word insights, "smallest next step"). Both data-safe.
+- **On DEV, not yet shipped:** read-along transcript + sentence-level "karaoke" (highlights the line
+  Leo's audio is on), Day 1 Mirror live Integration meter (v61.82), Days 2/4/5 audio.
+- **The 21 audio status:** Days **0, 1, 2, 4, 5 recorded & wired** with Leo's real voice. **Missing:
+  Day 3** (the live visualization) **and Days 6–21.** Leo is recording these now (traveling — Europe/London).
+- **The recording→ship pipeline** (repeat per day; helper scripts `build_the21.py` + `transcribe.py`
+  live in the session scratchpad and are recreated each session, NOT in the repo):
+  1. `afconvert -f m4af -d aac -b 64000 --mix "Day N.mp3" assets/the21/dayNN.m4a`
+  2. transcribe locally on-device: `afconvert` to 16k WAV → feed to `mlx_whisper`
+     (`pip3 install --user mlx-whisper`; model `mlx-community/whisper-small-mlx`; needs `transcribe.py`
+     bypass because the CLI wants ffmpeg, which isn't installed). Lightly clean the transcript.
+  3. Replace that day in `THE-21.md` with the cleaned transcript · add the day to the `AUDIO` map in
+     `build_the21.py` (+ `WIDGET` if it has an in-app action) · rerun it to regenerate `the21.json`.
+  4. Bump version, browser-verify on `localhost:8765`, commit, `git push origin dev`, confirm `/dev/` live.
+- **Deploy:** `git push origin dev` → `/dev/` only. Prod ships are a **surgical** checkout of dev's
+  `index.html`+`sw.js` onto `main` that PRESERVES `CNAME` + `assets/og-image.jpg` and RESTORES the
+  1200×630 `og-image.jpg` OG tags (dev has them reverted to `cross.png`), strips `-dev`. Never a blind
+  merge. Only on Leo's explicit go for that change.
+- **Working across two Macs:** primary workstation is a Mac Studio; Leo also works on a MacBook Pro
+  when traveling. GitHub is the source of truth — **push when leaving a machine, `git pull` before
+  starting on the other.** (Deep "memory" notes live in `~/.claude/…`, outside this repo, so this
+  block is the portable handoff.)
+- **Ministry season (context, not code):** Leo is finishing the 18 remaining recordings, then running
+  his founding ~9 men through The 21, then growing 9→90 via personal invitation + a physical table
+  (breakfast/dinner in San Diego). He listed ~25 men to invite; **next faithful step = put a date on a
+  dinner and personally invite 8–10.** A discipleship **CRM is intentionally PARKED** (premature at this
+  scale — revisit at ~40–50 men / when other leaders come); see `DESIGN_SYSTEM.md` for the eventual build.
+- **How Leo likes to work:** plain language, define any jargon in-sentence, analogies land well. He is
+  the founder/shepherd, faith-driven (Romans 12:2). Be an honest advisor — name procrastination and
+  push back when a "build" is avoiding the real assignment (recording + gathering men).
+
 ## What this is
 
 **The Integrated Man (TIM) Journal** — a faith-driven daily journal PWA for men: scripture reading
