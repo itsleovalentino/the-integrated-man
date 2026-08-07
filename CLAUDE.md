@@ -7,6 +7,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 > **nothing reaches `main`/production without Leo's explicit go for that specific change** (see Hard
 > Rule #5). Treat every prod change — especially data/sync/auth — as surgery on a running patient.
 
+## 🧭 NORTH STAR — the soul of the app (read `NORTH_STAR.md`)
+
+Before shaping any feature, read `NORTH_STAR.md`. In short: TIM is a **third place** — a digital space
+that *grounds* men instead of draining them (the opposite of a feed). It's a **house of rooms** (hearth,
+Word, private study, gym/pods, prayer room, Forge), not a set of tabs. The soul stack: the walk with
+Jesus (center) → becoming (the work) → accountability/pods (the engine that makes a man do the work,
+with brothers). Ethic: **carry, don't compete** (man vs. thief, never man vs. man). Hardest guardrail:
+**it releases, not captures** — the win is the life lived out there, never time-in-app. Measure every
+build against this.
+
 ## ⏱️ CURRENT STATE — session handoff (read this first)
 
 _Last updated July 15 2026. This block is the running handoff so any session (incl. on a second Mac)
