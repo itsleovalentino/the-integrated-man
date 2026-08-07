@@ -2379,6 +2379,25 @@
   .f21-sdots button { aspect-ratio: 1; max-width: 26px; width: 100%; justify-self: center; border-radius: 50%;
     background: var(--field); border: 1px solid var(--field-edge); cursor: pointer; padding: 0; }
   .f21-sdots button.on { background: var(--pc); border-color: var(--pc); }
+  /* Day 1/21 Mirror — the live Integration meter that stacks up as you rate yourself */
+  .f21-meter { background: linear-gradient(158deg, #171310, #121214 62%); border: 1px solid var(--gold-line); border-radius: 18px; padding: 16px 18px 14px; margin-bottom: 18px; position: relative; overflow: hidden; transition: border-color .4s ease; }
+  .f21-meter::after { content: ""; position: absolute; inset: 0; background: radial-gradient(120% 90% at 50% 0%, rgba(203,178,126,.10), transparent 62%); opacity: 0; transition: opacity .5s ease; pointer-events: none; }
+  .f21-meter.complete { border-color: var(--accent); }
+  .f21-meter.complete::after { opacity: 1; }
+  .f21-meter-top { display: flex; justify-content: space-between; align-items: baseline; }
+  .f21-meter-num { font-size: 40px; font-weight: 300; line-height: 1; letter-spacing: -.02em; color: var(--accent); font-variant-numeric: tabular-nums; display: inline-block; }
+  .f21-meter.bump .f21-meter-num { animation: f21mBump .42s cubic-bezier(.2,.8,.2,1); }
+  @keyframes f21mBump { 0% { transform: scale(1); } 34% { transform: scale(1.14); } 100% { transform: scale(1); } }
+  .f21-meter-unit { font-size: 12px; color: var(--ink-faint); margin-left: 7px; }
+  .f21-meter-count { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-faint); transition: color .4s ease; }
+  .f21-meter.complete .f21-meter-count { color: var(--accent); }
+  .f21-meter-bars { display: grid; grid-template-columns: repeat(7, 1fr); gap: 7px; align-items: end; height: 46px; margin-top: 14px; }
+  .f21-mbar { position: relative; height: 100%; border-radius: 5px; background: rgba(255,255,255,.05); overflow: hidden; }
+  .f21-mbar > i { position: absolute; left: 0; right: 0; bottom: 0; height: 0; background: linear-gradient(to top, var(--pc), color-mix(in srgb, var(--pc) 72%, white)); border-radius: 5px; transition: height .52s cubic-bezier(.2,.8,.2,1); }
+  .f21-mbar.set { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--pc) 42%, transparent); }
+  .f21-mbar.pop { animation: f21mPop .42s cubic-bezier(.2,.8,.2,1); }
+  @keyframes f21mPop { 0% { transform: translateY(0) scaleY(1); } 32% { transform: translateY(-3px) scaleY(1.06); } 100% { transform: translateY(0) scaleY(1); } }
+  @media (prefers-reduced-motion: reduce) { .f21-meter.bump .f21-meter-num, .f21-mbar.pop { animation: none; } .f21-mbar > i { transition: none; } }
   .f21-delta { margin-top: 12px; }
   .f21-delta div { display: flex; justify-content: space-between; align-items: baseline; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
   .f21-delta span { color: var(--ink-soft); }
@@ -2607,7 +2626,16 @@
   .cov-recap-row { display: flex; justify-content: space-between; align-items: baseline; padding: 5px 0; border-bottom: 1px solid var(--line); font-size: 13px; color: var(--ink-soft); }
   .cov-recap-row:last-child { border-bottom: none; }
   .cov-recap-row b { font-weight: 600; color: var(--ink-high); }
-  .cov-recap-row b.hit { color: var(--accent); }
+  .cov-recap-row.hit b { color: var(--accent); }
+  .cov-recap-row.hit .crr-name { color: var(--ink-high); }
+  .crr-flame { font-size: 11px; }
+  .cov-recap-row.mine { background: var(--accent-soft); border-radius: 8px; margin: 0 -6px; padding-left: 6px; padding-right: 6px; }
+  .cov-recap-row.mine .crr-name { font-weight: 600; }
+  /* a personal word to the man reading — celebratory if he kept it, encouraging if he didn't */
+  .cov-recap-you { margin-top: 10px; font-size: 12.5px; line-height: 1.5; color: var(--ink-soft); font-style: italic; text-align: center; padding: 9px 10px 2px; border-top: 1px solid var(--line); }
+  .cov-recap-you.win { color: var(--accent); font-style: normal; font-weight: 500; }
+  .cov-dev-preview { display: block; width: 100%; margin: 16px 0 4px; padding: 11px; font: inherit; font-size: 12px; letter-spacing: .04em; color: var(--ink-faint); background: transparent; border: 1px dashed var(--field-edge); border-radius: 12px; cursor: pointer; }
+  .cov-dev-preview:active { opacity: .6; }
   /* renewal prompt */
   .cov-renew { border: 1px solid #c2a86a55; border-radius: 16px; padding: 18px; background: rgba(194,168,106,0.06); margin-bottom: 22px; text-align: center; }
   .cov-renew-t { font-size: 18px; color: var(--ink-high); font-weight: 500; }
@@ -7292,13 +7320,15 @@
 
   // ================= Fellowship: circles + covenant board =================
   var circleState = { loaded: false, circle: null, members: [], profiles: {}, covenants: {}, checks: {}, sentBack: {}, fireCounts: {}, received: [], myRole: null, myJoinedDay: null };
+  var covRecapPreview = false;   // dev-only: force the Saturday recap to render on any day so it can be reviewed before Saturday
+  function covIsDev() { return !!(window.TIM_DEV || location.hostname === "localhost" || location.hostname === "127.0.0.1"); }
   var pendingJoinCode = null;   // an invite code awaiting signup/onboarding/confirmation
 
   function todayLocal() { return keyOf(new Date()); }
   // the circle's week runs Saturday → Friday; return the 7 local day-keys of the current week
-  function weekDaysSat() {
+  function weekDaysSat(weeksBack) {
     var x = new Date(); x = new Date(x.getFullYear(), x.getMonth(), x.getDate());
-    x.setDate(x.getDate() - ((x.getDay() + 1) % 7));   // back up to Saturday
+    x.setDate(x.getDate() - ((x.getDay() + 1) % 7) - 7 * (weeksBack || 0));   // back up to Saturday (optionally N weeks earlier)
     var out = []; for (var i = 0; i < 7; i++) { var d = new Date(x); d.setDate(x.getDate() + i); out.push(keyOf(d)); }
     return out;
   }
@@ -7318,12 +7348,15 @@
       var mine = (mr && mr.data) || [];
       if (!mine.length) { circleState = { loaded: true, circle: null, members: [], profiles: {}, covenants: {}, checks: {}, sentBack: {}, fireCounts: {}, received: [], myRole: null, myJoinedDay: null }; if (cb) cb(); return; }
       var cid = mine[0].circle_id, myRole = mine[0].role, myJoinedDay = mine[0].joined_day, days = weekDaysSat(), today = todayLocal();
+      // fetch TWO weeks of checks (last week + this week): the live board shows this week, but the
+      // Saturday recap scores LAST week — without last week's rows, every brother read 0/7.
+      var checkDays = weekDaysSat(1).concat(days);
       Promise.all([
         sb.from("circles").select("*").eq("id", cid).maybeSingle(),
         sb.from("circle_members").select("*").eq("circle_id", cid),
         sb.from("profiles").select("*"),
         sb.from("covenants").select("*").eq("circle_id", cid).order("signed_at", { ascending: true }),
-        sb.from("covenant_checks").select("user_id, day, done").eq("circle_id", cid).in("day", days),
+        sb.from("covenant_checks").select("user_id, day, done").eq("circle_id", cid).in("day", checkDays),
         sb.from("nudges").select("*").eq("circle_id", cid).in("day", days)
       ]).then(function (res) {
         var members = (res[1].data || []).slice().sort(function (a, b) { return (a.joined_at || "") < (b.joined_at || "") ? -1 : 1; });
@@ -7515,27 +7548,46 @@
     var html = '<div class="cov-name-head"><div class="cnh-eyebrow">The covenant of</div><div class="cnh-name serif">' + escapeHtml(c.name) + '</div></div>';
     html += focusCardHtml(c, isLeader);
     var myCov = circleState.covenants[uid];
-    if (myCov && myCov.signed_day < weekKey) {
-      // last week, on the record: how every brother finished before the new week begins
-      var recap = circleState.members.map(function (m) {
+    if (myCov && (myCov.signed_day < weekKey || covRecapPreview)) {
+      // last week, on the record: how every brother finished before the new week begins.
+      // Not a leaderboard (no ranking) — we celebrate everyone who kept his vow, and speak a
+      // personal word to the man reading it. Encouragement, never shame.
+      var rows = circleState.members.map(function (m) {
         var cv = circleState.covenants[m.user_id];
-        if (!cv) return "";   // a man with no covenant last week gets no scored row (no bogus 0/7)
+        if (!cv) return null;   // a man with no covenant last week gets no scored row (no bogus 0/7)
         var ch = circleState.checks[m.user_id] || {}, n = 0;
         days.forEach(function (dk) {
           var p = dk.split("-"); var prev = keyOf(new Date(+p[0], +p[1] - 1, +p[2] - 7));
           if (ch[prev]) n++;
         });
         var target = (+cv.freq) ? Math.min(+cv.freq, 7) : 7;
-        var nm = escapeHtml(bestName([m.member_name, m.name, m.display_name]) || "A brother");
-        return '<div class="cov-recap-row"><span>' + nm + '</span><b class="' + (n >= target ? "hit" : "") + '">' + n + "/" + target + "</b></div>";
+        return { name: bestName([m.member_name, m.name, m.display_name]) || "A brother",
+                 n: n, target: target, hit: n >= target, mine: m.user_id === uid };
+      }).filter(Boolean);
+      var kept = rows.filter(function (r) { return r.hit; }).length, total = rows.length;
+      var me = rows.filter(function (r) { return r.mine; })[0];
+      var headline = total === 0 ? "A fresh week begins."
+        : kept === total ? "Every brother kept his vow. 🔥"
+        : kept === 0 ? "A hard week. This one's a fresh start."
+        : kept + " of " + total + " kept the vow last week.";
+      var recap = rows.map(function (r) {
+        return '<div class="cov-recap-row' + (r.hit ? " hit" : "") + (r.mine ? " mine" : "") + '">' +
+          '<span class="crr-name">' + escapeHtml(r.name) + (r.hit ? ' <span class="crr-flame">🔥</span>' : "") + "</span>" +
+          '<b>' + r.n + "/" + r.target + "</b></div>";
       }).join("");
+      var youLine = !me ? "" : (me.hit
+        ? "You kept your covenant — " + me.n + "/" + me.target + ". Well done, brother. Keep the fire."
+        : me.n === 0 ? "Last week slipped by. A new week, a clean page — show up today."
+        : "You showed up " + me.n + (me.n === 1 ? " day" : " days") + " last week. This week, one more.");
       html += '<div class="cov-renew"><div class="cov-renew-t serif">A new week.</div>' +
-        '<div class="cov-recap"><div class="cov-recap-t">Last week, on the record</div>' + recap + "</div>" +
+        '<div class="cov-recap"><div class="cov-recap-t">' + escapeHtml(headline) + '</div>' + recap +
+          (youLine ? '<div class="cov-recap-you' + (me && me.hit ? " win" : "") + '">' + escapeHtml(youLine) + "</div>" : "") + "</div>" +
         '<div class="cov-renew-s">“' + escapeHtml(myCov.body) + '”</div>' +
         '<div class="cov-renew-actions"><button class="cov-renew-btn primary" data-act="renewContinue">Continue this covenant</button>' +
         '<button class="cov-renew-btn ghost" data-act="renewNew">Set a new covenant</button></div></div>';
     }
     html += '<div class="cov-board">' + circleState.members.map(function (m) { return covCardHtml(m, days, today, weekKey, uid); }).join("") + '</div>';
+    if (covIsDev()) html += '<button class="cov-dev-preview" data-act="covPreview">🔧 ' + (covRecapPreview ? "Hide" : "Preview") + " the Saturday review (dev only)</button>";
     // (no in-app invite controls — the invite link is shared by Leo outside the app)
     $("circleBody").innerHTML = html;
     // paint my tap circle's persisted state inline too (so a reload shows gold without
@@ -7844,6 +7896,7 @@
     else if (act === "editFocus") { openFocusEdit(); }
     else if (act === "saveFocus") { saveFocusEdit(); }
     else if (act === "cancelFocus") { renderBoard(); }
+    else if (act === "covPreview") { covRecapPreview = !covRecapPreview; renderBoard(); if (covRecapPreview) $("circleBody").scrollTop = 0; }
   });
   function openFocusEdit() {
     var c = circleState.circle, card = $("focusCard"); if (!card) return;
@@ -8262,6 +8315,18 @@
   function t21ScorerHtml(blankStart) {
     var h = '<div class="f21-action"><span class="f21-tag">Score your seven · right here, right now</span>' +
             (blankStart ? '<div class="f21-seal" style="margin-top:6px">Blank on purpose. Zero bias: score the man of TODAY.</div>' : "");
+    // live Integration meter — stacks up as he rates each pillar (Day 1 only; Day 21 stays blank for zero bias)
+    if (!blankStart) {
+      var mbars = "";
+      t21Pillars().forEach(function (p) { mbars += '<div class="f21-mbar" data-pk="' + p.key + '" style="--pc:' + p.color + '"><i></i></div>'; });
+      h += '<div class="f21-meter" id="f21Meter">' +
+             '<div class="f21-meter-top">' +
+               '<div><span class="f21-meter-num serif" id="f21MeterNum">—</span><span class="f21-meter-unit">/10 integration</span></div>' +
+               '<div class="f21-meter-count" id="f21MeterCount">0 of 7 scored</div>' +
+             '</div>' +
+             '<div class="f21-meter-bars" id="f21MeterBars">' + mbars + '</div>' +
+           '</div>';
+    }
     t21Pillars().forEach(function (p) {
       var cur = blankStart ? null : t21RatingOf(p.key);
       h += '<div class="f21-score-row' + (cur != null ? " rated" : "") + '" style="--pc:' + p.color + '" data-pk="' + p.key + '">' +
@@ -8273,6 +8338,42 @@
     });
     return h + '<div class="f21-seal">These are your real pillar scores. Your Home page shows the same numbers.</div></div>';
   }
+  // the live Mirror meter: integration = average of pillars rated TODAY, with the bars stacked in pillar order
+  var t21MeterShown = 0;
+  function t21UpdateMeter(animate, pulseKey) {
+    var meter = $("f21Meter"); if (!meter) return;
+    var dk = todayLocal(), r = (db.ratings && db.ratings[dk]) || {};
+    var sum = 0, n = 0, total = t21Pillars().length;
+    var bars = $("f21MeterBars");
+    if (bars) Array.prototype.forEach.call(bars.querySelectorAll(".f21-mbar"), function (b) {
+      var k = b.getAttribute("data-pk"), x = r[k];
+      var sc = (x && x.rated !== false && isNum(x.score)) ? x.score : 0;
+      var fill = b.querySelector("i"); if (fill) fill.style.height = (sc * 10) + "%";
+      b.classList.toggle("set", sc > 0);
+      if (pulseKey && k === pulseKey) { b.classList.remove("pop"); void b.offsetWidth; b.classList.add("pop"); }
+    });
+    t21Pillars().forEach(function (p) { var x = r[p.key]; if (x && x.rated !== false && isNum(x.score)) { sum += x.score; n++; } });
+    var avg = n ? sum / n : null;
+    var cnt = $("f21MeterCount"); if (cnt) cnt.textContent = n === total ? "All seven · your mirror" : (n + " of " + total + " scored");
+    meter.classList.toggle("complete", n === total);
+    var num = $("f21MeterNum"); if (!num) return;
+    var target = avg == null ? 0 : avg;
+    if (!animate) { num.textContent = avg == null ? "—" : target.toFixed(1); t21MeterShown = target; return; }
+    // correctness first: show the true value immediately (survives throttled rAF), then tween for flourish
+    var from = t21MeterShown;
+    num.textContent = target.toFixed(1); t21MeterShown = target;
+    meter.classList.remove("bump"); void meter.offsetWidth; meter.classList.add("bump");
+    var startTs = null, dur = 460;
+    function step(ts) {
+      if (startTs == null) startTs = ts;
+      var t = Math.min(1, (ts - startTs) / dur), e = 1 - Math.pow(1 - t, 3), val = from + (target - from) * e;
+      num.textContent = val.toFixed(1);
+      if (t < 1) requestAnimationFrame(step); else num.textContent = target.toFixed(1);
+    }
+    requestAnimationFrame(step);
+    // safety: if rAF is throttled and freezes mid-tween, force the true value once the tween window passes
+    setTimeout(function () { if (t21MeterShown === target) num.textContent = target.toFixed(1); }, dur + 90);
+  }
   function t21WireScorer(onChange) {
     var rows = $("f21SessBody").querySelectorAll(".f21-score-row");
     Array.prototype.forEach.call(rows, function (row) {
@@ -8282,14 +8383,19 @@
           var v = +btn.getAttribute("data-v"), dk = todayLocal();
           db.ratings = db.ratings || {}; db.ratings[dk] = db.ratings[dk] || {};
           var rec = db.ratings[dk][key] || {}; rec.score = v; rec.rated = true; db.ratings[dk][key] = rec;
+          var wasRated = row.classList.contains("rated");
           save(); buzz(6);
           row.classList.add("rated");
           row.querySelector(".f21-score-top b").textContent = v;
           Array.prototype.forEach.call(row.querySelectorAll(".f21-sdots button"), function (b2, i) { b2.classList.toggle("on", i < v); });
+          var wasComplete = $("f21Meter") && $("f21Meter").classList.contains("complete");
+          t21UpdateMeter(true, key);
+          if (!wasComplete && $("f21Meter") && $("f21Meter").classList.contains("complete")) { playChime(); buzz(16); }  // all seven — a small reward
           if (onChange) onChange();
         });
       });
     });
+    t21UpdateMeter(false);   // set the initial state (bars for any already-rated pillars)
   }
   function t21DeltaHtml() {
     var s = t21() || {}, m0 = s.mirror0 && s.mirror0.scores;
@@ -10983,7 +11089,7 @@
   });
   if (window.matchMedia) { try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { if (db.theme === "auto") applyTheme("auto"); }); } catch (e) {} }
 
-  var APP_VERSION = "v61.81";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v61.84";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
