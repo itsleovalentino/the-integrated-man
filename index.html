@@ -2634,6 +2634,8 @@
   /* a personal word to the man reading — celebratory if he kept it, encouraging if he didn't */
   .cov-recap-you { margin-top: 10px; font-size: 12.5px; line-height: 1.5; color: var(--ink-soft); font-style: italic; text-align: center; padding: 9px 10px 2px; border-top: 1px solid var(--line); }
   .cov-recap-you.win { color: var(--accent); font-style: normal; font-weight: 500; }
+  .cov-dev-preview { display: block; width: 100%; margin: 16px 0 4px; padding: 11px; font: inherit; font-size: 12px; letter-spacing: .04em; color: var(--ink-faint); background: transparent; border: 1px dashed var(--field-edge); border-radius: 12px; cursor: pointer; }
+  .cov-dev-preview:active { opacity: .6; }
   /* renewal prompt */
   .cov-renew { border: 1px solid #c2a86a55; border-radius: 16px; padding: 18px; background: rgba(194,168,106,0.06); margin-bottom: 22px; text-align: center; }
   .cov-renew-t { font-size: 18px; color: var(--ink-high); font-weight: 500; }
@@ -7318,6 +7320,8 @@
 
   // ================= Fellowship: circles + covenant board =================
   var circleState = { loaded: false, circle: null, members: [], profiles: {}, covenants: {}, checks: {}, sentBack: {}, fireCounts: {}, received: [], myRole: null, myJoinedDay: null };
+  var covRecapPreview = false;   // dev-only: force the Saturday recap to render on any day so it can be reviewed before Saturday
+  function covIsDev() { return !!(window.TIM_DEV || location.hostname === "localhost" || location.hostname === "127.0.0.1"); }
   var pendingJoinCode = null;   // an invite code awaiting signup/onboarding/confirmation
 
   function todayLocal() { return keyOf(new Date()); }
@@ -7544,7 +7548,7 @@
     var html = '<div class="cov-name-head"><div class="cnh-eyebrow">The covenant of</div><div class="cnh-name serif">' + escapeHtml(c.name) + '</div></div>';
     html += focusCardHtml(c, isLeader);
     var myCov = circleState.covenants[uid];
-    if (myCov && myCov.signed_day < weekKey) {
+    if (myCov && (myCov.signed_day < weekKey || covRecapPreview)) {
       // last week, on the record: how every brother finished before the new week begins.
       // Not a leaderboard (no ranking) — we celebrate everyone who kept his vow, and speak a
       // personal word to the man reading it. Encouragement, never shame.
@@ -7583,6 +7587,7 @@
         '<button class="cov-renew-btn ghost" data-act="renewNew">Set a new covenant</button></div></div>';
     }
     html += '<div class="cov-board">' + circleState.members.map(function (m) { return covCardHtml(m, days, today, weekKey, uid); }).join("") + '</div>';
+    if (covIsDev()) html += '<button class="cov-dev-preview" data-act="covPreview">🔧 ' + (covRecapPreview ? "Hide" : "Preview") + " the Saturday review (dev only)</button>";
     // (no in-app invite controls — the invite link is shared by Leo outside the app)
     $("circleBody").innerHTML = html;
     // paint my tap circle's persisted state inline too (so a reload shows gold without
@@ -7891,6 +7896,7 @@
     else if (act === "editFocus") { openFocusEdit(); }
     else if (act === "saveFocus") { saveFocusEdit(); }
     else if (act === "cancelFocus") { renderBoard(); }
+    else if (act === "covPreview") { covRecapPreview = !covRecapPreview; renderBoard(); if (covRecapPreview) $("circleBody").scrollTop = 0; }
   });
   function openFocusEdit() {
     var c = circleState.circle, card = $("focusCard"); if (!card) return;
@@ -11083,7 +11089,7 @@
   });
   if (window.matchMedia) { try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { if (db.theme === "auto") applyTheme("auto"); }); } catch (e) {} }
 
-  var APP_VERSION = "v61.83-dev";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v61.84-dev";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
