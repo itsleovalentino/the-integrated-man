@@ -2626,7 +2626,14 @@
   .cov-recap-row { display: flex; justify-content: space-between; align-items: baseline; padding: 5px 0; border-bottom: 1px solid var(--line); font-size: 13px; color: var(--ink-soft); }
   .cov-recap-row:last-child { border-bottom: none; }
   .cov-recap-row b { font-weight: 600; color: var(--ink-high); }
-  .cov-recap-row b.hit { color: var(--accent); }
+  .cov-recap-row.hit b { color: var(--accent); }
+  .cov-recap-row.hit .crr-name { color: var(--ink-high); }
+  .crr-flame { font-size: 11px; }
+  .cov-recap-row.mine { background: var(--accent-soft); border-radius: 8px; margin: 0 -6px; padding-left: 6px; padding-right: 6px; }
+  .cov-recap-row.mine .crr-name { font-weight: 600; }
+  /* a personal word to the man reading — celebratory if he kept it, encouraging if he didn't */
+  .cov-recap-you { margin-top: 10px; font-size: 12.5px; line-height: 1.5; color: var(--ink-soft); font-style: italic; text-align: center; padding: 9px 10px 2px; border-top: 1px solid var(--line); }
+  .cov-recap-you.win { color: var(--accent); font-style: normal; font-weight: 500; }
   /* renewal prompt */
   .cov-renew { border: 1px solid #c2a86a55; border-radius: 16px; padding: 18px; background: rgba(194,168,106,0.06); margin-bottom: 22px; text-align: center; }
   .cov-renew-t { font-size: 18px; color: var(--ink-high); font-weight: 500; }
@@ -7315,9 +7322,9 @@
 
   function todayLocal() { return keyOf(new Date()); }
   // the circle's week runs Saturday → Friday; return the 7 local day-keys of the current week
-  function weekDaysSat() {
+  function weekDaysSat(weeksBack) {
     var x = new Date(); x = new Date(x.getFullYear(), x.getMonth(), x.getDate());
-    x.setDate(x.getDate() - ((x.getDay() + 1) % 7));   // back up to Saturday
+    x.setDate(x.getDate() - ((x.getDay() + 1) % 7) - 7 * (weeksBack || 0));   // back up to Saturday (optionally N weeks earlier)
     var out = []; for (var i = 0; i < 7; i++) { var d = new Date(x); d.setDate(x.getDate() + i); out.push(keyOf(d)); }
     return out;
   }
@@ -7337,12 +7344,15 @@
       var mine = (mr && mr.data) || [];
       if (!mine.length) { circleState = { loaded: true, circle: null, members: [], profiles: {}, covenants: {}, checks: {}, sentBack: {}, fireCounts: {}, received: [], myRole: null, myJoinedDay: null }; if (cb) cb(); return; }
       var cid = mine[0].circle_id, myRole = mine[0].role, myJoinedDay = mine[0].joined_day, days = weekDaysSat(), today = todayLocal();
+      // fetch TWO weeks of checks (last week + this week): the live board shows this week, but the
+      // Saturday recap scores LAST week — without last week's rows, every brother read 0/7.
+      var checkDays = weekDaysSat(1).concat(days);
       Promise.all([
         sb.from("circles").select("*").eq("id", cid).maybeSingle(),
         sb.from("circle_members").select("*").eq("circle_id", cid),
         sb.from("profiles").select("*"),
         sb.from("covenants").select("*").eq("circle_id", cid).order("signed_at", { ascending: true }),
-        sb.from("covenant_checks").select("user_id, day, done").eq("circle_id", cid).in("day", days),
+        sb.from("covenant_checks").select("user_id, day, done").eq("circle_id", cid).in("day", checkDays),
         sb.from("nudges").select("*").eq("circle_id", cid).in("day", days)
       ]).then(function (res) {
         var members = (res[1].data || []).slice().sort(function (a, b) { return (a.joined_at || "") < (b.joined_at || "") ? -1 : 1; });
@@ -7535,21 +7545,39 @@
     html += focusCardHtml(c, isLeader);
     var myCov = circleState.covenants[uid];
     if (myCov && myCov.signed_day < weekKey) {
-      // last week, on the record: how every brother finished before the new week begins
-      var recap = circleState.members.map(function (m) {
+      // last week, on the record: how every brother finished before the new week begins.
+      // Not a leaderboard (no ranking) — we celebrate everyone who kept his vow, and speak a
+      // personal word to the man reading it. Encouragement, never shame.
+      var rows = circleState.members.map(function (m) {
         var cv = circleState.covenants[m.user_id];
-        if (!cv) return "";   // a man with no covenant last week gets no scored row (no bogus 0/7)
+        if (!cv) return null;   // a man with no covenant last week gets no scored row (no bogus 0/7)
         var ch = circleState.checks[m.user_id] || {}, n = 0;
         days.forEach(function (dk) {
           var p = dk.split("-"); var prev = keyOf(new Date(+p[0], +p[1] - 1, +p[2] - 7));
           if (ch[prev]) n++;
         });
         var target = (+cv.freq) ? Math.min(+cv.freq, 7) : 7;
-        var nm = escapeHtml(bestName([m.member_name, m.name, m.display_name]) || "A brother");
-        return '<div class="cov-recap-row"><span>' + nm + '</span><b class="' + (n >= target ? "hit" : "") + '">' + n + "/" + target + "</b></div>";
+        return { name: bestName([m.member_name, m.name, m.display_name]) || "A brother",
+                 n: n, target: target, hit: n >= target, mine: m.user_id === uid };
+      }).filter(Boolean);
+      var kept = rows.filter(function (r) { return r.hit; }).length, total = rows.length;
+      var me = rows.filter(function (r) { return r.mine; })[0];
+      var headline = total === 0 ? "A fresh week begins."
+        : kept === total ? "Every brother kept his vow. 🔥"
+        : kept === 0 ? "A hard week. This one's a fresh start."
+        : kept + " of " + total + " kept the vow last week.";
+      var recap = rows.map(function (r) {
+        return '<div class="cov-recap-row' + (r.hit ? " hit" : "") + (r.mine ? " mine" : "") + '">' +
+          '<span class="crr-name">' + escapeHtml(r.name) + (r.hit ? ' <span class="crr-flame">🔥</span>' : "") + "</span>" +
+          '<b>' + r.n + "/" + r.target + "</b></div>";
       }).join("");
+      var youLine = !me ? "" : (me.hit
+        ? "You kept your covenant — " + me.n + "/" + me.target + ". Well done, brother. Keep the fire."
+        : me.n === 0 ? "Last week slipped by. A new week, a clean page — show up today."
+        : "You showed up " + me.n + (me.n === 1 ? " day" : " days") + " last week. This week, one more.");
       html += '<div class="cov-renew"><div class="cov-renew-t serif">A new week.</div>' +
-        '<div class="cov-recap"><div class="cov-recap-t">Last week, on the record</div>' + recap + "</div>" +
+        '<div class="cov-recap"><div class="cov-recap-t">' + escapeHtml(headline) + '</div>' + recap +
+          (youLine ? '<div class="cov-recap-you' + (me && me.hit ? " win" : "") + '">' + escapeHtml(youLine) + "</div>" : "") + "</div>" +
         '<div class="cov-renew-s">“' + escapeHtml(myCov.body) + '”</div>' +
         '<div class="cov-renew-actions"><button class="cov-renew-btn primary" data-act="renewContinue">Continue this covenant</button>' +
         '<button class="cov-renew-btn ghost" data-act="renewNew">Set a new covenant</button></div></div>';
@@ -11055,7 +11083,7 @@
   });
   if (window.matchMedia) { try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { if (db.theme === "auto") applyTheme("auto"); }); } catch (e) {} }
 
-  var APP_VERSION = "v61.82-dev";   // shown in Settings so you can confirm which build you're on
+  var APP_VERSION = "v61.83-dev";   // shown in Settings so you can confirm which build you're on
   (function () { var v = $("settingsVersion"); if (v) v.textContent = "The Integrated Man · " + APP_VERSION; })();
 
   // ---------- profile · onboarding · settings · backup ----------
